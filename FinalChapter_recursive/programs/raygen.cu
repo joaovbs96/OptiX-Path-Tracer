@@ -71,8 +71,6 @@ inline __device__ vec3f color(optix::Ray ray, CuRandState &rnd)
   return prd.color;
 }
 
-inline __device__ float rnd() { return 0.5f; }
-
 /*! the actual ray generation program - note this has no formal
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */

@@ -36,7 +36,7 @@ cuda_compile_and_embed(
   )
 
 # this is doing the same using OptiX
-add_executable(finalChapter
+add_executable(finalChapter_recursive
   # C++ host code
   programs/vec.h
   programs/material.h
@@ -50,7 +50,7 @@ add_executable(finalChapter
   ${embedded_dielectric_programs}
   )
 
-target_link_libraries(finalChapter 
+target_link_libraries(finalChapter_recursive
   ${optix_LIBRARY}
   )
 

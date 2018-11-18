@@ -101,6 +101,17 @@ just edit ```FinalChapter/finalChapter.cpp```.
   programs, embedding them into host object files, and linking them to
   the final binary.
 
+- There are two versions of the code - a 'iterative' one, in which the
+  materials execute the scattering event, but the tracing of the path
+  itself is done iteratively in the ray generaiton program; and a
+  'recursive' variant in which the materials themselves recursively
+  trace the path on. The recursive one is closer to Pete's original
+  example code, but of course, requires a lot of stack per pixel,
+  which isn't cheap. The iterative version is thus "better" for a GPU,
+  but the recursive version shows that you can most definitely use
+  recursion if you need to (just make sure to set the stack size
+  accordingly).
+  
 I'll write a more "tutorial" - style version that explains the
 high-level concepts in a separate place (likely my blog, on
 http://ingowald.blog).

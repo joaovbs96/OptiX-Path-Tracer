@@ -44,4 +44,5 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
-add_subdirectory(FinalChapter)
+add_subdirectory(FinalChapter_recursive)
+add_subdirectory(FinalChapter_iterative)
