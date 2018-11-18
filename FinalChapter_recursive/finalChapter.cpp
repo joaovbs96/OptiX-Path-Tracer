@@ -281,6 +281,26 @@ int main(int ac, char **av)
   const int numSamples = 128;
   g_context["numSamples"]->setInt(numSamples);
 
+#if 1
+  {
+    // Note: this little piece of code (in the #if 1/#endif bracket)
+    // is _NOT_ required for correctness; it's just been added to
+    // factor our build time vs render time: In optix, the data
+    // structure gets built 'on demand', which basically means it gets
+    // built on the first launch after the scene got set up or
+    // changed. Thus, if we create a 0-sized launch optix won't do any
+    // rendering (0 pixels to render), but will still build; while the
+    // second renderFrame call below won't do any build (already done)
+    // but do all the rendering (Nx*Ny pixels) ...
+    auto t0 = std::chrono::system_clock::now();
+    renderFrame(0,0);
+    auto t1 = std::chrono::system_clock::now();
+    std::cout << "done building optix data structures, which took "
+              << std::setprecision(2) << std::chrono::duration<double>(t1-t0).count()
+              << " seconds" << std::endl;
+  }
+#endif
+
   // render the frame (and time it)
   auto t0 = std::chrono::system_clock::now();
   renderFrame(Nx, Ny);
