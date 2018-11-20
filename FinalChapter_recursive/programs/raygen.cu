@@ -44,7 +44,7 @@ rtDeclareVariable(float3, camera_v, , );
 rtDeclareVariable(float, camera_lens_radius, , );
 
 struct Camera {
-  static __device__ optix::Ray generateRay(float s, float t, CuRandState &rnd) 
+  static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) 
   {
     const vec3f rd = camera_lens_radius * random_in_unit_disk(rnd);
     const vec3f lens_offset = camera_u * rd.x + camera_v * rd.y;
@@ -62,10 +62,10 @@ struct Camera {
   }
 };
 
-inline __device__ vec3f color(optix::Ray ray, CuRandState &rnd)
+inline __device__ vec3f color(optix::Ray ray, DRand48 &rnd)
 {
   PerRayData prd;
-  prd.cuRandState = &rnd;
+  prd.randState = &rnd;
   prd.depth = 0;
   rtTrace(world, ray, prd);
   return prd.color;
@@ -78,7 +78,7 @@ RT_PROGRAM void renderPixel()
 {
   int pixel_index = pixelID.y * launchDim.x + pixelID.x;
   vec3f col(0.f, 0.f, 0.f);
-  CuRandState rnd;
+  DRand48 rnd;
   rnd.init(pixel_index);
   for (int s = 0; s < numSamples; s++) {
     float u = float(pixelID.x + rnd()) / float(launchDim.x);

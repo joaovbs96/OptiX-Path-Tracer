@@ -50,7 +50,7 @@ inline __device__ bool scatter(const optix::Ray &r_in,
   vec3f refracted;
   float reflect_prob;
   float cosine;
-  CuRandState &rnd = *prd.cuRandState;
+  DRand48 &rnd = *prd.randState;
   
   if (dot(r_in.direction, hit_rec_normal) > 0.f) {
     outward_normal = -hit_rec_normal;
@@ -89,7 +89,7 @@ RT_PROGRAM void closest_hit()
   if (prd.depth < 50 && scatter(ray,attenuation,scattered)) {
     PerRayData rec;
     rec.depth = prd.depth+1;
-    rec.cuRandState = prd.cuRandState;
+    rec.randState = prd.randState;
     rtTrace(world,scattered,rec);
     prd.color = attenuation * rec.color;
   } else {

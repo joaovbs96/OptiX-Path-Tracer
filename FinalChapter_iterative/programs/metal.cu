@@ -40,23 +40,24 @@ rtDeclareVariable(float,  fuzz,   , );
   virtual function, but since we have a different function per program
   we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in,
-                               CuRandState &rndState,
+                               DRand48 &rndState,
                                vec3f &scattered_origin,
                                vec3f &scattered_direction,
                                vec3f &attenuation)
 {
+  float3 hrn = hit_rec_normal;
   vec3f reflected = reflect(unit_vector(ray_in.direction),hit_rec_normal);
   scattered_origin    = hit_rec_p;
   scattered_direction = (reflected+fuzz*random_in_unit_sphere(rndState));
-  attenuation         = albedo;
-  return (dot(scattered_direction, hit_rec_normal) > 0.f);
+  attenuation         = vec3f(1.f);//albedo;
+  return (dot(scattered_direction, hrn) > 0.f);
 }
 
 RT_PROGRAM void closest_hit()
 {
   prd.out.scatterEvent
     = scatter(ray,
-              *prd.in.cuRandState,
+              *prd.in.randState,
               prd.out.scattered_origin,
               prd.out.scattered_direction,
               prd.out.attenuation)

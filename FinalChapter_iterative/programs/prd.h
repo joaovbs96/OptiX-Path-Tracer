@@ -17,7 +17,7 @@
 #pragma once
 
 #include "vec.h"
-#include "CuRandState.h"
+#include "DRand48.h"
 
 typedef enum {
   /*! ray could get properly bounced, and is still alive */
@@ -34,7 +34,7 @@ typedef enum {
   carry recursion state, which in this case are recursion depth and random number state */
 struct PerRayData {
   struct {
-    CuRandState *cuRandState;
+    DRand48 *randState;
   } in;
   struct {
     ScatterEvent scatterEvent;

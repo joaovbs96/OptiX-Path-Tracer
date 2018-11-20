@@ -17,9 +17,9 @@
 #pragma once
 
 #include "vec.h"
-#include "CuRandState.h"
+#include "DRand48.h"
 
-inline __device__ vec3f random_in_unit_disk(CuRandState &local_rand_state) {
+inline __device__ vec3f random_in_unit_disk(DRand48 &local_rand_state) {
   vec3f p;
   do {
     p = 2.0f*vec3f(local_rand_state(), local_rand_state(), 0) - vec3f(1, 1, 0);
@@ -27,10 +27,13 @@ inline __device__ vec3f random_in_unit_disk(CuRandState &local_rand_state) {
   return p;
 }
 
-__device__ vec3f random_in_unit_sphere(CuRandState &local_rand_state) {
+
+#define RANDVEC3F vec3f(rnd(),rnd(),rnd())
+
+inline __device__ vec3f random_in_unit_sphere(DRand48 &rnd) {
   vec3f p;
   do {
-    p = 2.0f*vec3f(local_rand_state(), local_rand_state(), local_rand_state()) - vec3f(1.f, 1.f, 1.f);
+    p = 2.0f*RANDVEC3F - vec3f(1, 1, 1);
   } while (p.squared_length() >= 1.0f);
   return p;
 }

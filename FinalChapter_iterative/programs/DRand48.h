@@ -17,22 +17,27 @@
 #pragma once
 
 #include "vec.h"
-#include <curand_kernel.h>
 
-struct CuRandState
+struct DRand48
 {
   /*! initialize the random number generator with a new seed (usually
       per pixel) */
   inline __device__ void init(int seed = 0)
   {
-    curand_init(1984, seed, 0, &state);
+    state = seed;
+    for (int warmUp=0;warmUp<10;warmUp++)
+      (*this)();
   }
 
   /*! get the next 'random' number in the sequence */
   inline __device__ float operator() ()
   {
-    return curand_uniform(&state);
+    const uint64_t a = 0x5DEECE66DULL;
+    const uint64_t c = 0xBULL;
+    const uint64_t mask = 0xFFFFFFFFFFFFULL;
+    state = a*state + c;
+    return float((state & mask) / float(mask+1ULL));
   }
-  
-  curandState state;
+
+  uint64_t state;
 };

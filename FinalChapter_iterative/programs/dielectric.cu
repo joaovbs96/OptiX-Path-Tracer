@@ -39,7 +39,7 @@ rtDeclareVariable(float, ref_idx, , );
   virtual function, but since we have a different function per program
   we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in,
-                               CuRandState &rnd,
+                               DRand48 &rnd,
                                vec3f &scattered_origin,
                                vec3f &scattered_direction,
                                vec3f &attenuation)
@@ -81,7 +81,7 @@ RT_PROGRAM void closest_hit()
 {
   prd.out.scatterEvent
     = scatter(ray,
-              *prd.in.cuRandState,
+              *prd.in.randState,
               prd.out.scattered_origin,
               prd.out.scattered_direction,
               prd.out.attenuation)

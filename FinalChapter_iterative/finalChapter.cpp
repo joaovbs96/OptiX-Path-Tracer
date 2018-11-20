@@ -296,7 +296,7 @@ int main(int ac, char **av)
     renderFrame(0,0);
     auto t1 = std::chrono::system_clock::now();
     std::cout << "done building optix data structures, which took "
-              << std::setprecision(2) << std::chrono::duration<double>(t1-t0).count()
+              << std::setprecision(4) << std::chrono::duration<double>(t1-t0).count()
               << " seconds" << std::endl;
   }
 #endif
@@ -306,7 +306,7 @@ int main(int ac, char **av)
   renderFrame(Nx, Ny);
   auto t1 = std::chrono::system_clock::now();
   std::cout << "done rendering, which took "
-            << std::setprecision(2) << std::chrono::duration<double>(t1-t0).count()
+            << std::setprecision(4) << std::chrono::duration<double>(t1-t0).count()
             << " seconds (for " << numSamples << " paths per pixel)" << std::endl;
        
   // ... map it, save it, and cleanly unmap it after reading...

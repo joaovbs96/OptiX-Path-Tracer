@@ -17,14 +17,14 @@
 #pragma once
 
 #include "vec.h"
-#include "CuRandState.h"
+#include "DRand48.h"
 
 /*! "per ray data" (PRD) for our sample's rays. In the simple example, there is only
   one ray type, and it only ever returns one thing, which is a color (everything else
   is handled through the recursion). In addition to that return type, rays have to
   carry recursion state, which in this case are recursion depth and random number state */
 struct PerRayData {
-  CuRandState *cuRandState;
+  DRand48     *randState;
   /*! recursion depth */
   int          depth;
   /*! return value of the recursive trace() call */

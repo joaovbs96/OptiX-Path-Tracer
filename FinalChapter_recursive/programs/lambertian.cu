@@ -25,7 +25,6 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
 
 
-
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
@@ -43,7 +42,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
                                vec3f &attenuation,
                                optix::Ray &scattered)
 {
-  vec3f target = hit_rec_p + hit_rec_normal + random_in_unit_sphere(*prd.cuRandState);
+  vec3f target = hit_rec_p + hit_rec_normal + random_in_unit_sphere(*prd.randState);
   scattered    = optix::Ray(/*org */hit_rec_p,
                             /*dir */(target-hit_rec_p).as_float3(),
                             /*type*/0,
@@ -60,7 +59,7 @@ RT_PROGRAM void closest_hit()
   if (prd.depth < 50 && scatter(ray,attenuation,scattered)) {
     PerRayData rec;
     rec.depth = prd.depth+1;
-    rec.cuRandState = prd.cuRandState;
+    rec.randState = prd.randState;
     rtTrace(world,scattered,rec);
     prd.color = attenuation * rec.color;
   } else {
