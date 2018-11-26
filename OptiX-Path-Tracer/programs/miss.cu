@@ -14,30 +14,14 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#pragma once
+#include "materials/material.h"
 
-#include "vec.h"
+/*! the implicit state's ray we will intersect against */
+rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+/*! the per ray data we operate on */
+rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-struct DRand48
+RT_PROGRAM void miss_program()
 {
-  /*! initialize the random number generator with a new seed (usually
-      per pixel) */
-  inline __device__ void init(int seed = 0)
-  {
-    state = seed;
-    for (int warmUp=0;warmUp<10;warmUp++)
-      (*this)();
-  }
-
-  /*! get the next 'random' number in the sequence */
-  inline __device__ float operator() ()
-  {
-    const uint64_t a = 0x5DEECE66DULL;
-    const uint64_t c = 0xBULL;
-    const uint64_t mask = 0xFFFFFFFFFFFFULL;
-    state = a*state + c;
-    return float((state & mask) / float(mask+1ULL));
-  }
-
-  uint64_t state;
-};
+  prd.out.scatterEvent = rayDidntHitAnything;
+}

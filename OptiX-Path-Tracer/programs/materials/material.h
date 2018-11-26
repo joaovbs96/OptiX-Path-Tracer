@@ -16,28 +16,30 @@
 
 #pragma once
 
-#include "vec.h"
+#include "../prd.h"
+#include "../DRand48.h"
+#include "../sampling.h"
 
-struct DRand48
-{
-  /*! initialize the random number generator with a new seed (usually
-      per pixel) */
-  inline __device__ void init(int seed = 0)
-  {
-    state = seed;
-    for (int warmUp=0;warmUp<10;warmUp++)
-      (*this)();
+__device__ float schlick(float cosine, float ref_idx) {
+  float r0 = (1.0f - ref_idx) / (1.0f + ref_idx);
+  r0 = r0 * r0;
+  return r0 + (1.0f - r0) * pow((1.0f - cosine), 5.0f);
+}
+
+__device__ bool refract(const vec3f& v, const vec3f& n, float ni_over_nt, vec3f& refracted) {
+  vec3f uv = unit_vector(v);
+  float dt = dot(uv, n);
+  float discriminant = 1.0f - ni_over_nt * ni_over_nt*(1 - dt * dt);
+  
+  if (discriminant > 0) {
+    refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+    return true;
   }
+  else
+    return false;
+}
 
-  /*! get the next 'random' number in the sequence */
-  inline __device__ float operator() ()
-  {
-    const uint64_t a = 0x5DEECE66DULL;
-    const uint64_t c = 0xBULL;
-    const uint64_t mask = 0xFFFFFFFFFFFFULL;
-    state = a*state + c;
-    return float((state & mask) / float(mask+1ULL));
-  }
+inline __device__ vec3f reflect(const vec3f &v, const vec3f &n) {
+  return v - 2.0f*dot(v, n)*n;
+}
 
-  uint64_t state;
-};

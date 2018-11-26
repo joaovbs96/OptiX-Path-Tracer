@@ -62,24 +62,51 @@ struct Camera {
   }
 };
 
-inline __device__ vec3f color(optix::Ray ray, DRand48 &rnd)
-{
+inline __device__ vec3f missColor(const optix::Ray &ray) {
+  const vec3f unit_direction = normalize(ray.direction);
+  const float t = 0.5f*(unit_direction.y + 1.0f);
+  const vec3f c = (1.0f - t)*vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
+  return c;
+}
+
+inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   PerRayData prd;
-  prd.randState = &rnd;
-  prd.depth = 0;
-  rtTrace(world, ray, prd);
-  return prd.color;
+  prd.in.randState = &rnd;
+
+  vec3f attenuation = 1.f;
+  
+  /* iterative version of recursion, up to depth 50 */
+  for (int depth = 0; depth < 50; depth++) {
+    rtTrace(world, ray, prd);
+    if (prd.out.scatterEvent == rayDidntHitAnything)
+      // ray got 'lost' to the environment - 'light' it with miss shader
+      return attenuation * missColor(ray);
+
+    else if (prd.out.scatterEvent == rayGotCancelled)
+      return vec3f(0.f);
+
+    else { // ray is still alive, and got properly bounced
+      attenuation *= prd.out.attenuation;
+      ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
+                            /* direction: */ prd.out.scattered_direction.as_float3(),
+                            /* ray type : */ 0,
+                            /* tmin     : */ 1e-3f,
+                            /* tmax     : */ RT_DEFAULT_MAX);
+    }
+  }
+  // recursion did not terminate - cancel it
+  return vec3f(0.f);
 }
 
 /*! the actual ray generation program - note this has no formal
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
-RT_PROGRAM void renderPixel()
-{
+RT_PROGRAM void renderPixel() {
   int pixel_index = pixelID.y * launchDim.x + pixelID.x;
   vec3f col(0.f, 0.f, 0.f);
   DRand48 rnd;
   rnd.init(pixel_index);
+
   for (int s = 0; s < numSamples; s++) {
     float u = float(pixelID.x + rnd()) / float(launchDim.x);
     float v = float(pixelID.y + rnd()) / float(launchDim.y);
@@ -87,6 +114,9 @@ RT_PROGRAM void renderPixel()
     col += color(ray, rnd);
   }
   col = col / float(numSamples);
+  
+  // gamma correction
+  col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
 
   fb[pixelID] = col.as_float3();
 }

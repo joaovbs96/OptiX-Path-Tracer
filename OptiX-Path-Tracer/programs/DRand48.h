@@ -16,30 +16,27 @@
 
 #pragma once
 
-// ooawe
-#include "programs/vec.h"
-// std
-#include <fstream>
-#include <vector>
-#include <assert.h>
+#include "vec.h"
+#include <stdint.h>
 
-/*! saving to a 'P3' type PPM file (255 values per channel).  There
-  are many other, more C++-like, ways of writing this; this version is
-  intentionally written as close to the RTOW version as possible */
-inline void savePPM(const std::string &fileName,
-                    const size_t Nx, const size_t Ny, const vec3f *pixels)
-{
-  std::ofstream file(fileName);
-  assert(file.good());
+struct DRand48 {
+  // initialize the random number generator with a new seed (usually per pixel)
+  inline __device__ void init(int seed = 0) {
+    state = seed;
+    for (int warmUp=0; warmUp < 10; warmUp++)
+      (*this)();
+  }
 
-  file << "P3\n" << Nx << " " << Ny << "\n255\n";
-  for (int iy=(int)Ny-1; iy>=0; --iy)
-    for (int ix=0; ix<(int)Nx; ix++) {
-      int ir = int(255.99*pixels[ix+Nx*iy].x);
-      int ig = int(255.99*pixels[ix+Nx*iy].y);
-      int ib = int(255.99*pixels[ix+Nx*iy].z);
-      file << ir << " " << ig << " " << ib << "\n";
-    }
-  assert(file.good());
-}
+  // get the next 'random' number in the sequence
+  inline __device__ float operator() () {
+    const uint64_t a = 0x5DEECE66DULL;
+    const uint64_t c = 0xBULL;
+    const uint64_t mask = 0xFFFFFFFFFFFFULL;
+    
+    state = a*state + c;
+    
+    return float((state & mask) / float(mask + 1ULL));
+  }
 
+  uint64_t state;
+};

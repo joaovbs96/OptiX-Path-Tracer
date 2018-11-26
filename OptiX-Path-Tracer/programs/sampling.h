@@ -16,30 +16,28 @@
 
 #pragma once
 
-// ooawe
-#include "programs/vec.h"
-// std
-#include <fstream>
-#include <vector>
-#include <assert.h>
+#include "vec.h"
+#include "DRand48.h"
 
-/*! saving to a 'P3' type PPM file (255 values per channel).  There
-  are many other, more C++-like, ways of writing this; this version is
-  intentionally written as close to the RTOW version as possible */
-inline void savePPM(const std::string &fileName,
-                    const size_t Nx, const size_t Ny, const vec3f *pixels)
-{
-  std::ofstream file(fileName);
-  assert(file.good());
+inline __device__ vec3f random_in_unit_disk(DRand48 &rnd) {
+  float a = rnd() * 2.0f * 3.1415926f;
 
-  file << "P3\n" << Nx << " " << Ny << "\n255\n";
-  for (int iy=(int)Ny-1; iy>=0; --iy)
-    for (int ix=0; ix<(int)Nx; ix++) {
-      int ir = int(255.99*pixels[ix+Nx*iy].x);
-      int ig = int(255.99*pixels[ix+Nx*iy].y);
-      int ib = int(255.99*pixels[ix+Nx*iy].z);
-      file << ir << " " << ig << " " << ib << "\n";
-    }
-  assert(file.good());
+	vec3f xy(sin(a), cos(a), 0);
+	xy *= sqrt(rnd());
+	
+  return xy;
+}
+
+inline __device__ vec3f random_in_unit_sphere(DRand48 &rnd) {
+  float z = rnd() * 2.0f - 1.0f;
+	float t = rnd() * 2.0f * 3.1415926f;
+	float r = sqrt((0.0f > (1.0f - z * z) ? 0.0f : (1.0f - z * z)));
+	float x = r * cos(t);
+	float y = r * sin(t);
+
+	vec3f res(x, y, z);
+	res *= powf(rnd(), 1.0f / 3.0f);
+	
+  return res;
 }
 

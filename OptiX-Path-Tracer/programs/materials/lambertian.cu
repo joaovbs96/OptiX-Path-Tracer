@@ -15,25 +15,20 @@
 // ======================================================================== //
 
 #include "material.h"
-#include "prd.h"
-#include "sampling.h"
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
-
-
 
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 
-
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(float3, albedo, , );
-
 
 
 /*! the actual scatter function - in Pete's reference code, that's a
@@ -43,20 +38,17 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
                                DRand48 &rndState,
                                vec3f &scattered_origin,
                                vec3f &scattered_direction,
-                               vec3f &attenuation)
-{
-  vec3f target
-    = hit_rec_p + hit_rec_normal + random_in_unit_sphere(rndState);
+                               vec3f &attenuation) {
+  vec3f target = hit_rec_p + hit_rec_normal + random_in_unit_sphere(rndState);
 
   // return scattering event
-  scattered_origin    = hit_rec_p;
+  scattered_origin = hit_rec_p;
   scattered_direction = (target-hit_rec_p);
-  attenuation         = albedo;
+  attenuation = albedo;
   return true;
 }
 
-RT_PROGRAM void closest_hit()
-{
+RT_PROGRAM void closest_hit() {
    prd.out.scatterEvent
     = scatter(ray,
               *prd.in.randState,

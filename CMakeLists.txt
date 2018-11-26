@@ -14,7 +14,7 @@
 # limitations under the License.                                           #
 # ======================================================================== #
 
-project(RTOW-OptiX)
+project(OptiX-Path-Tracer)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -44,5 +44,4 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 
-add_subdirectory(FinalChapter_recursive)
-add_subdirectory(FinalChapter_iterative)
+add_subdirectory(OptiX-Path-Tracer)
