@@ -1,5 +1,7 @@
 # OptiX Path Tracer
 
+![alt text](img.png "4480x1080 w/ 128 spp")
+
 ## Overview
 
 Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing in one Weekend" series.
