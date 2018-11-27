@@ -1,49 +1,34 @@
-# RTOW-OptiX (my OptiX version of Pete's 'Ray Tracing in One Weekend' series)
+# OptiX Path Tracer
 
 ## Overview
 
-This project aims at providing a Optix Version of the 'final chapter'
-example in Pete Shirley's "Ray Tracing in one Week-End" series.
+Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing in one Weekend" series.
 
-If you haven't read that book yet, you should (have a look here:
-https://www.amazon.com/Ray-Tracing-Weekend-Minibooks-Book-ebook/dp/B01B5AODD8
-).
+I personally implemented a C++ version of all three minibooks before attempting
+to deal with a GPU based version, just so I could understand the underlining 
+theory. After that, I tried my luck with CUDA, based on Roger Allen's version,
+and only then I tried to implement an OptiX version based on Ingo Wald's code.
 
-For reference, Pete's original C++ code is here:
+I would like to thank Peter Shirley, Roger Allen and Ingo Wald for solving my questions whenever I needed.
+
+Ingo Wald's original OptiX code:
+https://github.com/ingowald/RTOW-OptiX
+
+More info & tutorials:
+http://ingowald.blog
+
+Peter Shirley's original C++ code:
 https://github.com/petershirley/raytracinginoneweekend
 
-Note this project covers *only* the final chapter example; Pete and I
-are in parallel working on a more complete OptiX-version of Pete's
-entire book series, but that might take a while yet.
+Peter Shirley's Ray Tracing books:
+https://www.amazon.com/Ray-Tracing-Weekend-Minibooks-Book-ebook/dp/B01B5AODD8
 
-## Some random notes
-
-- I tried to follow Pete's original example wherever I could. I did
-  take the freedom to clean up a few things, such as using longer (ie,
-  more meaningful) variable names and caml-case to improve
-  readability; or using float-constants more consistently (eg, "1.f"
-  vs "1" or "1."); etc... but kept with his blueprint were
-  possible. 
-
-- There are multiple ways of realizing this example in OptiX; in
-  particular the recursion found in Pete's example could be realized
-  in multiple ways that would be more efficient, faster, more elegant,
-  etc. However, as said before I tried to follow his example as well
-  as I could, so this is my version. I'll probably provide a iterative
-  version soon as well, but for now that should do.
-
-- In terms of performance, this version "should" be way faster than
-  either Pete's CPU version or Roger Allen's CUDA version (see
-  https://devblogs.nvidia.com/accelerated-ray-tracing-cuda/ for that
-  one); this is not because of any magic I might have done, but simply
-  because OptiX will automatically build an acceleration structure
-  over all those spheres, whereas their examples didn't. The magic of
-  OptiX, I guess :-).
-
+Roger Allen's CUDA version:
+https://devblogs.nvidia.com/accelerated-ray-tracing-cuda/
 
 ## Prerequisites
 
-To buidl this project, you need
+To buid this project, you need
 
 - a install of CUDA, preferably CUDA 10. Make sure to put your CUDA
   binary directory into your path.
@@ -71,52 +56,52 @@ Assuming you have nvcc (CUDA) in your path, and have set a
 ```OptiX_INSTALL_DIR``` environment variable to point to the OptiX
 install dir, everything should be configured automatically.
 
-On windows, you'll have to use the cmake gui, and make sure to set the
+On Windows, you'll have to use the cmake gui, and make sure to set the
 right paths for optix include dirs, optix paths, etc.
 
 
 ## Running
 
-Just run the ./finalChapter binary (finalChapter.exe on windows). This
-should render a ```finalChapter.ppm``` image. To change image
-resolution (default 1200x800), number of samples (default 128), etc,
-just edit ```FinalChapter/finalChapter.cpp```.
+Run the ./OptiX-Path-Tracer binary (OptiX-Path-Tracer.exe on windows). This
+should render a PNG image under the output folder(that needs to be 
+created on ahead). To change image resolution (default 1200x800), 
+number of samples (default 128), etc, just edit ```OptiX-Path-Tracer/main.cpp```.
 
-
+On Windows, you might see a "DLL File is Missing" warning. Just copy the missing 
+file from ```OptiX SDK X.X.X\SDK-precompiled-samples``` to the build folder.
 
 ## Code Overview
 
-- The main host cost is in finalChapter.cpp. This sets up the optix
+- The main host cost is in main.cpp. This sets up the optix
   node graph, creates and compiles all programs, etc.
-
-- All OptiX device programs are in FinalChapter/programs/, sorted by
-  raygen.cu for the ray generation program (the main render launch),
-  sphere.cu for the sphere intersectoin and bounding box codes, and
-  metal/dielectric/lambertian.cu for the three material types, with
-  some helper code in vec.h (vector math), sampling, random number
-  code, etc.
-
-- The finalChapter/CMakeLists scripts sets up the build; in
-  particular, it defines all the cmake rules for compiling the device
-  programs, embedding them into host object files, and linking them to
-  the final binary.
-
-- There are two versions of the code - a 'iterative' one, in which the
-  materials execute the scattering event, but the tracing of the path
-  itself is done iteratively in the ray generaiton program; and a
-  'recursive' variant in which the materials themselves recursively
-  trace the path on. The recursive one is closer to Pete's original
-  example code, but of course, requires a lot of stack per pixel,
-  which isn't cheap. The iterative version is thus "better" for a GPU,
-  but the recursive version shows that you can most definitely use
-  recursion if you need to (just make sure to set the stack size
-  accordingly).
   
-I'll write a more "tutorial" - style version that explains the
-high-level concepts in a separate place (likely my blog, on
-http://ingowald.blog).
+- Host functions and constructors are separeted into different header files 
+under the ```host_includes/``` folder..
+
+- All OptiX device programs are in ```OptiX-Path-Tracer/programs/```:
+  - raygen.cu - ray generation program (the main render launch)
+  - under ```hitables/```: sphere.cu for the sphere intersection and bounding box codes
+  - under ```materials/```: metal/dielectric/lambertian.cu for the three material types
+  - We also have some other headers with device helper functions.
+
+- The ```OptiX-Path-Tracer/CMakeLists``` scripts sets up the build; in
+particular, it defines all the cmake rules for compiling the device
+programs, embedding them into host object files, and linking them to
+the final binary.
+
+- Ingo Wald made two different versions of the code, a recursive one and
+an iterative one(better suited to GPUs). On my fork, I decided to keep 
+the iterative version only, but you can still check his original code on 
+his repository.
 
 
 ## ChangeLog
 
-- 11/16/18 Initial Release
+- 11/16/18 - Initial Release by Ingo Wald;
+- 11/18/18 - Iterative Version Release;
+- 11/20/18 - Switched random number generator to DRand48;
+- 11/26/18 - Project Forked:
+           - Added PNG output;
+           - Added Gamma SQRT Correction;
+           - Changed sampling functions to non-loop versions;
+           - Moved contructors to separate files under the 'header_include' folder;
