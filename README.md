@@ -84,7 +84,7 @@ under the ```host_includes/``` folder..
   - raygen.cu - ray generation program (the main render launch)
   - under ```hitables/```: sphere.cu for the sphere intersection and bounding box codes
   - under ```materials/```: metal/dielectric/lambertian.cu for the three material types
-  - We also have some other headers with device helper functions.
+  - some other headers with device helper functions.
 
 - The ```OptiX-Path-Tracer/CMakeLists``` scripts sets up the build; in
 particular, it defines all the cmake rules for compiling the device
@@ -107,3 +107,4 @@ his repository.
            - Added Gamma SQRT Correction;
            - Changed sampling functions to non-loop versions;
            - Moved contructors to separate files under the 'header_include' folder;
+- 11/27/18 - Added moving spheres;
