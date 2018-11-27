@@ -10,7 +10,8 @@ Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing in 
 I personally implemented a C++ version of all three minibooks before attempting
 to deal with a GPU based version, just so I could understand the underlining 
 theory. After that, I tried my luck with CUDA, based on Roger Allen's version,
-and only then I tried to implement an OptiX version based on Ingo Wald's code. I would like to thank Peter Shirley, Roger Allen and Ingo Wald for solving my questions whenever I needed.
+and only then I tried to implement an OptiX version based on Ingo Wald's code. 
+I would like to thank Peter Shirley, Roger Allen and Ingo Wald for help and tips whenever I needed.
 
 - Ingo Wald's original OptiX code:
 https://github.com/ingowald/RTOW-OptiX
