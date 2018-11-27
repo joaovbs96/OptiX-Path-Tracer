@@ -77,7 +77,7 @@ file from ```OptiX SDK X.X.X\SDK-precompiled-samples``` to the build folder.
 - The main host cost is in main.cpp. This sets up the optix
   node graph, creates and compiles all programs, etc.
   
-- Host functions and constructors are separeted into different header files 
+- Host functions and constructors are separated into different header files 
 under the ```host_includes/``` folder..
 
 - All OptiX device programs are in ```OptiX-Path-Tracer/programs/```:
