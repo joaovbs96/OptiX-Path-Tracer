@@ -87,7 +87,7 @@ int main(int ac, char **av) {
   const size_t Nx = 4480;
   const size_t Ny = 1080;
   const int samples = 128;
-  int scene = 0;
+  int scene = 1;
 
   // Create and set the camera
   const vec3f lookfrom(13, 2, 3);
@@ -97,7 +97,7 @@ int main(int ac, char **av) {
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.1f);
   const float dist(10.f);
-  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
   camera.set(g_context);
 
   // Set the ray generation and miss shader program
@@ -155,7 +155,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z));
     }
 
-  std::string output = "output/test.png";
+  std::string output = "output/moving.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

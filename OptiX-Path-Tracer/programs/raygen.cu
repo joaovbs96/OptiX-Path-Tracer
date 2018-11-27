@@ -42,6 +42,8 @@ rtDeclareVariable(float3, camera_origin, , );
 rtDeclareVariable(float3, camera_u, , );
 rtDeclareVariable(float3, camera_v, , );
 rtDeclareVariable(float, camera_lens_radius, , );
+rtDeclareVariable(float, time0, , );
+rtDeclareVariable(float, time1, , );
 
 struct Camera {
   static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) 
@@ -72,6 +74,7 @@ inline __device__ vec3f missColor(const optix::Ray &ray) {
 inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
+  prd.in.time = time0 + rnd() * (time1 - time0);
 
   vec3f attenuation = 1.f;
   

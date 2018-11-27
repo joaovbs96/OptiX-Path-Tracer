@@ -35,6 +35,7 @@ typedef enum {
 struct PerRayData {
   struct {
     DRand48 *randState;
+    float time;
   } in;
   struct {
     ScatterEvent scatterEvent;

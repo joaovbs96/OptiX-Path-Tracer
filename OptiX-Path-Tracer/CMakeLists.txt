@@ -18,6 +18,7 @@
 # the resulting ptx code string into the final executable
 cuda_compile_and_embed( embedded_raygen_program programs/raygen.cu )
 cuda_compile_and_embed( embedded_sphere_programs programs/hitables/sphere.cu )
+cuda_compile_and_embed( embedded_moving_sphere_programs programs/hitables/moving_sphere.cu )
 cuda_compile_and_embed( embedded_miss_program programs/miss.cu )
 cuda_compile_and_embed( embedded_metal_programs programs/materials/metal.cu )
 cuda_compile_and_embed( embedded_dielectric_programs programs/materials/dielectric.cu )
@@ -38,6 +39,7 @@ add_executable(OptiX-Path-Tracer
   # embedded cuda kernels:
   ${embedded_raygen_program}
   ${embedded_sphere_programs}
+  ${embedded_moving_sphere_programs}
   ${embedded_lambertian_programs}
   ${embedded_miss_program}
   ${embedded_metal_programs}

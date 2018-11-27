@@ -70,7 +70,7 @@ optix::GeometryGroup MovingSpheres(optix::Context &g_context) {
       float choose_mat = rnd();
       vec3f center(a + rnd(), 0.2f, b + rnd());
       if (choose_mat < 0.8f) {
-        d_list.push_back(createSphere(center, 0.2f, Lambertian(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd())), g_context));
+        d_list.push_back(createMovingSphere(center, center + vec3f(0, 0.5 * rnd(), 0), 0.0, 1.0, 0.2f, Lambertian(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd())), g_context));
       }
       else if (choose_mat < 0.95f) {
         d_list.push_back(createSphere(center, 0.2f, Metal(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd())), 0.5f*rnd()), g_context));
