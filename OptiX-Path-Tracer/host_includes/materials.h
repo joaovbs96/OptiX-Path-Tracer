@@ -53,7 +53,12 @@ struct Metal : public Material {
     
     gi->setMaterial(/*ray type:*/0, mat);
     gi["albedo"]->set3fv(&albedo.x);
-    gi["fuzz"]->setFloat(fuzz);
+    
+    // fuzz <= 1
+    if(fuzz < 1.f)
+      gi["fuzz"]->setFloat(fuzz);
+    else
+      gi["fuzz"]->setFloat(1.f);
   }
   const vec3f albedo;
   const float fuzz;

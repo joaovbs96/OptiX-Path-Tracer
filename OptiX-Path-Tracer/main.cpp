@@ -146,7 +146,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z));
     }
 
-  std::string output = "output/moving.png";
+  std::string output = "output/moving_new_metal_albedo.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 
