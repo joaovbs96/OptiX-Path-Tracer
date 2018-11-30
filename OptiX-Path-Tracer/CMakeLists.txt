@@ -16,6 +16,7 @@
 
 # do some cmake magic to pre-compile the cuda file to ptx, and embed
 # the resulting ptx code string into the final executable
+cuda_compile_and_embed( embedded_exception_program programs/exception.cu )
 cuda_compile_and_embed( embedded_raygen_program programs/raygen.cu )
 cuda_compile_and_embed( embedded_sphere_programs programs/hitables/sphere.cu )
 cuda_compile_and_embed( embedded_moving_sphere_programs programs/hitables/moving_sphere.cu )
@@ -37,6 +38,7 @@ add_executable(OptiX-Path-Tracer
   lib/stb_image_write.h
   main.cpp
   # embedded cuda kernels:
+  ${embedded_exception_program}
   ${embedded_raygen_program}
   ${embedded_sphere_programs}
   ${embedded_moving_sphere_programs}

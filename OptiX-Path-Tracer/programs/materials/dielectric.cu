@@ -42,7 +42,9 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   vec3f outward_normal;
   vec3f reflected = reflect(ray_in.direction, hit_rec_normal);
   float ni_over_nt;
+
   attenuation = vec3f(1.f, 1.f, 1.f); 
+  
   vec3f refracted;
   float reflect_prob;
   float cosine;
@@ -51,11 +53,11 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
     outward_normal = -hit_rec_normal;
     ni_over_nt = ref_idx;
     cosine = dot(ray_in.direction, hit_rec_normal) / vec3f(ray_in.direction).length();
-    cosine = sqrtf(1.f - ref_idx*ref_idx*(1.f-cosine*cosine));
+    cosine = sqrtf(1.f - ref_idx * ref_idx * (1.f - cosine * cosine));
   }
   else {
     outward_normal = hit_rec_normal;
-    ni_over_nt = 1.0 / ref_idx;
+    ni_over_nt = 1.f / ref_idx;
     cosine = -dot(ray_in.direction, hit_rec_normal) / vec3f(ray_in.direction).length();
   }
   

@@ -43,7 +43,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
 
   // return scattering event
   scattered_origin = hit_rec_p;
-  scattered_direction = (target-hit_rec_p);
+  scattered_direction = (target - hit_rec_p);
   attenuation = albedo;
   return true;
 }

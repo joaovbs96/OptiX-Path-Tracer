@@ -42,6 +42,7 @@ optix::Context g_context;
   'extern'.  */
 extern "C" const char embedded_raygen_program[];
 extern "C" const char embedded_miss_program[];
+extern "C" const char embedded_exception_program[];
 
 // Clamp color values when saving to file
 inline float clamp(float value) {
@@ -74,6 +75,11 @@ void setMissProgram() {
   g_context->setMissProgram(/*program ID:*/0, missProgram);
 }
 
+void setExceptionProgram() {
+  optix::Program exceptionProgram = g_context->createProgramFromPTXString(embedded_exception_program, "exception_program");
+  g_context->setExceptionProgram(/*program ID:*/0, exceptionProgram);
+}
+
 int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
@@ -92,6 +98,7 @@ int main(int ac, char **av) {
   // Set the ray generation and miss shader program
   setRayGenProgram();
   setMissProgram();
+  setExceptionProgram();
 
   // Create a frame buffer
   optix::Buffer fb = createFrameBuffer(Nx, Ny);
