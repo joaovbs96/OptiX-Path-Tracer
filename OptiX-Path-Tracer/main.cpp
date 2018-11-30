@@ -19,14 +19,11 @@
 #include <chrono>
 #include <cstdlib>
 
-// Host includes
-// These are host side constructors and functions. We also have OptiX 
-// Programs(RT_PROGRAM) that act in the device side. Note that we can
-// use host functions as usual in the functions of these headers.
-#include "host_includes/camera.h"
+// Host include
+// Host side constructors and functions. We also have OptiX 
+// Programs(RT_PROGRAM) that act in the device side. Note 
+// that we can use host functions as usual in these headers.
 #include "host_includes/scenes.h"
-#include "host_includes/materials.h"
-#include "host_includes/hitables.h"
 
 // Image I/O - disregard lib warnings
 #pragma warning(push, 0)        
@@ -90,15 +87,7 @@ int main(int ac, char **av) {
   int scene = 1;
 
   // Create and set the camera
-  const vec3f lookfrom(13, 2, 3);
-  const vec3f lookat(0, 0, 0);
-  const vec3f up(0, 1, 0);
-  const float fovy(20.0);
-  const float aspect(float(Nx) / float(Ny));
-  const float aperture(0.1f);
-  const float dist(10.f);
-  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
+  Camera camera;
 
   // Set the ray generation and miss shader program
   setRayGenProgram();
@@ -112,15 +101,17 @@ int main(int ac, char **av) {
   optix::GeometryGroup world;
   switch(scene){
     case 0: 
-      world = InOneWeekend(g_context);
+      world = InOneWeekend(g_context, camera, Nx, Ny);
       break;
     case 1:
-      world = MovingSpheres(g_context);
+      world = MovingSpheres(g_context, camera, Nx, Ny);
       break;
     default:
       printf("Error: scene unknown.\n");
       return 1;
-  }  
+  }
+
+  camera.set(g_context);
   
   g_context["world"]->set(world);
   g_context["numSamples"]->setInt(samples);

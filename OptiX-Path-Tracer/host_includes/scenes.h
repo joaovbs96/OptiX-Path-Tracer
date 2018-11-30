@@ -5,6 +5,7 @@
 #include <optixu/optixpp.h>
 
 #include "../programs/vec.h"
+#include "camera.h"
 #include "materials.h"
 #include "hitables.h"
 
@@ -17,7 +18,7 @@ float rnd() {
   return dis(gen);
 }
 
-optix::GeometryGroup InOneWeekend(optix::Context &g_context) { 
+optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   // first, create all geometry instances (GIs), and, for now,
   // store them in a std::vector. For ease of reference, I'll
   // stick wit the 'd_list' and 'd_world' names used in the
@@ -51,12 +52,23 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context) {
   d_world->setChildCount((int)d_list.size());
   for (int i = 0; i < d_list.size(); i++)
     d_world->setChild(i, d_list[i]);
+  
+
+  // configure camera
+  const vec3f lookfrom(13, 2, 3);
+  const vec3f lookat(0, 0, 0);
+  const vec3f up(0, 1, 0);
+  const float fovy(20.0);
+  const float aspect(float(Nx) / float(Ny));
+  const float aperture(0.1f);
+  const float dist(10.f);
+  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
   // that all we have to do, the rest is up to optix
   return d_world;
 }
 
-optix::GeometryGroup MovingSpheres(optix::Context &g_context) { 
+optix::GeometryGroup MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   // first, create all geometry instances (GIs), and, for now,
   // store them in a std::vector. For ease of reference, I'll
   // stick wit the 'd_list' and 'd_world' names used in the
@@ -90,6 +102,16 @@ optix::GeometryGroup MovingSpheres(optix::Context &g_context) {
   d_world->setChildCount((int)d_list.size());
   for (int i = 0; i < d_list.size(); i++)
     d_world->setChild(i, d_list[i]);
+
+  // configure camera
+  const vec3f lookfrom(13, 2, 3);
+  const vec3f lookat(0, 0, 0);
+  const vec3f up(0, 1, 0);
+  const float fovy(20.0);
+  const float aspect(float(Nx) / float(Ny));
+  const float aperture(0.1f);
+  const float dist(10.f);
+  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
   // that all we have to do, the rest is up to optix
   return d_world;

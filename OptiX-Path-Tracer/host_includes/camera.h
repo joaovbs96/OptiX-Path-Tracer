@@ -11,10 +11,11 @@
 #include "../programs/vec.h"
 
 struct Camera {
+  Camera(){}
+
   Camera(const vec3f &lookfrom, const vec3f &lookat, const vec3f &vup, 
          float vfov, float aspect, float aperture, float focus_dist, float t0, float t1) { 
     // vfov is top to bottom in degrees
-
     lens_radius = aperture / 2.0f;
 
     // shutter is open between t0 and t1
