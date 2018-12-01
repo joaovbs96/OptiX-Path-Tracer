@@ -5,6 +5,7 @@
 #include <optixu/optixpp.h>
 
 #include "../programs/vec.h"
+#include "textures.h"
 
 /*! the precompiled programs/raygen.cu code (in ptx) that our
   cmake magic will precompile (to ptx) and link to the generated
@@ -23,7 +24,7 @@ struct Material {
 /*! host side code for the "Lambertian" material; the actual
   sampling code is in the programs/lambertian.cu closest hit program */
 struct Lambertian : public Material {
-  Lambertian(const vec3f &albedo) : albedo(albedo) {}
+  Lambertian(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
   virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
@@ -33,9 +34,10 @@ struct Lambertian : public Material {
                               (embedded_lambertian_programs, "closest_hit"));
 
     gi->setMaterial(/*ray type:*/0, mat);
-    gi["albedo"]->set3fv(&albedo.x);
+    texture->assignTo(gi, g_context);
+    //gi["albedo"]->set3fv(&albedo.x);
   }
-
+  const Texture* texture;
   const vec3f albedo;
 };
 

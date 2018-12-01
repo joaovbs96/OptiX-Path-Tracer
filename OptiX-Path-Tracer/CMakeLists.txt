@@ -24,6 +24,7 @@ cuda_compile_and_embed( embedded_miss_program programs/miss.cu )
 cuda_compile_and_embed( embedded_metal_programs programs/materials/metal.cu )
 cuda_compile_and_embed( embedded_dielectric_programs programs/materials/dielectric.cu )
 cuda_compile_and_embed( embedded_lambertian_programs programs/materials/lambertian.cu )
+cuda_compile_and_embed( embedded_constant_texture_programs programs/textures/constant_texture.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -46,6 +47,7 @@ add_executable(OptiX-Path-Tracer
   ${embedded_miss_program}
   ${embedded_metal_programs}
   ${embedded_dielectric_programs}
+  ${embedded_constant_texture_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer
