@@ -90,7 +90,7 @@ int main(int ac, char **av) {
   const size_t Nx = 4480;
   const size_t Ny = 1080;
   const int samples = 128;
-  int scene = 1;
+  int scene = 0;
 
   // Create and set the camera
   Camera camera;
@@ -153,7 +153,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z));
     }
 
-  std::string output = "output/moving_new_metal_albedo.png";
+  std::string output = "output/box_random.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 
