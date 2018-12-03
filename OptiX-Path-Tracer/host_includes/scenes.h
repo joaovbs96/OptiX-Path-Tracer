@@ -45,6 +45,7 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
   d_list.push_back(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context));
   d_list.push_back(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context));
   d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(vec3f(0.7f, 0.6f, 0.5f), 0.0f), g_context));
+  //createBox(vec3f(2.3f, 0.5f, 1.6f), vec3f(3.55f, 3.f, 3.2f), Lambertian(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd())), g_context, d_list);
   
   // now, create the optix world that contains all these GIs
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
@@ -53,7 +54,6 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
   for (int i = 0; i < d_list.size(); i++)
     d_world->setChild(i, d_list[i]);
   
-
   // configure camera
   const vec3f lookfrom(13, 2, 3);
   const vec3f lookat(0, 0, 0);
@@ -83,6 +83,7 @@ optix::GeometryGroup MovingSpheres(optix::Context &g_context, Camera &camera, in
       vec3f center(a + rnd(), 0.2f, b + rnd());
       if (choose_mat < 0.8f) {
         d_list.push_back(createMovingSphere(center, center + vec3f(0.f, 0.5f * rnd(), 0.f), 0.f, 1.f, 0.2f, Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context));
+        // d_list.push_back(createMovingSphere(center, center + vec3f(0.f, 0.5f * rnd(), 0.f), 0.f, 1.f, 0.2f, Lambertian(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd())), g_context));
       }
       else if (choose_mat < 0.95f) {
         d_list.push_back(createSphere(center, 0.2f, Metal(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd())), 0.5f*rnd()), g_context));

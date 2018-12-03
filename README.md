@@ -2,6 +2,7 @@
 
 ![alt text](img.png "'In One Weekend' Chapter 12 - 4480x1080 w/ 128 spp")
 ![alt text](moving.png "'The Next Week' Chapter 1 - 4480x1080 w/ 128 spp")
+![alt text](box.png "'The Next Week' Chapter 6 - 4480x1080 w/ 1000 spp")
 
 ## Overview
 

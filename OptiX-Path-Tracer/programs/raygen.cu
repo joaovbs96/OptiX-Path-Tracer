@@ -32,6 +32,7 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtBuffer<float3, 2> fb;
 
 rtDeclareVariable(int, numSamples, , );
+rtDeclareVariable(int, run, , );
 
 rtDeclareVariable(rtObject, world, , );
 
@@ -67,7 +68,7 @@ struct Camera {
 inline __device__ vec3f missColor(const optix::Ray &ray) {
   const vec3f unit_direction = normalize(ray.direction);
   const float t = 0.5f*(unit_direction.y + 1.0f);
-  const vec3f c = (1.0f - t)*vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
+  const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
   return c;
 }
 
@@ -108,7 +109,7 @@ RT_PROGRAM void renderPixel() {
   int pixel_index = pixelID.y * launchDim.x + pixelID.x;
   vec3f col(0.f, 0.f, 0.f);
   DRand48 rnd;
-  rnd.init(pixel_index);
+  rnd.init(pixel_index + run * numSamples);
 
   for (int s = 0; s < numSamples; s++) {
     float u = float(pixelID.x + rnd()) / float(launchDim.x);
@@ -116,11 +117,8 @@ RT_PROGRAM void renderPixel() {
     optix::Ray ray = Camera::generateRay(u, v, rnd);
     col += color(ray, rnd);
   }
-  col = col / float(numSamples);
-  
-  // gamma correction
-  col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
 
-  fb[pixelID] = col.as_float3();
+  // the buffer keeps its previous state unless it's initialized again
+  fb[pixelID] += col.as_float3();
 }
 

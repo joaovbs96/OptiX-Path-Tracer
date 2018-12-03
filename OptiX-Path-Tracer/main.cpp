@@ -89,8 +89,9 @@ int main(int ac, char **av) {
   // Set main parameters
   const size_t Nx = 4480;
   const size_t Ny = 1080;
-  const int samples = 128;
-  int scene = 1;
+  const int samples = 1000;
+  const int batchSize = 10;
+  int scene = 0;
 
   // Create and set the camera
   Camera camera;
@@ -103,6 +104,8 @@ int main(int ac, char **av) {
   // Create a frame buffer
   optix::Buffer fb = createFrameBuffer(Nx, Ny);
   g_context["fb"]->set(fb);
+
+  // TODO: initialize buffer with 0 as a safety measure
 
   // Create the world to render
   optix::GeometryGroup world;
@@ -117,11 +120,11 @@ int main(int ac, char **av) {
       printf("Error: scene unknown.\n");
       return 1;
   }
-
   camera.set(g_context);
   
   g_context["world"]->set(world);
   g_context["numSamples"]->setInt(samples);
+  g_context["run"]->setInt(0);
 
   // Check OptiX scene build time
   auto t0 = std::chrono::system_clock::now();
@@ -131,12 +134,31 @@ int main(int ac, char **av) {
   auto buildTime = std::chrono::duration<double>(t1-t0).count();
   printf("Done building optix data structures, which took %4f seconds.\n", buildTime);
 
-  // Render scene
+  // Render scene in multiple mini-batches of a small number of samples 
+  // to prevent the GPU from blocking. The buffer keeps its previous 
+  // state.
+  int remainder = samples % batchSize;
+  int runs = (samples - remainder) / batchSize;
+  g_context["numSamples"]->setInt(batchSize);
+
   auto t2 = std::chrono::system_clock::now();
-  renderFrame(Nx, Ny);
+  
+  for(int i = 0; i < runs; i++){
+    g_context["run"]->setInt(i);
+    renderFrame(Nx, Ny);
+    printf("Render Progress: %.4f%%\r", float((i * batchSize * 100.f)/samples));
+  }
+
+  // Render remaining samples, if needed
+  if(remainder > 0){
+    g_context["run"]->setInt(runs + 1);
+    g_context["numSamples"]->setInt(remainder);
+    renderFrame(Nx, Ny);
+  }
+
   auto t3 = std::chrono::system_clock::now();
   
-  auto renderTime = std::chrono::duration<double>(t3-t2).count();
+  auto renderTime = std::chrono::duration<double>(t3 - t2).count();
   printf("Done rendering, which took %4f seconds.\n", renderTime);
        
   // Save buffer to a PNG file
@@ -148,12 +170,19 @@ int main(int ac, char **av) {
       int col_index = Nx * j + i;
 			int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
-			arr[pixel_index + 0] = int(255.99 * clamp(cols[col_index].x));
-			arr[pixel_index + 1] = int(255.99 * clamp(cols[col_index].y));
-			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z));
+      // average matrix of samples
+      vec3f col = cols[col_index] / float(samples);
+  
+      // gamma correction
+      col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
+
+      // from float to RGB [0, 255]
+			arr[pixel_index + 0] = int(255.99 * clamp(col.x));
+			arr[pixel_index + 1] = int(255.99 * clamp(col.y));
+			arr[pixel_index + 2] = int(255.99 * clamp(col.z));
     }
 
-  std::string output = "output/moving_new_metal_albedo.png";
+  std::string output = "output/box_random_1000_2.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 
