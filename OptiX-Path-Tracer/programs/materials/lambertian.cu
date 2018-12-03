@@ -27,6 +27,9 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 
+// TODO: eventually UV parameters will be needed in the materials. 
+// These should be defined in the intersection/hitable programs.
+
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(float3, albedo, , );
 
