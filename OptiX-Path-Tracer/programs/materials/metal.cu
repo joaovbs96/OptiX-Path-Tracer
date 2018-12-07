@@ -30,7 +30,7 @@ rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 
 
 /*! and finally - that particular material's parameters */
-rtDeclareVariable(float3, albedo, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 rtDeclareVariable(float,  fuzz,   , );
 
 
@@ -46,7 +46,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   vec3f reflected = reflect(unit_vector(ray_in.direction),hit_rec_normal);
   scattered_origin    = hit_rec_p;
   scattered_direction = (reflected+fuzz*random_in_unit_sphere(rndState));
-  attenuation         = albedo;//albedo;
+  attenuation         = sample_texture(0.f, 0.f, hit_rec_p);
   return (dot(scattered_direction, hrn) > 0.f);
 }
 

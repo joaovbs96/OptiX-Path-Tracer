@@ -35,7 +35,6 @@ struct Lambertian : public Material {
 
     gi->setMaterial(/*ray type:*/0, mat);
     texture->assignTo(gi, g_context);
-    //gi["albedo"]->set3fv(&albedo.x);
   }
   const Texture* texture;
   const vec3f albedo;
@@ -44,7 +43,7 @@ struct Lambertian : public Material {
 /*! host side code for the "Metal" material; the actual
   sampling code is in the programs/metal.cu closest hit program */
 struct Metal : public Material {
-  Metal(const vec3f &albedo, const float fuzz) : albedo(albedo), fuzz(fuzz) {}
+  Metal(const Texture *t, const float fuzz) : texture(t), fuzz(fuzz) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
   virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
@@ -54,7 +53,7 @@ struct Metal : public Material {
                               (embedded_metal_programs, "closest_hit"));
     
     gi->setMaterial(/*ray type:*/0, mat);
-    gi["albedo"]->set3fv(&albedo.x);
+    texture->assignTo(gi, g_context);
     
     // fuzz <= 1
     if(fuzz < 1.f)
@@ -62,7 +61,7 @@ struct Metal : public Material {
     else
       gi["fuzz"]->setFloat(1.f);
   }
-  const vec3f albedo;
+  const Texture* texture;
   const float fuzz;
 };
 

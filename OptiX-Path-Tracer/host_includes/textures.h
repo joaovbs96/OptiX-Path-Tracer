@@ -13,14 +13,15 @@
 extern "C" const char embedded_constant_texture_programs[];
 
 struct Texture {
-    virtual void assignTo(optix::GeometryInstance &gi, optix::Context &g_context) const = 0;
+    virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const = 0;
 };
 
 struct Constant_Texture : public Texture{
     Constant_Texture(const vec3f &c) : color(c) {}
     
-    virtual void assignTo(optix::GeometryInstance &gi, optix::Context &g_context) const override {
+    virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
         optix::Program textProg = g_context->createProgramFromPTXString(embedded_constant_texture_programs, "sample_texture");
+        
         textProg["color"]->set3fv(&color.x);
         gi["sample_texture"]->setProgramId(textProg);
     }

@@ -31,9 +31,7 @@ rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 // These should be defined in the intersection/hitable programs.
 
 /*! and finally - that particular material's parameters */
-//rtDeclareVariable(float3, albedo, , );
-
-rtDeclareVariable(rtCallableProgram<float3(float, float, float3)>, sample_texture,,);
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 
 
 /*! the actual scatter function - in Pete's reference code, that's a
@@ -49,7 +47,8 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   // return scattering event
   scattered_origin = hit_rec_p;
   scattered_direction = (target - hit_rec_p);
-  attenuation = sample_texture(0.f, 0.f, hit_rec_p);
+  float3  color = sample_texture(0.f, 0.f, hit_rec_p);
+  attenuation = vec3f(color);
   return true;
 }
 
