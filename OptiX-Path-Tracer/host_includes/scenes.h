@@ -25,7 +25,9 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
   // reference C++ and CUDA codes.
   std::vector<optix::GeometryInstance> d_list;
 
-  d_list.push_back(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f, 0.5f, 0.5f))), g_context));
+  Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2, 0.3, 0.1)), new Constant_Texture(vec3f(0.9, 0.9, 0.9)));
+
+  d_list.push_back(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker), g_context));
 
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
@@ -45,7 +47,7 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
   d_list.push_back(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context));
   d_list.push_back(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context));
   d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context));
-  //createBox(vec3f(2.3f, 0.5f, 1.6f), vec3f(3.55f, 3.f, 3.2f), Lambertian(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd())), g_context, d_list);
+  //createBox(vec3f(0.3f, 0.5f, 0.6f), vec3f(3.55f, 3.f, 3.2f), Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context, d_list);
   
   // now, create the optix world that contains all these GIs
   optix::GeometryGroup d_world = g_context->createGeometryGroup();

@@ -26,6 +26,7 @@ cuda_compile_and_embed( embedded_dielectric_programs programs/materials/dielectr
 cuda_compile_and_embed( embedded_lambertian_programs programs/materials/lambertian.cu )
 cuda_compile_and_embed( embedded_constant_texture_programs programs/textures/constant_texture.cu )
 cuda_compile_and_embed( embedded_aarect_programs programs/hitables/aarect.cu )
+cuda_compile_and_embed( embedded_checker_texture_programs programs/textures/checkered_texture.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -50,6 +51,7 @@ add_executable(OptiX-Path-Tracer
   ${embedded_dielectric_programs}
   ${embedded_constant_texture_programs}
   ${embedded_aarect_programs}
+  ${embedded_checker_texture_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer
