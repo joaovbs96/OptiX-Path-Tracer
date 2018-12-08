@@ -30,9 +30,19 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
+rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
+rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
+
+inline __device__ void get_sphere_uv(const vec3f& p) {
+	float phi = atan2(p.z, p.x);
+	float theta = asin(p.y); 
+
+	hit_rec_u = 1 - (phi + CUDART_PI_F) / (2 * CUDART_PI_F);
+	hit_rec_v = (theta + CUDART_PI_F / 2) / CUDART_PI_F;
+}
 
 __device__ float3 center(float time) {
 	return center0 + ((time - time0) / (time1 - time0)) * (center1 - center0);
@@ -71,6 +81,7 @@ RT_PROGRAM void hit_sphere(int pid) {
     if (rtPotentialIntersection(temp)) {
       hit_rec_p = ray.origin + temp * ray.direction;
       hit_rec_normal = (hit_rec_p - center(prd.in.time)) / radius;
+      get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
       rtReportIntersection(0);
     }
   }
@@ -81,6 +92,7 @@ RT_PROGRAM void hit_sphere(int pid) {
     if (rtPotentialIntersection(temp)) {
       hit_rec_p = ray.origin + temp * ray.direction;
       hit_rec_normal = (hit_rec_p - center(prd.in.time)) / radius;
+      get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
       rtReportIntersection(0);
     }
   }

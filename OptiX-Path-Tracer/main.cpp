@@ -25,15 +25,6 @@
 // that we can use host functions as usual in these headers.
 #include "host_includes/scenes.h"
 
-// Image I/O - disregard lib warnings
-#pragma warning(push, 0)        
-#define STBI_MSC_SECURE_CRT
-#define STB_IMAGE_IMPLEMENTATION
-#include "lib/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "lib/stb_image_write.h"
-#pragma warning(pop)
-
 optix::Context g_context;
 
 /*! the precompiled programs/raygen.cu code (in ptx) that our
@@ -182,7 +173,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z));
     }
 
-  std::string output = "output/perlin_1000.png";
+  std::string output = "output/image_1000.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

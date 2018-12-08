@@ -25,6 +25,10 @@
 #else
 #endif
 
+#ifndef CUDART_PI_F
+#define CUDART_PI_F 3.141592654f
+#endif
+
 struct vec3f 
 {
   inline __device__ vec3f() {}

@@ -1,6 +1,6 @@
 # OptiX Path Tracer
 
-![alt text](perlin.png "'The Next Week' Chapter 4 - 4480x1080 w/ 1000 spp")
+![alt text](ch5.png "'The Next Week' Chapter 5 - 4480x1080 w/ 1000 spp")
 
 ## Overview
 
@@ -101,9 +101,7 @@ his repository.
 - 11/16/18 - Initial Release by Ingo Wald;
 - 11/18/18 - Iterative Version Release;
 - 11/20/18 - Switched random number generator to DRand48;
-- 11/26/18 - Project Forked:
-           - Added PNG output;
-           - Added Gamma SQRT Correction;
-           - Changed sampling functions to non-loop versions;
-           - Moved contructors to separate files under the 'header_include' folder;
+- 11/26/18 - Project Forked: Added PNG output, gamma SQRT correction, changed sampling functions to non-loop versions, moved contructors to separate files under the 'header_include' folder;
 - 11/27/18 - Added moving spheres;
+- 12/07/18 - Added constant, checkered and Perlin noise textures;
+- 12/08/18 - Added image textures;

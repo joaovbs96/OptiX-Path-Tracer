@@ -26,6 +26,8 @@ rtDeclareVariable(rtObject, world, , );
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
+rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
+rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
 
 // TODO: eventually UV parameters will be needed in the materials. 
 // These should be defined in the intersection/hitable programs.
@@ -47,13 +49,18 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   // return scattering event
   scattered_origin = hit_rec_p;
   scattered_direction = (target - hit_rec_p);
-  float3  color = sample_texture(0.f, 0.f, hit_rec_p);
+  float3  color = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
   attenuation = vec3f(color);
   return true;
 }
 
+inline __device__ float3 emitted(){
+  return make_float3(0.f, 0.f, 0.f);
+}
+
 RT_PROGRAM void closest_hit() {
-   prd.out.scatterEvent
+  prd.out.emitted = emitted();
+  prd.out.scatterEvent
     = scatter(ray,
               *prd.in.randState,
               prd.out.scattered_origin,

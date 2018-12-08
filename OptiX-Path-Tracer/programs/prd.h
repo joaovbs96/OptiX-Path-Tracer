@@ -41,6 +41,7 @@ struct PerRayData {
     ScatterEvent scatterEvent;
     vec3f        scattered_origin;
     vec3f        scattered_direction;
+    vec3f        emitted;
     vec3f        attenuation;
   } out;
 };

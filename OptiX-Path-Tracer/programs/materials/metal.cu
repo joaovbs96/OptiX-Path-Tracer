@@ -23,16 +23,15 @@ rtDeclareVariable(PerRayData, prd,   rtPayload, );
 rtDeclareVariable(rtObject,   world, , );
 
 
-
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-
+rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
+rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
 
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 rtDeclareVariable(float,  fuzz,   , );
-
 
 /*! the actual scatter function - in Pete's reference code, that's a
   virtual function, but since we have a different function per program
@@ -46,12 +45,16 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   vec3f reflected = reflect(unit_vector(ray_in.direction),hit_rec_normal);
   scattered_origin    = hit_rec_p;
   scattered_direction = (reflected+fuzz*random_in_unit_sphere(rndState));
-  attenuation         = sample_texture(0.f, 0.f, hit_rec_p);
+  attenuation         = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
   return (dot(scattered_direction, hrn) > 0.f);
 }
 
-RT_PROGRAM void closest_hit()
-{
+inline __device__ float3 emitted(){
+  return make_float3(0.f, 0.f, 0.f);
+}
+
+RT_PROGRAM void closest_hit() {
+  prd.out.emitted = emitted();
   prd.out.scatterEvent
     = scatter(ray,
               *prd.in.randState,

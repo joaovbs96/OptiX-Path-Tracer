@@ -15,6 +15,8 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 /*! the attributes we use to communicate between intersection programs and hit program */
 rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
+rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
+rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -38,6 +40,8 @@ RT_PROGRAM void hit_rect_X(int pid) {
         if (rtPotentialIntersection(t)) {
           hit_rec_p = ray.origin + t * ray.direction;
           hit_rec_normal = normal;
+          hit_rec_u = (a - a0) / (a1 - a0);
+          hit_rec_v = (b - b0) / (b1 - b0);
           rtReportIntersection(0);
         }
     }
@@ -60,6 +64,8 @@ RT_PROGRAM void hit_rect_Y(int pid) {
         if (rtPotentialIntersection(t)) {
           hit_rec_p = ray.origin + t * ray.direction;
           hit_rec_normal = normal;
+          hit_rec_u = (a - a0) / (a1 - a0);
+          hit_rec_v = (b - b0) / (b1 - b0);
           rtReportIntersection(0);
         }
     }
@@ -78,6 +84,8 @@ RT_PROGRAM void hit_rect_Z(int pid) {
         if (rtPotentialIntersection(t)) {
           hit_rec_p = ray.origin + t * ray.direction;
           hit_rec_normal = normal;
+          hit_rec_u = (a - a0) / (a1 - a0);
+          hit_rec_v = (b - b0) / (b1 - b0);
           rtReportIntersection(0);
         }
     }

@@ -37,7 +37,7 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
     }
   }
   d_list.push_back(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context));
-  d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(4.f)), g_context));
+  d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context));
   d_list.push_back(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context));
   //createBox(vec3f(0.3f, 0.5f, 0.6f), vec3f(3.55f, 3.f, 3.2f), Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context, d_list);
   
