@@ -1,6 +1,6 @@
 # OptiX Path Tracer
 
-![alt text](perlin.png "'The Next Week' Chapter 3 - 4480x1080 w/ 1000 spp")
+![alt text](perlin.png "'The Next Week' Chapter 4 - 4480x1080 w/ 1000 spp")
 
 ## Overview
 
