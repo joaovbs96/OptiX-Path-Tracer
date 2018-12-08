@@ -8,15 +8,7 @@
 #include "camera.h"
 #include "materials.h"
 #include "hitables.h"
-
-#include <random>
-
-float rnd() {
-  // static std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  static std::mt19937 gen(0); //Standard mersenne_twister_engine seeded with rd()
-  static std::uniform_real_distribution<float> dis(0.f, 1.f);
-  return dis(gen);
-}
+#include "textures.h"
 
 optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   // first, create all geometry instances (GIs), and, for now,
@@ -44,9 +36,9 @@ optix::GeometryGroup InOneWeekend(optix::Context &g_context, Camera &camera, int
       }
     }
   }
-  d_list.push_back(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context));
-  d_list.push_back(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context));
-  d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context));
+  d_list.push_back(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context));
+  d_list.push_back(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(4.f)), g_context));
+  d_list.push_back(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context));
   //createBox(vec3f(0.3f, 0.5f, 0.6f), vec3f(3.55f, 3.f, 3.2f), Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context, d_list);
   
   // now, create the optix world that contains all these GIs
