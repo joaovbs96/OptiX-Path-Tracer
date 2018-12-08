@@ -36,6 +36,8 @@ rtDeclareVariable(int, run, , );
 
 rtDeclareVariable(rtObject, world, , );
 
+rtDeclareVariable(int, light, , );
+
 rtDeclareVariable(float3, camera_lower_left_corner, , );
 rtDeclareVariable(float3, camera_horizontal, , );
 rtDeclareVariable(float3, camera_vertical, , );
@@ -47,8 +49,7 @@ rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
 
 struct Camera {
-  static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) 
-  {
+  static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) {
     const vec3f rd = camera_lens_radius * random_in_unit_disk(rnd);
     const vec3f lens_offset = camera_u * rd.x + camera_v * rd.y;
     const vec3f origin = camera_origin + lens_offset;
@@ -66,10 +67,14 @@ struct Camera {
 };
 
 inline __device__ vec3f missColor(const optix::Ray &ray) {
-  const vec3f unit_direction = normalize(ray.direction);
-  const float t = 0.5f*(unit_direction.y + 1.0f);
-  const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
-  return c;
+  if(light){
+    const vec3f unit_direction = normalize(ray.direction);
+    const float t = 0.5f*(unit_direction.y + 1.0f);
+    const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
+    return c;
+  }
+  else
+    return vec3f(0.f);
 }
 
 inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
@@ -82,15 +87,16 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
-    if (prd.out.scatterEvent == rayDidntHitAnything)
+    if (prd.out.scatterEvent == rayDidntHitAnything){
       // ray got 'lost' to the environment - 'light' it with miss shader
       return attenuation * missColor(ray);
+    }
 
     else if (prd.out.scatterEvent == rayGotCancelled)
-      return vec3f(0.f);
+      return attenuation * prd.out.emitted;
 
     else { // ray is still alive, and got properly bounced
-      attenuation *= prd.out.attenuation;
+      attenuation = prd.out.emitted + attenuation * prd.out.attenuation;
       ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
                             /* direction: */ prd.out.scattered_direction.as_float3(),
                             /* ray type : */ 0,

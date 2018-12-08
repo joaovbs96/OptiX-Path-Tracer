@@ -29,6 +29,7 @@ cuda_compile_and_embed( embedded_aarect_programs programs/hitables/aarect.cu )
 cuda_compile_and_embed( embedded_checker_texture_programs programs/textures/checkered_texture.cu )
 cuda_compile_and_embed( embedded_noise_texture_programs programs/textures/noise_texture.cu )
 cuda_compile_and_embed( embedded_image_texture_programs programs/textures/image_texture.cu )
+cuda_compile_and_embed( embedded_diffuse_light_programs programs/materials/diffuse_light.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -56,6 +57,7 @@ add_executable(OptiX-Path-Tracer
   ${embedded_checker_texture_programs}
   ${embedded_noise_texture_programs}
   ${embedded_image_texture_programs}
+  ${embedded_diffuse_light_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer

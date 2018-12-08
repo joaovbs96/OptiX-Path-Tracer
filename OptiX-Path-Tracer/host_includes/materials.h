@@ -14,6 +14,7 @@
 extern "C" const char embedded_metal_programs[];
 extern "C" const char embedded_dielectric_programs[];
 extern "C" const char embedded_lambertian_programs[];
+extern "C" const char embedded_diffuse_light_programs[];
 
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
@@ -37,7 +38,6 @@ struct Lambertian : public Material {
     texture->assignTo(gi, g_context);
   }
   const Texture* texture;
-  const vec3f albedo;
 };
 
 /*! host side code for the "Metal" material; the actual
@@ -83,4 +83,23 @@ struct Dielectric : public Material {
   
   const float ref_idx;
 };
+
+/*! host side code for the "Diffuse Light" material; the actual
+  sampling code is in the programs/diffuse_light.cu closest hit program */
+struct Diffuse_Light : public Material {
+  Diffuse_Light(const Texture *t) : texture(t) {}
+  
+  /* create optix material, and assign mat and mat values to geom instance */
+  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+    optix::Material mat = g_context->createMaterial();
+    
+    mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
+                              (embedded_diffuse_light_programs, "closest_hit"));
+
+    gi->setMaterial(/*ray type:*/0, mat);
+    texture->assignTo(gi, g_context);
+  }
+  const Texture* texture;
+};
+
 #endif

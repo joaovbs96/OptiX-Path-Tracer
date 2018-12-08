@@ -1,6 +1,6 @@
 # OptiX Path Tracer
 
-![alt text](ch5.png "'The Next Week' Chapter 5 - 4480x1080 w/ 1000 spp")
+![alt text](ch6.png "'The Next Week' Chapter 6 - 4480x1080 w/ 1000 spp")
 
 ## Overview
 
