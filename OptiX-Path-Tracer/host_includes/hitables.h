@@ -59,7 +59,7 @@ optix::GeometryInstance createMovingSphere(const vec3f &center0, const vec3f &ce
 }
 
 // Axis-alligned Rectangle constructor
-optix::GeometryInstance createXRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip_normal, const Material &material, optix::Context &g_context) {
+optix::GeometryInstance createXRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip, const Material &material, optix::Context &g_context) {
   optix::Geometry geometry = g_context->createGeometry();
   
   geometry->setPrimitiveCount(1);
@@ -71,11 +71,7 @@ optix::GeometryInstance createXRect(const float a0, const float a1, const float 
   geometry["b0"]->setFloat(b0);
   geometry["b1"]->setFloat(b1);
   geometry["k"]->setFloat(k);
-
-  if(flip_normal)
-    geometry["flip_normal"]->setInt(-1);
-  else
-    geometry["flip_normal"]->setInt(1);
+  geometry["flip"]->setInt(flip);
 
   optix::GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
@@ -85,7 +81,7 @@ optix::GeometryInstance createXRect(const float a0, const float a1, const float 
   return gi;
 }
 
-optix::GeometryInstance createYRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip_normal, const Material &material, optix::Context &g_context) {
+optix::GeometryInstance createYRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip, const Material &material, optix::Context &g_context) {
   optix::Geometry geometry = g_context->createGeometry();
   
   geometry->setPrimitiveCount(1);
@@ -97,11 +93,7 @@ optix::GeometryInstance createYRect(const float a0, const float a1, const float 
   geometry["b0"]->setFloat(b0);
   geometry["b1"]->setFloat(b1);
   geometry["k"]->setFloat(k);
-
-  if(flip_normal)
-    geometry["flip_normal"]->setInt(-1);
-  else
-    geometry["flip_normal"]->setInt(1);
+  geometry["flip"]->setInt(flip);
 
   optix::GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
@@ -111,7 +103,7 @@ optix::GeometryInstance createYRect(const float a0, const float a1, const float 
   return gi;
 }
 
-optix::GeometryInstance createZRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip_normal, const Material &material, optix::Context &g_context) {
+optix::GeometryInstance createZRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip, const Material &material, optix::Context &g_context) {
   optix::Geometry geometry = g_context->createGeometry();
   
   geometry->setPrimitiveCount(1);
@@ -123,11 +115,7 @@ optix::GeometryInstance createZRect(const float a0, const float a1, const float 
   geometry["b0"]->setFloat(b0);
   geometry["b1"]->setFloat(b1);
   geometry["k"]->setFloat(k);
-
-  if(flip_normal)
-    geometry["flip_normal"]->setInt(-1);
-  else
-    geometry["flip_normal"]->setInt(1);
+  geometry["flip"]->setInt(flip);
 
   optix::GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
@@ -138,33 +126,14 @@ optix::GeometryInstance createZRect(const float a0, const float a1, const float 
 }
 
 void createBox(const vec3f& p0, const vec3f& p1, Material &material, optix::Context &g_context, std::vector<optix::GeometryInstance> &d_list){
-  d_list.push_back(createZRect(p0.x, p1.x, p0.y, p1.y, p0.z, true, material, g_context));// flip normal
+  d_list.push_back(createZRect(p0.x, p1.x, p0.y, p1.y, p0.z, true, material, g_context));
   d_list.push_back(createZRect(p0.x, p1.x, p0.y, p1.y, p1.z, false, material, g_context));
-  d_list.push_back(createYRect(p0.x, p1.x, p0.z, p1.z, p0.y, true, material, g_context));// flip normal
+
+  d_list.push_back(createYRect(p0.x, p1.x, p0.z, p1.z, p0.y, true, material, g_context));
   d_list.push_back(createYRect(p0.x, p1.x, p0.z, p1.z, p1.y, false, material, g_context));
-  d_list.push_back(createXRect(p0.y, p1.y, p0.z, p1.z, p0.x, true, material, g_context));// flip normal
+  
+  d_list.push_back(createXRect(p0.y, p1.y, p0.z, p1.z, p0.x, true, material, g_context));
   d_list.push_back(createXRect(p0.y, p1.y, p0.z, p1.z, p1.x, false, material, g_context));
 }
-
-/*optix::GeometryGroup translate(const vec3f& pos, optix::GeometryInstance &gi, optix::Context &g_context){
-  optix::Transform transform; // Keep in mind transforms are expensive matrix operations
-
-  const float m[16] = {
-    1.f, 0.f, 0.f, pos.x,
-    0.f, 1.f, 0.f, pos.y,
-    0.f, 0.f, 1.f, pos.z,
-    0.f, 0.f, 0.f, 1.f
-  };
-
-  transform = g_context->createTransform();
-  transform->setMatrix(0, m, 0); // TODO: optimization - third parameter is the inverse of the matrix m
-  transform->setChild(gi);
-
-  optix::GeometryGroup group = g_context->createGeometryGroup();
-  group->setChildCount(1);
-  group->setChild(0, transform);
-
-  return group;
-}*/
 
 #endif

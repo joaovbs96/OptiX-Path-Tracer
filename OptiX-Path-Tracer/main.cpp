@@ -78,27 +78,21 @@ int main(int ac, char **av) {
   g_context->setStackSize( 3000 );
   
   // Set main parameters
-  const size_t Nx = 4480;
-  const size_t Ny = 1080;
+  int Nx = 4480;
+  int Ny = 1080;
   const int samples = 1000;
-  const int batchSize = 10;
-  int scene = 0;
+  int scene = 2;
 
-  // Create and set the camera
-  Camera camera;
+  // set number of samples
+  g_context["samples"]->setInt(samples);
 
   // Set the ray generation and miss shader program
   setRayGenProgram();
   setMissProgram();
   setExceptionProgram();
 
-  // Create a frame buffer
-  optix::Buffer fb = createFrameBuffer(Nx, Ny);
-  g_context["fb"]->set(fb);
-
-  // TODO: initialize buffer with 0 as a safety measure
-
-  // Create the world to render
+  // Create the world to render, create and set camera
+  Camera camera;
   optix::GeometryGroup world;
   switch(scene){
     case 0: 
@@ -107,48 +101,33 @@ int main(int ac, char **av) {
     case 1:
       world = MovingSpheres(g_context, camera, Nx, Ny);
       break;
+    case 2:
+      Nx = Ny = 1080;
+      world = Cornell(g_context, camera, Nx, Ny);
+      break;
     default:
       printf("Error: scene unknown.\n");
+      system("PAUSE");
       return 1;
   }
   camera.set(g_context);
-  
   g_context["world"]->set(world);
-  g_context["numSamples"]->setInt(samples);
-  g_context["run"]->setInt(0);
+
+  // Create a frame buffer
+  optix::Buffer fb = createFrameBuffer(Nx, Ny);
+  g_context["fb"]->set(fb);
 
   // Check OptiX scene build time
   auto t0 = std::chrono::system_clock::now();
   renderFrame(0, 0);
   auto t1 = std::chrono::system_clock::now();
+  auto buildTime = std::chrono::duration<double>(t1 - t0).count();
+  printf("Done building OptiX data structures, which took %4f seconds.\n", buildTime);
 
-  auto buildTime = std::chrono::duration<double>(t1-t0).count();
-  printf("Done building optix data structures, which took %4f seconds.\n", buildTime);
-
-  // Render scene in multiple mini-batches of a small number of samples 
-  // to prevent the GPU from blocking. The buffer keeps its previous 
-  // state.
-  int remainder = samples % batchSize;
-  int runs = (samples - remainder) / batchSize;
-  g_context["numSamples"]->setInt(batchSize);
-
+  // Render scene
   auto t2 = std::chrono::system_clock::now();
-  
-  for(int i = 0; i < runs; i++){
-    g_context["run"]->setInt(i);
-    renderFrame(Nx, Ny);
-    printf("Render Progress: %.4f%%\r", float((i * batchSize * 100.f)/samples));
-  }
-
-  // Render remaining samples, if needed
-  if(remainder > 0){
-    g_context["run"]->setInt(runs + 1);
-    g_context["numSamples"]->setInt(remainder);
-    renderFrame(Nx, Ny);
-  }
-
+  renderFrame(Nx, Ny);
   auto t3 = std::chrono::system_clock::now();
-  
   auto renderTime = std::chrono::duration<double>(t3 - t2).count();
   printf("Done rendering, which took %4f seconds.\n", renderTime);
        
@@ -161,19 +140,13 @@ int main(int ac, char **av) {
       int col_index = Nx * j + i;
 			int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
-      // average matrix of samples
-      vec3f col = cols[col_index] / float(samples);
-  
-      // gamma correction
-      col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
-
       // from float to RGB [0, 255]
-			arr[pixel_index + 0] = int(255.99 * clamp(col.x));
-			arr[pixel_index + 1] = int(255.99 * clamp(col.y));
-			arr[pixel_index + 2] = int(255.99 * clamp(col.z));
+			arr[pixel_index + 0] = int(255.99 * clamp(cols[col_index].x)); // R
+			arr[pixel_index + 1] = int(255.99 * clamp(cols[col_index].y)); // G
+			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z)); // B
     }
 
-  std::string output = "output/no_light_1000.png";
+  std::string output = "output/cornell_50.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

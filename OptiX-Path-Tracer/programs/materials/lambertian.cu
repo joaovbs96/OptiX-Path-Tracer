@@ -49,8 +49,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
   // return scattering event
   scattered_origin = hit_rec_p;
   scattered_direction = (target - hit_rec_p);
-  float3  color = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
-  attenuation = vec3f(color);
+  attenuation = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
   return true;
 }
 

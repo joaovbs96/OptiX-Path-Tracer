@@ -7,7 +7,7 @@ rtDeclareVariable(float,  a1, , );
 rtDeclareVariable(float,  b0, , );
 rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
-rtDeclareVariable(int, flip_normal, , );
+rtDeclareVariable(int,  flip, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
@@ -28,66 +28,77 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 // stable variants out there, but for now let's stick with the one that
 // the reference code used.
 RT_PROGRAM void hit_rect_X(int pid) {
-    float t = (k - ray.origin.x) / ray.direction.x;
+    float t = (k - ray.origin.x) / ray.direction.x;        
+    if (t > ray.tmax || t < ray.tmin)
+        return;
+
     float a = ray.origin.y + t * ray.direction.y;
     float b = ray.origin.z + t * ray.direction.z;
-    float3 normal = make_float3(flip_normal * 1.f, 0.f, 0.f);
-
-	if (a < a0 || a > a1 || b < b0 || b > b1)
+    if (a < a0 || a > a1 || b < b0 || b > b1)
         return;
+    
+    if (rtPotentialIntersection(t)) {
+        hit_rec_p = ray.origin + t * ray.direction;
+
+        hit_rec_normal = make_float3(1.f, 0.f, 0.f);
         
-    if (t < ray.tmax && t > ray.tmin) {
-        if (rtPotentialIntersection(t)) {
-          hit_rec_p = ray.origin + t * ray.direction;
-          hit_rec_normal = normal;
-          hit_rec_u = (a - a0) / (a1 - a0);
-          hit_rec_v = (b - b0) / (b1 - b0);
-          rtReportIntersection(0);
-        }
+        // flip normal
+        if(flip)
+            hit_rec_normal *= -1;
+
+        hit_rec_u = (a - a0) / (a1 - a0);
+        hit_rec_v = (b - b0) / (b1 - b0);
+        rtReportIntersection(0);
     }
 }
 
 RT_PROGRAM void hit_rect_Y(int pid) {
-    float t = (k - ray.origin.y) / ray.direction.y;
+    float t = (k - ray.origin.y) / ray.direction.y;        
+    if (t > ray.tmax || t < ray.tmin)
+        return;
+
     float a = ray.origin.x + t * ray.direction.x;
     float b = ray.origin.z + t * ray.direction.z;
-    float3 normal = make_float3(0.f, flip_normal * 1.f, 0.f);
-
-	if (a < a0 || a > a1 || b < b0 || b > b1)
+    if (a < a0 || a > a1 || b < b0 || b > b1)
         return;
     
-    // rtPotentialIntersection will determine whether the 
-    // reported hit distance is within the valid interval 
-    // associated with the ray, and return true if the 
-    // intersection is valid.
-    if (t < ray.tmax && t > ray.tmin) {
-        if (rtPotentialIntersection(t)) {
-          hit_rec_p = ray.origin + t * ray.direction;
-          hit_rec_normal = normal;
-          hit_rec_u = (a - a0) / (a1 - a0);
-          hit_rec_v = (b - b0) / (b1 - b0);
-          rtReportIntersection(0);
-        }
+    if (rtPotentialIntersection(t)) {
+        hit_rec_p = ray.origin + t * ray.direction;
+
+        hit_rec_normal = make_float3(0.f, 1.f, 0.f);
+       
+        // flip normal
+        if(flip)
+            hit_rec_normal *= -1;
+
+        hit_rec_u = (a - a0) / (a1 - a0);
+        hit_rec_v = (b - b0) / (b1 - b0);
+        rtReportIntersection(0);
     }
 }
 
 RT_PROGRAM void hit_rect_Z(int pid) {
-    float t = (k - ray.origin.z) / ray.direction.z;
+    float t = (k - ray.origin.z) / ray.direction.z;        
+    if (t > ray.tmax || t < ray.tmin)
+        return;
+
     float a = ray.origin.x + t * ray.direction.x;
     float b = ray.origin.y + t * ray.direction.y;
-    float3 normal = make_float3(0.f, 0.f, flip_normal * 1.f);
-
-	if (a < a0 || a > a1 || b < b0 || b > b1)
+    if (a < a0 || a > a1 || b < b0 || b > b1)
         return;
-        
-    if (t < ray.tmax && t > ray.tmin) {
-        if (rtPotentialIntersection(t)) {
-          hit_rec_p = ray.origin + t * ray.direction;
-          hit_rec_normal = normal;
-          hit_rec_u = (a - a0) / (a1 - a0);
-          hit_rec_v = (b - b0) / (b1 - b0);
-          rtReportIntersection(0);
-        }
+    
+    if (rtPotentialIntersection(t)) {
+        hit_rec_p = ray.origin + t * ray.direction;
+
+        hit_rec_normal = make_float3(0.f, 0.f, 1.f);
+
+        // flip normal
+        if(flip)
+            hit_rec_normal *= -1;
+
+        hit_rec_u = (a - a0) / (a1 - a0);
+        hit_rec_v = (b - b0) / (b1 - b0);
+        rtReportIntersection(0);
     }
 }
 

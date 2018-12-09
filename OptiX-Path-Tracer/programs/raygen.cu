@@ -31,8 +31,7 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 /*! the 2D, float3-type color frame buffer we'll write into */
 rtBuffer<float3, 2> fb;
 
-rtDeclareVariable(int, numSamples, , );
-rtDeclareVariable(int, run, , );
+rtDeclareVariable(int, samples, , );
 
 rtDeclareVariable(rtObject, world, , );
 
@@ -104,6 +103,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
                             /* tmax     : */ RT_DEFAULT_MAX);
     }
   }
+  
   // recursion did not terminate - cancel it
   return vec3f(0.f);
 }
@@ -113,18 +113,28 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
   int pixel_index = pixelID.y * launchDim.x + pixelID.x;
-  vec3f col(0.f, 0.f, 0.f);
+  vec3f col(0.f);
   DRand48 rnd;
-  rnd.init(pixel_index + run * numSamples);
+  rnd.init(pixel_index);
 
-  for (int s = 0; s < numSamples; s++) {
+  // for each pixel...
+  for (int s = 0; s < samples; s++) {
     float u = float(pixelID.x + rnd()) / float(launchDim.x);
     float v = float(pixelID.y + rnd()) / float(launchDim.y);
+    
+    // trace ray
     optix::Ray ray = Camera::generateRay(u, v, rnd);
+    
+    // accumulate color
     col += color(ray, rnd);
   }
 
-  // the buffer keeps its previous state unless it's initialized again
-  fb[pixelID] += col.as_float3();
+  // average matrix of samples
+  col /= float(samples);
+  
+  // gamma correction
+  col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
+
+  fb[pixelID] = col.as_float3();
 }
 
