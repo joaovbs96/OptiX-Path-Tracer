@@ -40,11 +40,11 @@ RT_PROGRAM void hit_rect_X(int pid) {
     if (rtPotentialIntersection(t)) {
         hit_rec_p = ray.origin + t * ray.direction;
 
-        hit_rec_normal = make_float3(1.f, 0.f, 0.f);
-        
         // flip normal
         if(flip)
-            hit_rec_normal *= -1;
+            hit_rec_normal = make_float3(-1.f, 0.f, 0.f);
+        else
+            hit_rec_normal = make_float3(1.f, 0.f, 0.f);
 
         hit_rec_u = (a - a0) / (a1 - a0);
         hit_rec_v = (b - b0) / (b1 - b0);
@@ -65,11 +65,11 @@ RT_PROGRAM void hit_rect_Y(int pid) {
     if (rtPotentialIntersection(t)) {
         hit_rec_p = ray.origin + t * ray.direction;
 
-        hit_rec_normal = make_float3(0.f, 1.f, 0.f);
-       
         // flip normal
         if(flip)
-            hit_rec_normal *= -1;
+            hit_rec_normal = make_float3(0.f, -1.f, 0.f);
+        else
+            hit_rec_normal = make_float3(0.f, 1.f, 0.f);
 
         hit_rec_u = (a - a0) / (a1 - a0);
         hit_rec_v = (b - b0) / (b1 - b0);
@@ -90,11 +90,11 @@ RT_PROGRAM void hit_rect_Z(int pid) {
     if (rtPotentialIntersection(t)) {
         hit_rec_p = ray.origin + t * ray.direction;
 
-        hit_rec_normal = make_float3(0.f, 0.f, 1.f);
-
         // flip normal
         if(flip)
-            hit_rec_normal *= -1;
+            hit_rec_normal = make_float3(0.f, 0.f, -1.f);
+        else
+            hit_rec_normal = make_float3(0.f, 0.f, 1.f);
 
         hit_rec_u = (a - a0) / (a1 - a0);
         hit_rec_v = (b - b0) / (b1 - b0);

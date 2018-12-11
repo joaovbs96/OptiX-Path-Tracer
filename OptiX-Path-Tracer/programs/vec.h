@@ -141,6 +141,11 @@ inline __host__ __device__ float dot(const vec3f &a, const vec3f &b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+// returns true if all components are zero
+inline __host__ __device__ bool isNull(const vec3f &a) {
+  return (a.x == 0.f) && (a.y == 0.f) && (a.z == 0.f);
+}
+
 inline __host__ __device__ vec3f cross(const vec3f &a, const vec3f &b) {
   return vec3f(a.y * b.z - a.z * b.y,
                a.z * b.x - a.x * b.z,

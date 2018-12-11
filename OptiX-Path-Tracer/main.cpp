@@ -75,12 +75,12 @@ int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
-  g_context->setStackSize( 3000 );
+  g_context->setStackSize( 5000 );
   
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 1000;
+  const int samples = 100;
   int scene = 2;
 
   // set number of samples
@@ -93,7 +93,9 @@ int main(int ac, char **av) {
 
   // Create the world to render, create and set camera
   Camera camera;
-  optix::GeometryGroup world;
+  //optix::GeometryGroup group;
+  optix::Group world;
+  
   switch(scene){
     case 0: 
       world = InOneWeekend(g_context, camera, Nx, Ny);
@@ -110,7 +112,9 @@ int main(int ac, char **av) {
       system("PAUSE");
       return 1;
   }
+
   camera.set(g_context);
+  
   g_context["world"]->set(world);
 
   // Create a frame buffer
