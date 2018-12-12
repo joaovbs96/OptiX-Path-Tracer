@@ -71,16 +71,35 @@ void setExceptionProgram() {
   g_context->setExceptionProgram(/*program ID:*/0, exceptionProgram);
 }
 
+optix::Buffer initRNDBuffer(int nx, int ny){
+  optix::Buffer perm_buffer = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_INT, nx * ny);
+  int *perm_map = static_cast<int*>(perm_buffer->map());
+        
+  for (int i = 0; i < nx * ny; i++)
+	  perm_map[i] = (int)(rnd() * nx * ny * i);
+  perm_buffer->unmap();
+
+  return perm_buffer;
+}
+
+void refreshRNDBuffer(optix::Buffer &perm_buffer, int nx, int ny){
+  int *perm_map = static_cast<int*>(perm_buffer->map());
+        
+  for (int i = 0; i < nx * ny; i++)
+	  perm_map[i] = (int)(rnd() * nx * ny * i);
+  perm_buffer->unmap();
+}
+
 int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
-  g_context->setStackSize( 5000 );
+  g_context->setStackSize( 3000 );
   
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 100;
+  const int samples = 1000;
   int scene = 2;
 
   // set number of samples
@@ -91,9 +110,8 @@ int main(int ac, char **av) {
   setMissProgram();
   setExceptionProgram();
 
-  // Create the world to render, create and set camera
+  // Create and set the world and camera
   Camera camera;
-  //optix::GeometryGroup group;
   optix::Group world;
   
   switch(scene){
@@ -112,9 +130,7 @@ int main(int ac, char **av) {
       system("PAUSE");
       return 1;
   }
-
   camera.set(g_context);
-  
   g_context["world"]->set(world);
 
   // Create a frame buffer
@@ -122,17 +138,24 @@ int main(int ac, char **av) {
   g_context["fb"]->set(fb);
 
   // Check OptiX scene build time
-  auto t0 = std::chrono::system_clock::now();
+  auto t2 = std::chrono::system_clock::now();
+  g_context["init"]->setFloat(0.f);
+  g_context["run"]->setInt(0);
   renderFrame(0, 0);
-  auto t1 = std::chrono::system_clock::now();
-  auto buildTime = std::chrono::duration<double>(t1 - t0).count();
+  auto t3 = std::chrono::system_clock::now();
+  auto buildTime = std::chrono::duration<double>(t3 - t2).count();
   printf("Done building OptiX data structures, which took %4f seconds.\n", buildTime);
 
   // Render scene
-  auto t2 = std::chrono::system_clock::now();
-  renderFrame(Nx, Ny);
-  auto t3 = std::chrono::system_clock::now();
-  auto renderTime = std::chrono::duration<double>(t3 - t2).count();
+  auto t4 = std::chrono::system_clock::now();
+  for(int i = 0; i < samples; i++){
+    g_context["init"]->setFloat(rnd());
+    g_context["run"]->setInt(i);
+    renderFrame(Nx, Ny);
+    printf("Progress: %2f%%\r", (i * 100.f / samples));
+  }
+  auto t5 = std::chrono::system_clock::now();
+  auto renderTime = std::chrono::duration<double>(t5 - t4).count();
   printf("Done rendering, which took %4f seconds.\n", renderTime);
        
   // Save buffer to a PNG file
@@ -144,10 +167,16 @@ int main(int ac, char **av) {
       int col_index = Nx * j + i;
 			int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
+      // average matrix of samples
+      vec3f col = cols[col_index] / float(samples);
+  
+      // gamma correction
+      col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
+
       // from float to RGB [0, 255]
-			arr[pixel_index + 0] = int(255.99 * clamp(cols[col_index].x)); // R
-			arr[pixel_index + 1] = int(255.99 * clamp(cols[col_index].y)); // G
-			arr[pixel_index + 2] = int(255.99 * clamp(cols[col_index].z)); // B
+			arr[pixel_index + 0] = int(255.99 * clamp(col.x)); // R
+			arr[pixel_index + 1] = int(255.99 * clamp(col.y)); // G
+			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
   std::string output = "output/cornell_50.png";

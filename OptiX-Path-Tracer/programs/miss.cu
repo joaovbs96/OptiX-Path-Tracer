@@ -21,7 +21,6 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-RT_PROGRAM void miss_program()
-{
+RT_PROGRAM void miss_program() {
   prd.out.scatterEvent = rayDidntHitAnything;
 }

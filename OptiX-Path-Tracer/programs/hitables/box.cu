@@ -1,21 +1,9 @@
-// ======================================================================== //
-// Copyright 2018 Ingo Wald                                                 //
-//                                                                          //
-// Licensed under the Apache License, Version 2.0 (the "License");          //
-// you may not use this file except in compliance with the License.         //
-// You may obtain a copy of the License at                                  //
-//                                                                          //
-//     http://www.apache.org/licenses/LICENSE-2.0                           //
-//                                                                          //
-// Unless required by applicable law or agreed to in writing, software      //
-// distributed under the License is distributed on an "AS IS" BASIS,        //
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. //
-// See the License for the specific language governing permissions and      //
-// limitations under the License.                                           //
-// ======================================================================== //
-
 #include <optix_world.h>
 #include "../prd.h"
+
+// references:
+// AABB intersection function from Peter Shirley's "The Next Week"
+// Box intersection function from the optixTutorial sample from OptiX's SDK
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, boxmin, , );
@@ -39,37 +27,6 @@ static __device__ float3 boxnormal(float t, float3 t0, float3 t1) {
   return pos - neg;
 }
 
-// if (a < b), return a, else return b
-inline __device__ float ffmin(float a, float b) {
-	return a < b ? a : b;
-}
-
-// if (a > b), return a, else return b
-inline __device__ float ffmax(float a, float b) {
-	return a > b ? a : b;
-}
-
-// return pairwise min vector
-inline __device__ float3 min_vec(float3 a, float3 b) {
-	return make_float3(ffmin(a.x, b.x), ffmin(a.y, b.y), ffmin(a.z, b.z));
-}
-
-// return pairwise max vector
-inline __device__ float3 max_vec(float3 a, float3 b) {
-	return make_float3(ffmax(a.x, b.x), ffmax(a.y, b.y), ffmax(a.z, b.z));
-}
-
-// return max component of vector
-inline __device__ float max_component(float3 a){
-	return ffmax(ffmax(a.x, a.y), a.z);
-}
-
-// return max component of vector
-inline __device__ float min_component(float3 a){
-	return ffmin(ffmin(a.x, a.y), a.z);
-}
-
-
 // Program that performs the ray-box intersection
 RT_PROGRAM void hit_box(int pid) {
     float3 t0 = (boxmin - ray.origin) / ray.direction;
@@ -81,10 +38,16 @@ RT_PROGRAM void hit_box(int pid) {
       bool check_second = true;
       
       if(rtPotentialIntersection(tmin)) {
-        hit_rec_p = ray.origin + tmin * ray.direction;
+        float3 hit_point = ray.origin + tmin * ray.direction;
+        hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+        hit_rec_p = hit_point;
+        
         hit_rec_u = 0.f;
         hit_rec_v = 0.f;
-        hit_rec_normal = boxnormal(tmin, t0, t1);
+
+        float3 normal = boxnormal(tmin, t0, t1);
+        normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        hit_rec_normal = normal;
         
         if(rtReportIntersection(0))
             check_second = false;
@@ -92,10 +55,17 @@ RT_PROGRAM void hit_box(int pid) {
       
       if(check_second) {
         if(rtPotentialIntersection(tmax)) {
-            hit_rec_p = ray.origin + tmax * ray.direction;
+            float3 hit_point = ray.origin + tmax * ray.direction;
+            hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+            hit_rec_p = hit_point;
+
             hit_rec_u = 0.f;
             hit_rec_v = 0.f;
-            hit_rec_normal = boxnormal(tmax, t0, t1);
+            
+            float3 normal = boxnormal(tmax, t0, t1);
+            normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+            hit_rec_normal = normal;
+            
             rtReportIntersection(0);
         }
       }

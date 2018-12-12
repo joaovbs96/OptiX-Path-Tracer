@@ -61,13 +61,21 @@ RT_PROGRAM void hit_torus(int pid) {
     // if the second root was a hit,
     if (temp < ray.tmax && temp > ray.tmin) {
       if (rtPotentialIntersection(temp)) {
-        hit_rec_p = ray.origin + temp * ray.direction;
+        float3 hit_point = ray.origin + temp * ray.direction;
+        hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+        hit_rec_p = hit_point;
         
         float paramSqrd = sweptR * sweptR + tubeR * tubeR;
         float sumSqrd = dot(hit_rec_p, hit_rec_p);
-        hit_rec_normal = vec3f(4.f * hit_rec_p.x * (sumSqrd - paramSqrd),
-                               4.f * hit_rec_p.y * (sumSqrd - paramSqrd + 2.f * sweptR * sweptR),
-                               4.f * hit_rec_p.z * (sumSqrd - paramSqrd));
+
+        float3 normal = vec3f(4.f * hit_rec_p.x * (sumSqrd - paramSqrd),
+                              4.f * hit_rec_p.y * (sumSqrd - paramSqrd + 2.f * sweptR * sweptR),
+                              4.f * hit_rec_p.z * (sumSqrd - paramSqrd));
+        normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        hit_rec_normal = normal;
+
+        //TODO: UV
+        
         rtReportIntersection(0);
       }
     }

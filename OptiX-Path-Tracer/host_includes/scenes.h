@@ -13,7 +13,7 @@
 
 optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   optix::Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Bvh"));
+  group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
 
@@ -52,13 +52,12 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   // configure background color
   g_context["light"]->setInt(true);
 
-  // that all we have to do, the rest is up to optix
   return group;
 }
 
 optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   optix::Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Bvh"));
+  group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f, 0.5f, 0.5f))), g_context), group, g_context);
 
@@ -102,7 +101,7 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
 
 optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
   optix::Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Bvh"));
+  group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Material *red = new Lambertian(new Constant_Texture(vec3f(0.65f, 0.05f, 0.05f)));
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
@@ -115,7 +114,6 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
-  
   addBox(vec3f(265.f, 0.f, 295.f), vec3f(165.f, 330.f, 165.f), 15.f, *white, group, g_context); // bigger box
   addBox(vec3f(130.f, 0.f, 65.f), vec3f(165.f, 165.f, 165.f), -18.f, *white, group, g_context); // smaller box
   
@@ -132,7 +130,6 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   // configure background color
   g_context["light"]->setInt(false);
 
-  // that all we have to do, the rest is up to optix
   return group;
 }
 

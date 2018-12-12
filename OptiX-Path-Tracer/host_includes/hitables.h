@@ -60,7 +60,7 @@ optix::GeometryInstance createMovingSphere(const vec3f &center0, const vec3f &ce
   return gi;
 }
 
-// Axis-alligned Rectangle constructor
+// Axis-alligned Rectangle constructors
 optix::GeometryInstance createXRect(const float a0, const float a1, const float b0, const float b1, const float k, const bool flip, const Material &material, optix::Context &g_context) {
   optix::Geometry geometry = g_context->createGeometry();
   
@@ -127,6 +127,7 @@ optix::GeometryInstance createZRect(const float a0, const float a1, const float 
   return gi;
 }
 
+// box made of rectangle primitives
 optix::GeometryGroup createBox(const vec3f& p0, const vec3f& p1, Material &material, optix::Context &g_context){
   std::vector<optix::GeometryInstance> d_list;
 
@@ -140,7 +141,7 @@ optix::GeometryGroup createBox(const vec3f& p0, const vec3f& p1, Material &mater
   d_list.push_back(createXRect(p0.y, p1.y, p0.z, p1.z, p1.x, false, material, g_context));
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("Bvh"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount((int)d_list.size());
   for (int i = 0; i < d_list.size(); i++)
     d_world->setChild(i, d_list[i]);
@@ -148,6 +149,7 @@ optix::GeometryGroup createBox(const vec3f& p0, const vec3f& p1, Material &mater
   return d_world;
 }
 
+// box made of a single primitive
 optix::GeometryInstance createAABox(const vec3f& p0, const vec3f& p1, Material &material, optix::Context &g_context){
   optix::Geometry geometry = g_context->createGeometry();
   
@@ -166,13 +168,14 @@ optix::GeometryInstance createAABox(const vec3f& p0, const vec3f& p1, Material &
   return gi;
 }
 
-// encapsulates box creation, rotation adn translation
+// encapsulates box creation, rotation and translation
 // boxes are created at a position p0, translated to the origin, rotated and translated back to their position
 void addBox(vec3f& p0, vec3f& p1, float angle, Material &material, optix::Group &group, optix::Context &g_context){
   addChild(
     translate(
       rotateY(
-          createAABox(vec3f(0.f), p1, material, g_context),
+          //createAABox(vec3f(0.f), p1, material, g_context),
+          createBox(vec3f(0.f), p1, material, g_context),
                                         angle, g_context), 
                                           p0, g_context),
                                           group, g_context);

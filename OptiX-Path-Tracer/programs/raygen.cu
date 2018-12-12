@@ -32,6 +32,8 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtBuffer<float3, 2> fb;
 
 rtDeclareVariable(int, samples, , );
+rtDeclareVariable(int, run, , );
+rtDeclareVariable(float, init, , );
 
 rtDeclareVariable(rtObject, world, , );
 
@@ -112,29 +114,24 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
-  int pixel_index = pixelID.y * launchDim.x + pixelID.x;
+  int init_index = (int)(((launchDim.y - pixelID.y - 1) * samples * 
+                              launchDim.x + samples * pixelID.x + run) * init);
   vec3f col(0.f);
   DRand48 rnd;
-  rnd.init(pixel_index);
+  rnd.init(init_index);
 
-  // for each pixel...
-  for (int s = 0; s < samples; s++) {
-    float u = float(pixelID.x + rnd()) / float(launchDim.x);
-    float v = float(pixelID.y + rnd()) / float(launchDim.y);
+  if(run == 0)
+    fb[pixelID] = make_float3(0.f, 0.f, 0.f);
+
+  float u = float(pixelID.x + rnd()) / float(launchDim.x);
+  float v = float(pixelID.y + rnd()) / float(launchDim.y);
     
-    // trace ray
-    optix::Ray ray = Camera::generateRay(u, v, rnd);
+  // trace ray
+  optix::Ray ray = Camera::generateRay(u, v, rnd);
     
-    // accumulate color
-    col += color(ray, rnd);
-  }
+  // accumulate color
+  col += color(ray, rnd);
 
-  // average matrix of samples
-  col /= float(samples);
-  
-  // gamma correction
-  col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
-
-  fb[pixelID] = col.as_float3();
+  fb[pixelID] += col.as_float3();
 }
 

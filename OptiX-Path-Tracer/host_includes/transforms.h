@@ -9,9 +9,10 @@
 #include "../programs/vec.h"
 #include "materials.h"
 
+// functions to add transforms, groups and primitives to the hierarchy
 void addChild(optix::GeometryInstance gi, optix::Group &d_world, optix::Context &g_context){
   optix::GeometryGroup test = g_context->createGeometryGroup();
-  test->setAcceleration(g_context->createAcceleration("Bvh"));
+  test->setAcceleration(g_context->createAcceleration("Trbvh"));
   test->setChildCount(1);
   test->setChild(0, gi);
 
@@ -35,6 +36,7 @@ void addChild(optix::Transform gi, optix::Group &d_world, optix::Context &g_cont
   d_world->getAcceleration()->markDirty();
 }
 
+// translate functions
 optix::Matrix4x4 translateMatrix(vec3f offset){
   float floatM[16] = {
       1.0f, 0.0f, 0.0f, offset.x,
@@ -47,60 +49,11 @@ optix::Matrix4x4 translateMatrix(vec3f offset){
   return mm;
 }
 
-optix::Matrix4x4 rotateMatrixX(float angle){
-  float floatM[16] = {
-             1.0f,        0.0f,       0.0f, 0.0f,
-             0.0f,  cos(angle), sin(angle), 0.0f,
-             0.0f, -sin(angle), cos(angle), 0.0f,
-             0.0f,        0.0f,       0.0f, 1.0f
-    };
-  optix::Matrix4x4 mm(floatM);
-
-  return mm;
-}
-
-optix::Matrix4x4 rotateMatrixY(float angle){
-  float floatM[16] = {
-       cos(angle), 0.0f, -sin(angle), 0.0f,
-             0.0f, 1.0f,        0.0f, 0.0f,
-       sin(angle), 0.0f,  cos(angle), 0.0f,
-             0.0f, 0.0f,        0.0f, 1.0f
-    };
-  optix::Matrix4x4 mm(floatM);
-
-  return mm;
-}
-
-optix::Matrix4x4 rotateAboutPointMatrix(float angle, vec3f offset){
-  float floatM[16] = {
-       cos(angle), 0.0f, -sin(angle), offset.x - cos(angle) * offset.x + sin(angle) * offset.z,
-             0.0f, 1.0f,        0.0f,                                                      0.f,
-       sin(angle), 0.0f,  cos(angle), offset.z - sin(angle) * offset.x - cos(angle) * offset.z,
-             0.0f, 0.0f,        0.0f,                                                     1.0f
-    };
-  optix::Matrix4x4 mm(floatM);
-
-  return mm;
-}
-
-optix::Matrix4x4 rotateMatrixZ(float angle){
-  float floatM[16] = {
-       cos(angle), sin(angle), 0.0f, 0.0f,
-      -sin(angle), cos(angle), 0.0f, 0.0f,
-             0.0f,       0.0f, 1.0f, 0.0f,
-             0.0f,       0.0f, 0.0f, 1.0f
-    };
-  optix::Matrix4x4 mm(floatM);
-
-  return mm;
-}
-
-// translate functions
 optix::Transform translate(optix::GeometryInstance gi, vec3f& translate, optix::Context &g_context){
   optix::Matrix4x4 matrix = translateMatrix(translate);
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("NoAccel"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount(1);
   d_world->setChild(0, gi);
 
@@ -127,16 +80,30 @@ optix::Transform translate(optix::Transform gi, vec3f& translate, optix::Context
   optix::Transform translateTransform = g_context->createTransform();
   translateTransform->setChild(gi);
   translateTransform->setMatrix(false, matrix.getData(), matrix.inverse().getData());
-    
+  
   return translateTransform;
 }
 
+
 // rotateAboutPoint
+optix::Matrix4x4 rotateAboutPointMatrix(float angle, vec3f offset){
+  float floatM[16] = {
+       cos(angle), 0.0f, -sin(angle), offset.x - cos(angle) * offset.x + sin(angle) * offset.z,
+             0.0f, 1.0f,        0.0f,                                                      0.f,
+       sin(angle), 0.0f,  cos(angle), offset.z - sin(angle) * offset.x - cos(angle) * offset.z,
+             0.0f, 0.0f,        0.0f,                                                     1.0f
+    };
+  optix::Matrix4x4 mm(floatM);
+
+  return mm;
+}
+
+// it's *really* slow.
 optix::Transform rotateAboutPoint(optix::GeometryInstance gi, float angle, vec3f& translate, optix::Context &g_context){
   optix::Matrix4x4 matrix = rotateAboutPointMatrix(-angle * CUDART_PI_F / 180.f, translate);
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("NoAccel"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount(1);
   d_world->setChild(0, gi);
 
@@ -148,16 +115,29 @@ optix::Transform rotateAboutPoint(optix::GeometryInstance gi, float angle, vec3f
 }
 
 // rotateX functions
+optix::Matrix4x4 rotateMatrixX(float angle){
+  float floatM[16] = {
+             1.0f,        0.0f,       0.0f, 0.0f,
+             0.0f,  cos(angle), sin(angle), 0.0f,
+             0.0f, -sin(angle), cos(angle), 0.0f,
+             0.0f,        0.0f,       0.0f, 1.0f
+    };
+  optix::Matrix4x4 mm(floatM);
+
+  return mm;
+}
+
 optix::Transform rotateX(optix::GeometryInstance gi, float angle, optix::Context &g_context){
   optix::Matrix4x4 matrix = rotateMatrixX(-angle * CUDART_PI_F / 180.f);
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("NoAccel"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount(1);
   d_world->setChild(0, gi);
 
   optix::Transform translateTransform = g_context->createTransform();
   translateTransform->setChild(d_world);
+  translateTransform->setMatrix(false, matrix.getData(), matrix.inverse().getData());
     
   return translateTransform;
 }
@@ -183,11 +163,23 @@ optix::Transform rotateX(optix::Transform gi, float angle, optix::Context &g_con
 }
 
 // rotat Y functions
+optix::Matrix4x4 rotateMatrixY(float angle){
+  float floatM[16] = {
+       cos(angle), 0.0f, -sin(angle), 0.0f,
+             0.0f, 1.0f,        0.0f, 0.0f,
+       sin(angle), 0.0f,  cos(angle), 0.0f,
+             0.0f, 0.0f,        0.0f, 1.0f
+    };
+  optix::Matrix4x4 mm(floatM);
+
+  return mm;
+}
+
 optix::Transform rotateY(optix::GeometryInstance gi, float angle, optix::Context &g_context){
   optix::Matrix4x4 matrix = rotateMatrixY(-angle * CUDART_PI_F / 180.f);
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("NoAccel"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount(1);
   d_world->setChild(0, gi);
 
@@ -218,12 +210,25 @@ optix::Transform rotateY(optix::Transform gi, float angle, optix::Context &g_con
   return transf;
 }
 
+
 // rotateZ functions
+optix::Matrix4x4 rotateMatrixZ(float angle){
+  float floatM[16] = {
+       cos(angle), sin(angle), 0.0f, 0.0f,
+      -sin(angle), cos(angle), 0.0f, 0.0f,
+             0.0f,       0.0f, 1.0f, 0.0f,
+             0.0f,       0.0f, 0.0f, 1.0f
+    };
+  optix::Matrix4x4 mm(floatM);
+
+  return mm;
+}
+
 optix::Transform rotateZ(optix::GeometryInstance gi, float angle, optix::Context &g_context){
   optix::Matrix4x4 matrix = rotateMatrixZ(-angle * CUDART_PI_F / 180.f);
 
   optix::GeometryGroup d_world = g_context->createGeometryGroup();
-  d_world->setAcceleration(g_context->createAcceleration("NoAccel"));
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount(1);
   d_world->setChild(0, gi);
 

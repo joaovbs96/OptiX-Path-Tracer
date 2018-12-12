@@ -79,9 +79,16 @@ RT_PROGRAM void hit_sphere(int pid) {
   // if the first root was a hit,
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
-      hit_rec_p = ray.origin + temp * ray.direction;
-      hit_rec_normal = (hit_rec_p - center(prd.in.time)) / radius;
+      float3 hit_point = ray.origin + temp * ray.direction;
+      hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+      hit_rec_p = hit_point;
+
+      float3 normal = (hit_rec_p - center(prd.in.time)) / radius;
+      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec_normal = normal;
+      
       get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
+      
       rtReportIntersection(0);
     }
   }
@@ -90,9 +97,16 @@ RT_PROGRAM void hit_sphere(int pid) {
   temp = (-b + sqrtf(discriminant)) / a;
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
-      hit_rec_p = ray.origin + temp * ray.direction;
-      hit_rec_normal = (hit_rec_p - center(prd.in.time)) / radius;
+      float3 hit_point = ray.origin + temp * ray.direction;
+      hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+      hit_rec_p = hit_point;
+
+      float3 normal = (hit_rec_p - center(prd.in.time)) / radius;
+      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec_normal = normal;
+
       get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
+      
       rtReportIntersection(0);
     }
   }
