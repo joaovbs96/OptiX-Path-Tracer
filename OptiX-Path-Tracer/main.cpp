@@ -174,7 +174,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/final_10000.png";
+  std::string output = "output/final_51.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

@@ -123,6 +123,7 @@ struct Noise_Texture : public Texture{
         textProg["perm_x"]->set(perm_x);
         textProg["perm_y"]->set(perm_y);
         textProg["perm_z"]->set(perm_z);
+        textProg["scale"]->setFloat(scale);
 
         gi["sample_texture"]->setProgramId(textProg);
 

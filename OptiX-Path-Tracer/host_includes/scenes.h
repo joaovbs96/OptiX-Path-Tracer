@@ -35,7 +35,7 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
     }
   }
   addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
+  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
   addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
   addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
   

@@ -59,5 +59,5 @@ inline __device__ float turb(float3 p){
 }
 
 RT_CALLABLE_PROGRAM float3 sample_texture(float u, float v, float3 p) {
-    return make_float3(1.f) * 0.5f * (1.f + sin(scale * p.z + 10 * turb(p)));
+    return make_float3(1, 1, 1) * 0.5 * (1 + sin(scale * p.x + 5 * turb(scale * p)));
 }
