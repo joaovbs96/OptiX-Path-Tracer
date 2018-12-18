@@ -30,10 +30,10 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 /*! the 2D, float3-type color frame buffer we'll write into */
 rtBuffer<float3, 2> fb;
+rtBuffer<unsigned int, 2> seed;
 
 rtDeclareVariable(int, samples, , );
 rtDeclareVariable(int, run, , );
-rtDeclareVariable(float, init, , );
 
 rtDeclareVariable(rtObject, world, , );
 
@@ -114,11 +114,15 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
-  int init_index = (int)(((launchDim.y - pixelID.y - 1) * samples * 
-                              launchDim.x + samples * pixelID.x + run) * init);
-  vec3f col(0.f);
   DRand48 rnd;
-  rnd.init(init_index);
+  if(run == 0) {
+    unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;
+    rnd.init(init_index);
+  }
+  else{
+    rnd.init(seed[pixelID]);
+  }
+  vec3f col(0.f);
 
   if(run == 0)
     fb[pixelID] = make_float3(0.f, 0.f, 0.f);
@@ -133,5 +137,6 @@ RT_PROGRAM void renderPixel() {
   col += color(ray, rnd);
 
   fb[pixelID] += col.as_float3();
+  seed[pixelID] = rnd.state; // save RND state
 }
 

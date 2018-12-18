@@ -55,6 +55,14 @@ optix::Buffer createFrameBuffer(int Nx, int Ny) {
   return pixelBuffer;
 }
 
+optix::Buffer createSeedBuffer(int Nx, int Ny) {
+  optix::Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
+  pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_INT);
+  pixelBuffer->setSize(Nx, Ny);
+  return pixelBuffer;
+}
+
+
 void setRayGenProgram() {
   optix::Program rayGenAndBackgroundProgram = g_context->createProgramFromPTXString(embedded_raygen_program, "renderPixel");
   g_context->setEntryPointCount(1);
@@ -71,36 +79,17 @@ void setExceptionProgram() {
   g_context->setExceptionProgram(/*program ID:*/0, exceptionProgram);
 }
 
-optix::Buffer initRNDBuffer(int nx, int ny){
-  optix::Buffer perm_buffer = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_INT, nx * ny);
-  int *perm_map = static_cast<int*>(perm_buffer->map());
-        
-  for (int i = 0; i < nx * ny; i++)
-	  perm_map[i] = (int)(rnd() * nx * ny * i);
-  perm_buffer->unmap();
-
-  return perm_buffer;
-}
-
-void refreshRNDBuffer(optix::Buffer &perm_buffer, int nx, int ny){
-  int *perm_map = static_cast<int*>(perm_buffer->map());
-        
-  for (int i = 0; i < nx * ny; i++)
-	  perm_map[i] = (int)(rnd() * nx * ny * i);
-  perm_buffer->unmap();
-}
-
 int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
-  g_context->setStackSize( 3000 );
+  g_context->setStackSize( 5000 ); // keep it under 10k, it's per core
   
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 1000;
-  int scene = 2;
+  const int samples = 10000;
+  int scene = 3;
 
   // set number of samples
   g_context["samples"]->setInt(samples);
@@ -125,6 +114,10 @@ int main(int ac, char **av) {
       Nx = Ny = 1080;
       world = Cornell(g_context, camera, Nx, Ny);
       break;
+    case 3:
+      //Nx = Ny = 1080;
+      world = Final_Next_Week(g_context, camera, Nx, Ny);
+      break;
     default:
       printf("Error: scene unknown.\n");
       system("PAUSE");
@@ -137,9 +130,12 @@ int main(int ac, char **av) {
   optix::Buffer fb = createFrameBuffer(Nx, Ny);
   g_context["fb"]->set(fb);
 
+  // Create a rng seed buffer
+  optix::Buffer seed = createSeedBuffer(Nx, Ny);
+  g_context["seed"]->set(seed);
+
   // Check OptiX scene build time
   auto t2 = std::chrono::system_clock::now();
-  g_context["init"]->setFloat(0.f);
   g_context["run"]->setInt(0);
   renderFrame(0, 0);
   auto t3 = std::chrono::system_clock::now();
@@ -149,7 +145,6 @@ int main(int ac, char **av) {
   // Render scene
   auto t4 = std::chrono::system_clock::now();
   for(int i = 0; i < samples; i++){
-    g_context["init"]->setFloat(rnd());
     g_context["run"]->setInt(i);
     renderFrame(Nx, Ny);
     printf("Progress: %2f%%\r", (i * 100.f / samples));
@@ -179,7 +174,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/cornell_50.png";
+  std::string output = "output/final_10000.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

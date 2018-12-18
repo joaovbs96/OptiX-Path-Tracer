@@ -23,7 +23,6 @@ float rnd() {
   return dis(gen);
 }
 
-
 /*! the precompiled programs/raygen.cu code (in ptx) that our
   cmake magic will precompile (to ptx) and link to the generated
   executable (ie, we can simply declare and use this here as

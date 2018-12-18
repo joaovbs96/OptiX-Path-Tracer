@@ -21,7 +21,7 @@
 
 struct DRand48 {
   // initialize the random number generator with a new seed (usually per pixel)
-  inline __device__ void init(int seed = 0) {
+  inline __device__ void init(unsigned int seed = 1) {
     state = seed;
     for (int warmUp=0; warmUp < 10; warmUp++)
       (*this)();
@@ -29,14 +29,16 @@ struct DRand48 {
 
   // get the next 'random' number in the sequence
   inline __device__ float operator() () {
-    const uint64_t a = 0x5DEECE66DULL;
-    const uint64_t c = 0xBULL;
-    const uint64_t mask = 0xFFFFFFFFFFFFULL;
+    unsigned int x = state;
     
-    state = a*state + c;
-    
-    return float((state & mask) / float(mask + 1ULL));
+    x ^= x << 13;
+	  x ^= x >> 17;
+	  x ^= x << 15;
+	  
+    state = x;
+
+    return (x & 0xFFFFFF) / 16777216.0f;
   }
 
-  uint64_t state;
+  unsigned int state;
 };

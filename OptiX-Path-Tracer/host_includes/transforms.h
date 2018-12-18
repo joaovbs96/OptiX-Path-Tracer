@@ -259,4 +259,39 @@ optix::Transform rotateZ(optix::Transform gi, float angle, optix::Context &g_con
   return rotateTransform;
 }
 
+optix::Transform scale(optix::GeometryInstance gi, vec3f& scale, optix::Context &g_context){
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+
+  optix::GeometryGroup d_world = g_context->createGeometryGroup();
+  d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
+  d_world->setChildCount(1);
+  d_world->setChild(0, gi);
+
+  optix::Transform transf = g_context->createTransform();
+  transf->setChild(d_world);
+  transf->setMatrix(false, matrix.getData(), matrix.inverse().getData());
+    
+  return transf;
+}
+
+optix::Transform scale(optix::GeometryGroup gi, vec3f& scale, optix::Context &g_context){
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+
+  optix::Transform transf = g_context->createTransform();
+  transf->setChild(gi);
+  transf->setMatrix(false, matrix.getData(), matrix.inverse().getData());
+    
+  return transf;
+}
+
+optix::Transform scale(optix::Transform gi, vec3f& scale, optix::Context &g_context){
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+
+  optix::Transform transf = g_context->createTransform();
+  transf->setChild(gi);
+  transf->setMatrix(false, matrix.getData(), matrix.inverse().getData());
+    
+  return transf;
+}
+
 #endif
