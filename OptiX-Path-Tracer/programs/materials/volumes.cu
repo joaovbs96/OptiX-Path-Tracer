@@ -2,6 +2,8 @@
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+
+// distance to the last intersection point yet found
 rtDeclareVariable(float, distance, rtIntersectionDistance, );
 
 /*! the per ray data we operate on */
@@ -13,6 +15,7 @@ rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
 rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
 rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+rtDeclareVariable(float, hit_rec_d, attribute hit_rec_d, );
 
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
@@ -51,18 +54,7 @@ RT_PROGRAM void closest_hit() {
 }
 
 RT_PROGRAM void any_hit() {
-    // call when rtIgnoreIntersection() when the cosntant_medium returns false
-    float value = (*prd.in.randState)();
-	/*float hit_distance = -(1.f / density) * log(value);
-
-    if (hit_distance < distance)
-        rtIgnoreIntersection();*/
-
-    // density basically acts like a probability that the ray hits the geometry
-	if (value > density)
-		rtIgnoreIntersection();
-  
-    /*if (hit_distance < distance){
-        rtTerminateRay(); // call closest_hit program
-    }*/
+  float value = (*prd.in.randState)();
+  if(value > density)
+    rtIgnoreIntersection();
 }

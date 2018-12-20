@@ -104,8 +104,8 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
   Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  //Material *black_fog = new Volumes(new Constant_Texture(vec3f(0.f)), 0.5f);
-  //Material *white_fog = new Volumes(new Constant_Texture(vec3f(1.f)), 0.5f);
+  Material *black_fog = new Volumes(new Constant_Texture(vec3f(0.f)), 0.5f);
+  Material *white_fog = new Volumes(new Constant_Texture(vec3f(1.f)), 0.5f);
 
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall
@@ -113,10 +113,10 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
-  addBox(vec3f(265.f, 0.f, 295.f), vec3f(165.f, 330.f, 165.f), 15.f, *white, group, g_context); // bigger box
-  addBox(vec3f(130.f, 0.f, 65.f), vec3f(165.f, 165.f, 165.f), -18.f, *white, group, g_context); // smaller box
-  //addBox(vec3f(265.f, 0.f, 295.f), vec3f(165.f, 330.f, 165.f), 15.f, *black_fog, group, g_context); // bigger box
-  //addBox(vec3f(130.f, 0.f, 65.f), vec3f(165.f, 165.f, 165.f), -18.f, *white_fog, group, g_context); // smaller box
+  //addBox(vec3f(265.f, 0.f, 295.f), vec3f(165.f, 330.f, 165.f), 15.f, *white, group, g_context); // bigger box
+  //addBox(vec3f(130.f, 0.f, 65.f), vec3f(165.f, 165.f, 165.f), -18.f, *white, group, g_context); // smaller box
+  addBox(vec3f(265.f, 0.f, 295.f), vec3f(165.f, 330.f, 165.f), 15.f, *black_fog, group, g_context); // bigger box
+  addBox(vec3f(130.f, 0.f, 65.f), vec3f(165.f, 165.f, 165.f), -18.f, *white_fog, group, g_context); // smaller box
   
   // configure camera
   const vec3f lookfrom(278.f, 278.f, -800.f);
@@ -176,7 +176,7 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
   addChild(createSphere(vec3f(360.f, 150.f, 45.f), 70.f, *blue_fog, g_context), group, g_context);
 
   // fog
-  Material *fog = new Volumes(new Constant_Texture(vec3f(1.f)), 0.95f);
+  Material *fog = new Volumes(new Constant_Texture(vec3f(1.f)), 0.99999f);
   addChild(createSphere(vec3f(0.f), 5000.f, *fog, g_context), group, g_context);
 
   // earth

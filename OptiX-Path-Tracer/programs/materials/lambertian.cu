@@ -29,9 +29,6 @@ rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
 rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
 rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
 
-// TODO: eventually UV parameters will be needed in the materials. 
-// These should be defined in the intersection/hitable programs.
-
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 
