@@ -3,9 +3,6 @@
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
-// distance to the last intersection point yet found
-rtDeclareVariable(float, distance, rtIntersectionDistance, );
-
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
@@ -19,8 +16,6 @@ rtDeclareVariable(float, hit_rec_d, attribute hit_rec_d, );
 
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
-rtDeclareVariable(float, density, , );
-
 
 /*! the actual scatter function - in Pete's reference code, that's a
   virtual function, but since we have a different function per program
@@ -51,10 +46,4 @@ RT_PROGRAM void closest_hit() {
               prd.out.attenuation)
     ? rayGotBounced
     : rayGotCancelled;
-}
-
-RT_PROGRAM void any_hit() {
-  float value = (*prd.in.randState)();
-  if(value > density)
-    rtIgnoreIntersection();
 }

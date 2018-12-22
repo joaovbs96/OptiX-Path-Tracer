@@ -15,7 +15,7 @@ extern "C" const char embedded_metal_programs[];
 extern "C" const char embedded_dielectric_programs[];
 extern "C" const char embedded_lambertian_programs[];
 extern "C" const char embedded_diffuse_light_programs[];
-extern "C" const char embedded_volumes_programs[];
+extern "C" const char embedded_isotropic_programs[];
 
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
@@ -105,25 +105,20 @@ struct Diffuse_Light : public Material {
 
 /*! host side code for the "Diffuse Light" material; the actual
   sampling code is in the programs/diffuse_light.cu closest hit program */
-struct Volumes : public Material {
-  Volumes(const Texture *t, const float d) : texture(t), density(d) {}
+struct Isotropic : public Material {
+  Isotropic(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
   virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
     optix::Material mat = g_context->createMaterial();
     
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
-                              (embedded_volumes_programs, "closest_hit"));
+                              (embedded_isotropic_programs, "closest_hit"));
     
-    mat->setAnyHitProgram(0, g_context->createProgramFromPTXString
-                              (embedded_volumes_programs, "any_hit"));
-
     gi->setMaterial(/*ray type:*/0, mat);
-    gi["density"]->setFloat(density);
     texture->assignTo(gi, g_context);
   }
   const Texture* texture;
-  const float density;
 };
 
 #endif

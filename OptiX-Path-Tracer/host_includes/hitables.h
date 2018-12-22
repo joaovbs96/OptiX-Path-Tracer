@@ -18,6 +18,8 @@ extern "C" const char embedded_sphere_programs[];
 extern "C" const char embedded_moving_sphere_programs[];
 extern "C" const char embedded_aarect_programs[];
 extern "C" const char embedded_box_programs[];
+extern "C" const char embedded_volume_sphere_programs[];
+extern "C" const char embedded_volume_box_programs[];
 
 // Sphere constructor
 optix::GeometryInstance createSphere(const vec3f &center, const float radius, const Material &material, optix::Context &g_context) {
@@ -29,6 +31,26 @@ optix::GeometryInstance createSphere(const vec3f &center, const float radius, co
   
   geometry["center"]->setFloat(center.x,center.y,center.z);
   geometry["radius"]->setFloat(radius);
+
+  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  gi->setGeometry(geometry);
+  gi->setMaterialCount(1);
+  material.assignTo(gi, g_context);
+  
+  return gi;
+}
+
+// Sphere constructor
+optix::GeometryInstance createVolumeSphere(const vec3f &center, const float radius, const float density, const Material &material, optix::Context &g_context) {
+  optix::Geometry geometry = g_context->createGeometry();
+  
+  geometry->setPrimitiveCount(1);
+  geometry->setBoundingBoxProgram(g_context->createProgramFromPTXString(embedded_volume_sphere_programs, "get_bounds"));
+  geometry->setIntersectionProgram(g_context->createProgramFromPTXString(embedded_volume_sphere_programs, "hit_sphere"));
+  
+  geometry["center"]->setFloat(center.x,center.y,center.z);
+  geometry["radius"]->setFloat(radius);
+  geometry["density"]->setFloat(density);
 
   optix::GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
@@ -149,16 +171,16 @@ optix::GeometryGroup createBox(const vec3f& p0, const vec3f& p1, Material &mater
   return d_world;
 }
 
-// box made of a single primitive
-optix::GeometryInstance createAABox(const vec3f& p0, const vec3f& p1, Material &material, optix::Context &g_context){
+optix::GeometryInstance createVolumeBox(const vec3f& p0, const vec3f& p1, const float density, Material &material, optix::Context &g_context){
   optix::Geometry geometry = g_context->createGeometry();
   
   geometry->setPrimitiveCount(1);
-  geometry->setBoundingBoxProgram(g_context->createProgramFromPTXString(embedded_box_programs, "get_bounds"));
-  geometry->setIntersectionProgram(g_context->createProgramFromPTXString(embedded_box_programs, "hit_box"));
+  geometry->setBoundingBoxProgram(g_context->createProgramFromPTXString(embedded_volume_box_programs, "get_bounds"));
+  geometry->setIntersectionProgram(g_context->createProgramFromPTXString(embedded_volume_box_programs, "hit_volume"));
   
   geometry["boxmin"]->setFloat(p0.x, p0.y, p0.z);
   geometry["boxmax"]->setFloat(p1.x, p1.y, p1.z);
+  geometry["density"]->setFloat(density);
 
   optix::GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
@@ -166,19 +188,6 @@ optix::GeometryInstance createAABox(const vec3f& p0, const vec3f& p1, Material &
   material.assignTo(gi, g_context);
   
   return gi;
-}
-
-// encapsulates box creation, rotation and translation
-// boxes are created at a position p0, translated to the origin, rotated and translated back to their position
-void addBox(vec3f& p0, vec3f& p1, float angle, Material &material, optix::Group &group, optix::Context &g_context){
-  addChild(
-    translate(
-      rotateY(
-          //createAABox(vec3f(0.f), p1, material, g_context),
-          createBox(vec3f(0.f), p1, material, g_context),
-                                        angle, g_context), 
-                                          p0, g_context),
-                                          group, g_context);
 }
 
 #endif
