@@ -1,6 +1,6 @@
 # OptiX Path Tracer
 
-![alt text](ch7_edited.png "'The Next Week' Chapter 7 - Original in 1080x1080 w/ 1000 spp")
+![alt text](ch9.png "'The Next Week' Chapter 9 - 4480x1080 w/ 10k spp")
 
 ## Overview
 
@@ -45,7 +45,7 @@ To buid this project, you need
 
 ## Building
 
-This project is built with cmake. On linux, simply create a build
+This project is built with cmake. On Linux, simply create a build
 directory, and start the build with with ccmake:
 
    mkdir build
@@ -53,23 +53,26 @@ directory, and start the build with with ccmake:
    cmake ..
    make
 
-Assuming you have nvcc (CUDA) in your path, and have set a
+Assuming you have NVCC (CUDA) in your path, and have set a
 ```OptiX_INSTALL_DIR``` environment variable to point to the OptiX
 install dir, everything should be configured automatically.
 
-On Windows, you'll have to use the cmake gui, and make sure to set the
-right paths for optix include dirs, optix paths, etc.
+You can set NVCC flags through the macro cuda_compile_ptx in the file
+```OptiX-Path-Tracer/cmake/configure_optix.cmake```. Keep in mind that the flag 
+```--relocatable-device-code=true;``` is needed to make use of callable 
+programs if you are building the project using the CUDA SDK 8.0 or superior.
+An InvalidSource exception will happen if you fail to do so.
 
 
 ## Running
 
 Run the ./OptiX-Path-Tracer binary (OptiX-Path-Tracer.exe on windows). This
 should render a PNG image under the output folder(that needs to be 
-created on ahead). To change image resolution (default 1200x800), 
-number of samples (default 128), etc, just edit ```OptiX-Path-Tracer/main.cpp```.
+created on ahead). To change image resolution, 
+and number of samples just edit ```OptiX-Path-Tracer/main.cpp```.
 
 On Windows, you might see a "DLL File is Missing" warning. Just copy the missing 
-file from ```OptiX SDK X.X.X\SDK-precompiled-samples``` to the build folder.
+file from ```OptiX SDK X.X.X/SDK-precompiled-samples``` to the build folder.
 
 ## Code Overview
 
@@ -105,3 +108,6 @@ his repository.
 - 11/27/18 - Added moving spheres;
 - 12/07/18 - Added constant, checkered and Perlin noise textures;
 - 12/08/18 - Added image textures;
+- 12/09/18 - Added lights and rectangles;
+- 12/12/18 - Added boxes and transforms(scale, rotations and translation);
+- 12/21/18 - Added volumes. Major changes were made to the random number generator to allow the renderer to escale to several thousand samples.
