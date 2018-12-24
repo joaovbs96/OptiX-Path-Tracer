@@ -58,13 +58,13 @@ struct Checker_Texture : public Texture{
         optix::Program textProg = g_context->createProgramFromPTXString(embedded_checker_texture_programs, "sample_texture");
 
         // this defines how the secondary texture programs will be named
-        // in thecheckered program context. They might be named "sample_texture"
+        // in the checkered program context. They might be named "sample_texture"
         // in their own source code and context, but will be invoked by the names 
         // defined here.
         textProg["odd"]->setProgramId(odd->assignTo(gi, g_context));
         textProg["even"]->setProgramId(even->assignTo(gi, g_context));
         
-        // this "replaces" the previous gi->setProgramId assgined to the geometry
+        // this "replaces" the previous gi->setProgramId assigned to the geometry
         // by the "odd" and "even" assignTo() calls. In practice, this assigns the
         // actual checkered_program sample_texture to the material.
         gi["sample_texture"]->setProgramId(textProg);

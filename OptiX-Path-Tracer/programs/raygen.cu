@@ -114,7 +114,8 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
-  DRand48 rnd;
+  DRand48 rnd; 
+  
   if(run == 0) {
     unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;
     rnd.init(init_index);
@@ -122,6 +123,7 @@ RT_PROGRAM void renderPixel() {
   else{
     rnd.init(seed[pixelID]);
   }
+
   vec3f col(0.f);
 
   if(run == 0)

@@ -15,9 +15,9 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
+  //Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
 
-  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker), g_context), group, g_context);
+  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f))), g_context), group, g_context);
 
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
@@ -34,10 +34,11 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
       }
     }
   }
-  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
-  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
-  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
+  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  //addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
+  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
+  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
+  //addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
   
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -59,7 +60,9 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f, 0.5f, 0.5f))), g_context), group, g_context);
+  Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
+
+  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker), g_context), group, g_context);
 
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
@@ -76,9 +79,10 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
       }
     }
   }
-  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
-  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
+  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
+  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
+  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
 
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -91,7 +95,7 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
   // configure background color
-  g_context["light"]->setInt(true);
+  g_context["light"]->setInt(false);
 
   return group;
 }
@@ -114,16 +118,16 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
   
-  /*// big box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
+  // big box
+  /*addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
                                                                                  15.f, g_context), 
                                                              vec3f(265.f, 0.f, 295.f), g_context),
                                                                                 group, g_context);
 
   // small box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(130.f, 0.f, 65.f), *white, g_context),
+  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 165.f, 165.f), *white, g_context),
                                                                              -18.f, g_context), 
-                                                        vec3f(165.f, 165.f, 165.f), g_context),
+                                                        vec3f(130.f, 0.f, 65.f), g_context),
                                                                              group, g_context);*/
 
   // big box

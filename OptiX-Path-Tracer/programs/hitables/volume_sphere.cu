@@ -38,7 +38,7 @@ inline __device__ bool hit_boundary(const float tmin, const float tmax, float &r
   const float  c = dot(oc, oc) - radius * radius;
   const float  discriminant = b * b - a * c;
   
-  // if the descriminant is lower than zero, there's no real 
+  // if the discriminant is lower than zero, there's no real 
   // solution and thus no hit
   if (discriminant < 0.f) 
     return false;
