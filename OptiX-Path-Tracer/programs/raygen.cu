@@ -83,7 +83,10 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  vec3f attenuation = 1.f;
+  // TODO: rename to current attenuation or color or something else
+  // this is the return of the color function in the original function
+  vec3f attenuation = 1.f; // color 
+  // albedo over there is our prd.out.attenuation
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
@@ -97,7 +100,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
       return attenuation * prd.out.emitted;
 
     else { // ray is still alive, and got properly bounced
-      attenuation = prd.out.emitted + attenuation * prd.out.attenuation;
+      attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / prd.out.pdf;
       ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
                             /* direction: */ prd.out.scattered_direction.as_float3(),
                             /* ray type : */ 0,

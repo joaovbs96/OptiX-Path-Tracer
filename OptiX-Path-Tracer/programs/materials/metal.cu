@@ -40,13 +40,18 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
                                DRand48 &rndState,
                                vec3f &scattered_origin,
                                vec3f &scattered_direction,
-                               vec3f &attenuation) {
+                               vec3f &attenuation,
+                               float &pdf) {
   float3 hrn = hit_rec_normal;
   vec3f reflected = reflect(unit_vector(ray_in.direction), hit_rec_normal);
   scattered_origin    = hit_rec_p;
   scattered_direction = (reflected + fuzz * random_in_unit_sphere(rndState));
   attenuation         = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
   return (dot(scattered_direction, hrn) > 0.f);
+}
+
+inline __device__ float scattering_pdf(){
+  return false;
 }
 
 inline __device__ float3 emitted(){
@@ -60,7 +65,9 @@ RT_PROGRAM void closest_hit() {
               *prd.in.randState,
               prd.out.scattered_origin,
               prd.out.scattered_direction,
-              prd.out.attenuation)
+              prd.out.attenuation,
+              prd.out.pdf)
     ? rayGotBounced
     : rayGotCancelled;
+  prd.out.scattered_pdf = scattering_pdf();
 }

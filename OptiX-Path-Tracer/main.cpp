@@ -111,7 +111,7 @@ int main(int ac, char **av) {
       world = MovingSpheres(g_context, camera, Nx, Ny);
       break;
     case 2:
-      //Nx = Ny = 1080;
+      Nx = Ny = 1080;
       world = Cornell(g_context, camera, Nx, Ny);
       break;
     case 3:
@@ -174,7 +174,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/tnw-ch7.png";
+  std::string output = "output/royl-ch5.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

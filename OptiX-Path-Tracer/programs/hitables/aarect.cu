@@ -7,7 +7,6 @@ rtDeclareVariable(float,  a1, , );
 rtDeclareVariable(float,  b0, , );
 rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
-rtDeclareVariable(int,  flip, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
@@ -42,7 +41,7 @@ RT_PROGRAM void hit_rect_X(int pid) {
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
         hit_rec_p = hit_point;
 
-        // flip normal
+        // flip normal if needed
         float3 normal = make_float3(1.f, 0.f, 0.f);
         if(0.f < dot(normal, ray.direction))
             normal = -normal;
@@ -70,7 +69,7 @@ RT_PROGRAM void hit_rect_Y(int pid) {
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
         hit_rec_p = hit_point;
 
-        // flip normal
+        // flip normal if needed
         float3 normal = make_float3(0.f, 1.0f, 0.f);
         if(0.f < dot(normal, ray.direction))
             normal = -normal;
@@ -98,7 +97,7 @@ RT_PROGRAM void hit_rect_Z(int pid) {
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
         hit_rec_p = hit_point;
 
-        // check if it's needed to flip normals
+        // flip normal if needed
         float3 normal = make_float3(0.f, 0.f, 1.f);
         if(0.f < dot(normal, ray.direction))
             normal = -normal;

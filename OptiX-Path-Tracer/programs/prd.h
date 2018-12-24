@@ -43,5 +43,7 @@ struct PerRayData {
     vec3f        scattered_direction;
     vec3f        emitted;
     vec3f        attenuation;
+    float        pdf;
+    float        scattered_pdf;
   } out;
 };
