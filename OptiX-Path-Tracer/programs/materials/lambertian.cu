@@ -42,13 +42,17 @@ inline __device__ bool scatter(const optix::Ray &ray_in,
                                vec3f &scattered_direction,
                                vec3f &attenuation,
                                float &pdf) {
-  vec3f target = hit_rec_p + hit_rec_normal + random_in_unit_sphere(rndState);
+  onb uvw;
+  uvw.build_from_w(hit_rec_normal);
+
+  vec3f direction = uvw.local(random_cosine_direction(rndState));
 
   // return scattering event
   scattered_origin = hit_rec_p;
-  scattered_direction = (target - hit_rec_p);
+  scattered_direction = unit_vector(direction);
   attenuation = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
-  pdf = dot(hit_rec_normal, scattered_direction) / CUDART_PI_F;
+  pdf = dot(uvw.w, scattered_direction) / CUDART_PI_F;
+
   return true;
 }
 

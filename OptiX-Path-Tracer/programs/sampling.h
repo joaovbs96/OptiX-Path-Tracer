@@ -30,8 +30,10 @@ inline __device__ vec3f random_in_unit_disk(DRand48 &rnd) {
 
 inline __device__ vec3f random_in_unit_sphere(DRand48 &rnd) {
   float z = rnd() * 2.0f - 1.0f;
+	
 	float t = rnd() * 2.0f * 3.1415926f;
 	float r = sqrt((0.0f > (1.0f - z * z) ? 0.0f : (1.0f - z * z)));
+	
 	float x = r * cos(t);
 	float y = r * sin(t);
 
@@ -41,3 +43,15 @@ inline __device__ vec3f random_in_unit_sphere(DRand48 &rnd) {
   return res;
 }
 
+inline __device__ vec3f random_cosine_direction(DRand48 &rnd){
+	float r1 = rnd();
+	float r2 = rnd();
+
+	float phi = 2 * CUDART_PI_F * r1;
+
+	float x = cos(phi) * 2 * sqrt(r2);
+	float y = sin(phi) * 2 * sqrt(r2);
+	float z = sqrt(1 - r2);
+
+	return vec3f(x, y, z);
+}

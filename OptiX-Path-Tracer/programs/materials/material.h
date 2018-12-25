@@ -20,6 +20,7 @@
 #include <optix_world.h>
 
 #include "../prd.h"
+#include "../onb.h"
 #include "../DRand48.h"
 #include "../sampling.h"
 
