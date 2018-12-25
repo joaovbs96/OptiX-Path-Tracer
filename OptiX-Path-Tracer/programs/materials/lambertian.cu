@@ -71,6 +71,7 @@ inline __device__ float3 emitted(){
 
 RT_PROGRAM void closest_hit() {
   prd.out.emitted = emitted();
+  prd.out.normal = hit_rec_normal;
   prd.out.scatterEvent
     = scatter(ray,
               *prd.in.randState,

@@ -7,6 +7,7 @@ rtDeclareVariable(float,  a1, , );
 rtDeclareVariable(float,  b0, , );
 rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
+rtDeclareVariable(int,  flip, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
@@ -43,7 +44,8 @@ RT_PROGRAM void hit_rect_X(int pid) {
 
         // flip normal if needed
         float3 normal = make_float3(1.f, 0.f, 0.f);
-        if(0.f < dot(normal, ray.direction))
+        //if(0.f < dot(normal, ray.direction))
+        if(flip)
             normal = -normal;
         hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
@@ -71,7 +73,8 @@ RT_PROGRAM void hit_rect_Y(int pid) {
 
         // flip normal if needed
         float3 normal = make_float3(0.f, 1.0f, 0.f);
-        if(0.f < dot(normal, ray.direction))
+        //if(0.f < dot(normal, ray.direction))
+        if(flip)
             normal = -normal;
         hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
@@ -99,7 +102,8 @@ RT_PROGRAM void hit_rect_Z(int pid) {
 
         // flip normal if needed
         float3 normal = make_float3(0.f, 0.f, 1.f);
-        if(0.f < dot(normal, ray.direction))
+        //if(0.f < dot(normal, ray.direction))
+        if(flip)
             normal = -normal;
         hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 

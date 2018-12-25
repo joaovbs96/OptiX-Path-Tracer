@@ -84,7 +84,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.time = time0 + rnd() * (time1 - time0);
 
   // TODO: rename to current attenuation or color or something else
-  // this is the return of the color function in the original function
+  // this is the return of the color function in the original implementation
   vec3f attenuation = 1.f; // color 
   // albedo over there is our prd.out.attenuation
   
@@ -100,12 +100,30 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
       return attenuation * prd.out.emitted;
 
     else { // ray is still alive, and got properly bounced
-      attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / prd.out.pdf;
-      ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
-                            /* direction: */ prd.out.scattered_direction.as_float3(),
-                            /* ray type : */ 0,
-                            /* tmin     : */ 1e-3f,
-                            /* tmax     : */ RT_DEFAULT_MAX);
+      vec3f on_light(213.f + rnd() * (343.f - 213.f), 554.f, 227.f + rnd() * (332.f - 227.f));
+      vec3f to_light(on_light - prd.out.scattered_origin);
+      
+      float distance_squared = to_light.squared_length();
+      to_light.make_unit_vector();
+
+      if(dot(to_light, prd.out.normal) < 0.f)
+        return attenuation * prd.out.emitted; // TODO: test this out
+      else{
+        float light_cosine = fabsf(to_light.y);
+  
+        if(light_cosine < 0.000001)
+          return attenuation * prd.out.emitted;
+        else{
+          float light_area = (343.f - 213.f) * (332.f - 227.f);
+          float pdf = distance_squared / (light_cosine * light_area);
+          attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / pdf;
+          ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
+                                /* direction: */ to_light.as_float3()/*prd.out.scattered_direction.as_float3()*/,
+                                /* ray type : */ 0,
+                                /* tmin     : */ 1e-3f,
+                                /* tmax     : */ RT_DEFAULT_MAX);
+        }
+      }
     }
   }
   
@@ -124,7 +142,7 @@ RT_PROGRAM void renderPixel() {
     rnd.init(init_index);
   }
   else{
-    rnd.init(seed[pixelID]);
+    rnd.state = seed[pixelID];
   }
 
   vec3f col(0.f);

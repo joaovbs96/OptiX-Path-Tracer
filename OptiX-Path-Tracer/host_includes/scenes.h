@@ -82,7 +82,7 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
   addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
   addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
-  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
+  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
 
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -111,12 +111,12 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
   Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
 
-  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, *green, g_context), group, g_context); // left wall
-  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, *red, g_context), group, g_context); // right wall
-  addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, *light, g_context), group, g_context); // light
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, *white, g_context), group, g_context); // roof
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, *white, g_context), group, g_context); // ground
-  addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, *white, g_context), group, g_context); // back walls
+  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
+  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall
+  addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, true, *light, g_context), group, g_context); // light
+  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, false, *white, g_context), group, g_context); // roof
+  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
+  addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
   
   // big box
   addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
@@ -179,7 +179,7 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
 
   // light
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  addChild(createYRect(113.f, 443.f, 127.f, 432.f, 554.f, *light, g_context), group, g_context);
+  addChild(createYRect(113.f, 443.f, 127.f, 432.f, 554.f, false, *light, g_context), group, g_context);
 
   // brown moving sphere
   vec3f center(400.f, 400.f, 200.f);

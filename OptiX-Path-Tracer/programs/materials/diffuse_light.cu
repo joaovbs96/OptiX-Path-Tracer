@@ -34,11 +34,15 @@ inline __device__ float scattering_pdf(){
 }
 
 inline __device__ float3 emitted(){
-  return sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
+  if(dot(hit_rec_normal, ray.direction) < 0.f)
+    return sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
+  else
+    return make_float3(0.f);
 }
 
 RT_PROGRAM void closest_hit() {
   prd.out.emitted = emitted();
+  prd.out.normal = hit_rec_normal;
   prd.out.scatterEvent
     = scatter(ray,
               *prd.in.randState,

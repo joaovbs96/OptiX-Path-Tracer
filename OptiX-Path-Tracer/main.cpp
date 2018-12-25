@@ -88,7 +88,7 @@ int main(int ac, char **av) {
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 1000;
+  const int samples = 10;
   int scene = 2;
 
   // set number of samples
@@ -174,7 +174,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/royl-ch6.png";
+  std::string output = "output/royl-ch7.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 
