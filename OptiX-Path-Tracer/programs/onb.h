@@ -18,7 +18,7 @@ struct onb {
         w = unit_vector(n);
         
         vec3f a;
-        if(fabsf(w.x) > 0.9)
+        if(fabsf(w.x) > 0.9f)
             a = vec3f(0.f, 1.f, 0.f);
         else
             a = vec3f(1.f, 0.f, 0.f);

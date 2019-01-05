@@ -17,8 +17,12 @@
 // optix code:
 #include <optix.h>
 #include <optixu/optixu_math_namespace.h>
+
+#define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
+#include <optix_world.h>
+
 #include "prd.h"
-#include "sampling.h"
+#include "pdfs/pdf.h"
 
 /*! the 'builtin' launch index we need to render a frame */
 rtDeclareVariable(uint2, pixelID,   rtLaunchIndex, );
@@ -48,6 +52,10 @@ rtDeclareVariable(float3, camera_v, , );
 rtDeclareVariable(float, camera_lens_radius, , );
 rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
+
+// PDF callable programs
+rtDeclareVariable(rtCallableProgramId<float(pdf_in&)>, value, , );
+rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, DRand48&)>, generate, , );
 
 struct Camera {
   static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) {
@@ -83,10 +91,10 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  // TODO: rename to current attenuation or color or something else
+  // TODO: rename to current_attenuation or acc_color or something else.
   // this is the return of the color function in the original implementation
   vec3f attenuation = 1.f; // color 
-  // albedo over there is our prd.out.attenuation
+  // albedo in the original implementation is our prd.out.attenuation
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
@@ -99,36 +107,41 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
     else if (prd.out.scatterEvent == rayGotCancelled)
       return attenuation * prd.out.emitted;
 
-    else { // ray is still alive, and got properly bounced
-      vec3f on_light(213.f + rnd() * (343.f - 213.f), 554.f, 227.f + rnd() * (332.f - 227.f));
-      vec3f to_light(on_light - prd.out.scattered_origin);
-      
-      float distance_squared = to_light.squared_length();
-      to_light.make_unit_vector();
+    else { // ray is still alive, and got properly bounced      
+      /*float3 pdf_direction = generate(prd.out.scattered_origin, 
+                                      prd.out.scattered_direction, 
+                                      prd.out.normal, 
+                                      rnd);
+      float pdf_val = value(prd.out.scattered_origin, 
+                            prd.out.scattered_direction, 
+                            prd.out.normal);*/
 
-      if(dot(to_light, prd.out.normal) < 0.f)
-        return attenuation * prd.out.emitted; // TODO: test this out
-      else{
-        float light_cosine = fabsf(to_light.y);
-  
-        if(light_cosine < 0.000001)
-          return attenuation * prd.out.emitted;
-        else{
-          float light_area = (343.f - 213.f) * (332.f - 227.f);
-          float pdf = distance_squared / (light_cosine * light_area);
-          attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / pdf;
-          ray = optix::make_Ray(/* origin   : */ prd.out.scattered_origin.as_float3(),
-                                /* direction: */ to_light.as_float3()/*prd.out.scattered_direction.as_float3()*/,
-                                /* ray type : */ 0,
-                                /* tmin     : */ 1e-3f,
-                                /* tmax     : */ RT_DEFAULT_MAX);
-        }
-      }
+      pdf_in in(prd.out.scattered_origin, prd.out.scattered_direction, prd.out.normal);
+      float3 pdf_direction = generate(in, rnd);
+      float pdf_val = value(in);
+
+      // TODO: redo cosine from the ground, try to use struct again
+
+      attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / pdf_val;
+      ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
+                            /* direction: */ pdf_direction,
+                            /* ray type : */ 0,
+                            /* tmin     : */ 1e-3f,
+                            /* tmax     : */ RT_DEFAULT_MAX);
     }
   }
   
   // recursion did not terminate - cancel it
   return vec3f(0.f);
+}
+
+inline __device__ vec3f de_nan(const vec3f& c) {
+  vec3f temp = c;
+  if(!(temp.x == temp.x)) temp.x = 0.f;
+  if(!(temp.y == temp.y)) temp.y = 0.f;
+  if(!(temp.z == temp.z)) temp.z = 0.f;
+
+  return temp;
 }
 
 /*! the actual ray generation program - note this has no formal
@@ -157,7 +170,7 @@ RT_PROGRAM void renderPixel() {
   optix::Ray ray = Camera::generateRay(u, v, rnd);
     
   // accumulate color
-  col += color(ray, rnd);
+  col += de_nan(color(ray, rnd));
 
   fb[pixelID] += col.as_float3();
   seed[pixelID] = rnd.state; // save RND state

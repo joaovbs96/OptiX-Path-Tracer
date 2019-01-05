@@ -28,7 +28,7 @@ struct DRand48 {
     state = seed;
     for (int warmUp=0; warmUp < 10; warmUp++)
       (*this)();
-  }
+}
 
   // get the next 'random' number in the sequence
   inline __device__ float operator() () {

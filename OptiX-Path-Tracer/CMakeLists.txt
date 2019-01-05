@@ -34,6 +34,9 @@ cuda_compile_and_embed( embedded_box_programs programs/hitables/box.cu )
 cuda_compile_and_embed( embedded_isotropic_programs programs/materials/isotropic.cu )
 cuda_compile_and_embed( embedded_volume_sphere_programs programs/hitables/volume_sphere.cu )
 cuda_compile_and_embed( embedded_volume_box_programs programs/hitables/volume_box.cu )
+cuda_compile_and_embed( embedded_cosine_pdf_programs programs/pdfs/cosine_pdf.cu )
+cuda_compile_and_embed( embedded_rect_pdf_programs programs/pdfs/rect_pdf.cu )
+cuda_compile_and_embed( embedded_mixture_pdf_programs programs/pdfs/mixture_pdf.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -66,6 +69,9 @@ add_executable(OptiX-Path-Tracer
   ${embedded_isotropic_programs}
   ${embedded_volume_sphere_programs}
   ${embedded_volume_box_programs}
+  ${embedded_cosine_pdf_programs}
+  ${embedded_rect_pdf_programs}
+  ${embedded_mixture_pdf_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer

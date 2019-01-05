@@ -10,8 +10,15 @@
 #include "transforms.h"
 #include "hitables.h"
 #include "textures.h"
+#include "pdfs.h"
+#include "programs.h"
 
-optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
+optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+  // Set the exception, ray generation and miss shader programs of the scene
+  setRayGenerationProgram(g_context);
+  setMissProgram(g_context);
+  setExceptionProgram(g_context);
+
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
@@ -56,7 +63,12 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   return group;
 }
 
-optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
+optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+  // Set the exception, ray generation and miss shader programs of the scene
+  setRayGenerationProgram(g_context);
+  setMissProgram(g_context);
+  setExceptionProgram(g_context);
+
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
@@ -100,7 +112,17 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   return group;
 }
 
-optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
+optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+  // configure sampling
+  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  //Cosine_PDF mixture;
+  //Rect_Y_PDF mixture(213.f, 343.f, 227.f, 332.f, 554.f);
+
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, mixture);
+  setMissProgram(g_context);
+  setExceptionProgram(g_context);
+
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
@@ -114,7 +136,7 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall
   addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, true, *light, g_context), group, g_context); // light
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, false, *white, g_context), group, g_context); // roof
+  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
   
@@ -158,7 +180,12 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   return group;
 }
 
-optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, int Ny) { 
+optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+  // Set the exception, ray generation and miss shader programs of the scene
+  setRayGenerationProgram(g_context);
+  setMissProgram(g_context);
+  setExceptionProgram(g_context);
+
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
@@ -222,6 +249,11 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
     box->setChild(i, d_list[i]);
   addChild(translate(rotateY(box, 15.f, g_context), vec3f(-100.f, 270.f, 395.f), g_context), group, g_context);
   
+  // set raygen program of the scene
+  optix::Program raygen = g_context->createProgramFromPTXString(embedded_raygen_program, "renderPixel");
+  g_context->setEntryPointCount(1);
+  g_context->setRayGenerationProgram(/*program ID:*/0, raygen);
+
   // configure camera
   const vec3f lookfrom(478.f, 278.f, -600.f);
   const vec3f lookat(278.f, 278.f, 0.f);
