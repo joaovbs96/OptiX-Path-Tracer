@@ -24,10 +24,7 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
 
 /*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
@@ -36,28 +33,17 @@ rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_text
 /*! the actual scatter function - in Pete's reference code, that's a
   virtual function, but since we have a different function per program
   we do not need this here */
-inline __device__ bool scatter(const optix::Ray &ray_in,
-                               DRand48 &rndState,
-                               vec3f &scattered_origin,
-                               vec3f &scattered_direction,
-                               vec3f &attenuation,
-                               float &pdf) {
-  onb uvw;
-  uvw.build_from_w(hit_rec_normal);
-
-  vec3f direction = uvw.local(random_cosine_direction(rndState));
-
-  // return scattering event
-  scattered_origin = hit_rec_p;
-  scattered_direction = unit_vector(direction);
-  attenuation = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
-  pdf = dot(uvw.w, scattered_direction) / CUDART_PI_F;
+inline __device__ bool scatter(const optix::Ray &ray_in) {
+  prd.out.is_specular = false;
+  prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.origin = hit_rec.p;
+  prd.out.normal = hit_rec.normal;
 
   return true;
 }
 
-inline __device__ float scattering_pdf(){
-  float cosine = dot(hit_rec_normal, unit_vector(prd.out.scattered_direction));
+RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in){
+  float cosine = dot(unit_vector(in.normal), unit_vector(in.scattered_direction));
   
   if(cosine < 0.f)
     cosine = 0.f;
@@ -70,16 +56,7 @@ inline __device__ float3 emitted(){
 }
 
 RT_PROGRAM void closest_hit() {
+  prd.out.type = Lambertian;
   prd.out.emitted = emitted();
-  prd.out.normal = hit_rec_normal;
-  prd.out.scatterEvent
-    = scatter(ray,
-              *prd.in.randState,
-              prd.out.scattered_origin,
-              prd.out.scattered_direction,
-              prd.out.attenuation,
-              prd.out.pdf)
-    ? rayGotBounced
-    : rayGotCancelled;
-  prd.out.scattered_pdf = scattering_pdf();
+  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

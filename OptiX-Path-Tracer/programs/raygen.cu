@@ -56,6 +56,7 @@ rtDeclareVariable(float, time1, , );
 // PDF callable programs
 rtDeclareVariable(rtCallableProgramId<float(pdf_in&)>, value, , );
 rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, DRand48&)>, generate, , );
+rtBuffer< rtCallableProgramId<float(pdf_in&)> > scattering_pdf;
 
 struct Camera {
   static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) {
@@ -91,43 +92,44 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  // TODO: rename to current_attenuation or acc_color or something else.
-  // this is the return of the color function in the original implementation
-  vec3f attenuation = 1.f; // color 
-  // albedo in the original implementation is our prd.out.attenuation
+  // current color 
+  vec3f current_color = 1.f;
+  // 'albedo' from the books is our prd.out.attenuation
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
     if (prd.out.scatterEvent == rayDidntHitAnything){
       // ray got 'lost' to the environment - 'light' it with miss shader
-      return attenuation * missColor(ray);
+      return current_color * missColor(ray);
     }
 
     else if (prd.out.scatterEvent == rayGotCancelled)
-      return attenuation * prd.out.emitted;
+      return current_color * prd.out.emitted; // TODO: Can't we just return current_color? Test this with other night scenes
 
-    else { // ray is still alive, and got properly bounced      
-      /*float3 pdf_direction = generate(prd.out.scattered_origin, 
-                                      prd.out.scattered_direction, 
-                                      prd.out.normal, 
-                                      rnd);
-      float pdf_val = value(prd.out.scattered_origin, 
-                            prd.out.scattered_direction, 
-                            prd.out.normal);*/
+    else { // ray is still alive, and got properly bounced
+      if(prd.out.is_specular){
+        current_color = prd.out.attenuation * current_color;
 
-      pdf_in in(prd.out.scattered_origin, prd.out.scattered_direction, prd.out.normal);
-      float3 pdf_direction = generate(in, rnd);
-      float pdf_val = value(in);
+        ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),
+                              /* direction: */ prd.out.direction.as_float3(),
+                              /* ray type : */ 0,
+                              /* tmin     : */ 1e-3f,
+                              /* tmax     : */ RT_DEFAULT_MAX);
+      }
+      else{
+        pdf_in in(prd.out.origin, prd.out.normal);
+        float3 pdf_direction = generate(in, rnd);
+        float pdf_val = value(in);
+        
+        current_color = prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val;
 
-      // TODO: redo cosine from the ground, try to use struct again
-
-      attenuation = prd.out.emitted + (prd.out.attenuation * prd.out.scattered_pdf * attenuation) / pdf_val;
-      ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
-                            /* direction: */ pdf_direction,
-                            /* ray type : */ 0,
-                            /* tmin     : */ 1e-3f,
-                            /* tmax     : */ RT_DEFAULT_MAX);
+        ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
+                              /* direction: */ pdf_direction,
+                              /* ray type : */ 0,
+                              /* tmin     : */ 1e-3f,
+                              /* tmax     : */ RT_DEFAULT_MAX);
+      }
     }
   }
   
@@ -158,8 +160,7 @@ RT_PROGRAM void renderPixel() {
     rnd.state = seed[pixelID];
   }
 
-  vec3f col(0.f);
-
+  // initiate the color buffer if needed
   if(run == 0)
     fb[pixelID] = make_float3(0.f, 0.f, 0.f);
 
@@ -168,11 +169,10 @@ RT_PROGRAM void renderPixel() {
     
   // trace ray
   optix::Ray ray = Camera::generateRay(u, v, rnd);
-    
-  // accumulate color
-  col += de_nan(color(ray, rnd));
+  
+  vec3f col = de_nan(color(ray, rnd));
 
-  fb[pixelID] += col.as_float3();
+  fb[pixelID] += col.as_float3(); // accumulate color
   seed[pixelID] = rnd.state; // save RND state
 }
 

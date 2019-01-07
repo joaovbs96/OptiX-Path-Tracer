@@ -17,14 +17,10 @@ struct pdf_rec {
 
 // input structs for the PDF programs
 struct pdf_in {
-    __device__ pdf_in(const vec3f o, const vec3f d, const vec3f n) 
-                                : origin(o), direction(d), normal(n) {
-        uvw.build_from_w(normal);
-    }
+    __device__ pdf_in(const vec3f o, const vec3f n) : origin(o), normal(n) {}
 
     const vec3f origin;
-    const vec3f direction;
     const vec3f normal;
-    vec3f light_direction;
+    vec3f scattered_direction;
     onb uvw;
 };

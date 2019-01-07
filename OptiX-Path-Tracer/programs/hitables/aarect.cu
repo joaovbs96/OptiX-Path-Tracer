@@ -1,7 +1,7 @@
 #include <optix_world.h>
 #include "../prd.h"
 
-/*! the parameters that describe each individual rectangle */
+// the parameters that describe each individual rectangle
 rtDeclareVariable(float,  a0, , );
 rtDeclareVariable(float,  a1, , );
 rtDeclareVariable(float,  b0, , );
@@ -9,24 +9,16 @@ rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
 rtDeclareVariable(int,  flip, , );
 
-/*! the implicit state's ray we will intersect against */
+// the implicit state's ray we will intersect against
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
-/*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+// struct used to communicate between intersection programs and hit program
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
-/*! the per ray data we operate on */
+// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-// Program that performs the ray-sphere intersection
-//
-// note that this is here is a simple, but not necessarily most numerically
-// stable ray-sphere intersection variant out there. There are more
-// stable variants out there, but for now let's stick with the one that
-// the reference code used.
+// Program that performs the ray-rectangle intersection
 RT_PROGRAM void hit_rect_X(int pid) {
     float t = (k - ray.origin.x) / ray.direction.x;        
     if (t > ray.tmax || t < ray.tmin)
@@ -38,19 +30,20 @@ RT_PROGRAM void hit_rect_X(int pid) {
         return;
     
     if (rtPotentialIntersection(t)) {
+        hit_rec.distance = t;
+
         float3 hit_point = ray.origin + t * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-        hit_rec_p = hit_point;
+        hit_rec.p = hit_point;
 
         // flip normal if needed
         float3 normal = make_float3(1.f, 0.f, 0.f);
-        //if(0.f < dot(normal, ray.direction))
         if(flip)
             normal = -normal;
-        hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
-        hit_rec_u = (a - a0) / (a1 - a0);
-        hit_rec_v = (b - b0) / (b1 - b0);
+        hit_rec.u = (a - a0) / (a1 - a0);
+        hit_rec.v = (b - b0) / (b1 - b0);
         
         rtReportIntersection(0);
     }
@@ -67,19 +60,20 @@ RT_PROGRAM void hit_rect_Y(int pid) {
         return;
     
     if (rtPotentialIntersection(t)) {
+        hit_rec.distance = t;
+
         float3 hit_point = ray.origin + t * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-        hit_rec_p = hit_point;
+        hit_rec.p = hit_point;
 
         // flip normal if needed
         float3 normal = make_float3(0.f, 1.0f, 0.f);
-        //if(0.f < dot(normal, ray.direction))
         if(flip)
             normal = -normal;
-        hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
-        hit_rec_u = (a - a0) / (a1 - a0);
-        hit_rec_v = (b - b0) / (b1 - b0);
+        hit_rec.u = (a - a0) / (a1 - a0);
+        hit_rec.v = (b - b0) / (b1 - b0);
 
         rtReportIntersection(0);
     }
@@ -96,19 +90,20 @@ RT_PROGRAM void hit_rect_Z(int pid) {
         return;
     
     if (rtPotentialIntersection(t)) {
+        hit_rec.distance = t;
+        
         float3 hit_point = ray.origin + t * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-        hit_rec_p = hit_point;
+        hit_rec.p = hit_point;
 
         // flip normal if needed
         float3 normal = make_float3(0.f, 0.f, 1.f);
-        //if(0.f < dot(normal, ray.direction))
         if(flip)
             normal = -normal;
-        hit_rec_normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
-        hit_rec_u = (a - a0) / (a1 - a0);
-        hit_rec_v = (b - b0) / (b1 - b0);
+        hit_rec.u = (a - a0) / (a1 - a0);
+        hit_rec.v = (b - b0) / (b1 - b0);
 
         rtReportIntersection(0);
     }

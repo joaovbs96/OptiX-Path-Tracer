@@ -15,12 +15,13 @@ extern "C" const char embedded_miss_program[];
 extern "C" const char embedded_exception_program[];
 extern "C" const char embedded_raygen_program[];
 
-void setRayGenerationProgram(optix::Context &g_context, PDF &pdf) {
+void setRayGenerationProgram(optix::Context &g_context, PDF &pdf, optix::Buffer &material_pdfs) {
   // set raygen program of the scene
   optix::Program raygen = g_context->createProgramFromPTXString(embedded_raygen_program, "renderPixel");
   
   raygen["generate"]->setProgramId(pdf.assignGenerate(g_context));
   raygen["value"]->setProgramId(pdf.assignValue(g_context));
+  raygen["scattering_pdf"]->setBuffer(material_pdfs);
 
   g_context->setEntryPointCount(1);
   g_context->setRayGenerationProgram(/*program ID:*/0, raygen);

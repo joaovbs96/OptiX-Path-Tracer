@@ -20,12 +20,9 @@
 #include <optix_world.h>
 
 #include "../prd.h"
-#include "../onb.h"
+#include "../pdfs/pdf.h"
 #include "../DRand48.h"
 #include "../sampling.h"
-
-// where's this defined? compiler can't find it with the macro RT_USE_TEMPLATED_RTCALLABLEPROGRAM define
-// #define rtCallableProgram	(return_type, function_name, parameter_list) rtDeclareVariable(optix::boundCallableProgramId<return_type parameter_list>, function_name,,);
 
 
 __device__ float schlick(float cosine, float ref_idx) {

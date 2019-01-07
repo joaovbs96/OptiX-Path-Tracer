@@ -7,10 +7,10 @@ rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
 
 inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
-    float t = (k - in.origin.x) / in.light_direction.x;        
+    float t = (k - in.origin.x) / in.scattered_direction.x;        
 
-    float a = in.origin.y + t * in.light_direction.y;
-    float b = in.origin.z + t * in.light_direction.z;
+    float a = in.origin.y + t * in.scattered_direction.y;
+    float b = in.origin.z + t * in.scattered_direction.z;
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
@@ -24,10 +24,10 @@ inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax, pdf
 }
 
 inline __device__ bool hit_y(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
-    float t = (k - in.origin.y) / in.light_direction.y;        
+    float t = (k - in.origin.y) / in.scattered_direction.y;        
 
-    float a = in.origin.x + t * in.light_direction.x;
-    float b = in.origin.z + t * in.light_direction.z;
+    float a = in.origin.x + t * in.scattered_direction.x;
+    float b = in.origin.z + t * in.scattered_direction.z;
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
@@ -41,10 +41,10 @@ inline __device__ bool hit_y(pdf_in &in, const float tmin, const float tmax, pdf
 }
 
 inline __device__ bool hit_z(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
-    float t = (k - in.origin.z) / in.light_direction.z;        
+    float t = (k - in.origin.z) / in.scattered_direction.z;        
 
-    float a = in.origin.x + t * in.light_direction.x;
-    float b = in.origin.y + t * in.light_direction.y;
+    float a = in.origin.x + t * in.scattered_direction.x;
+    float b = in.origin.y + t * in.scattered_direction.y;
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
@@ -63,8 +63,8 @@ RT_CALLABLE_PROGRAM float rect_x_value(pdf_in &in) {
 
     if(hit_x(in, 0.001f, FLT_MAX, rec)){
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.light_direction.squared_length();
-        float cosine = fabs(dot(in.light_direction, rec.normal) / in.light_direction.length());
+        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
         return distance_squared / (cosine * area);
     }
     else
@@ -76,8 +76,8 @@ RT_CALLABLE_PROGRAM float rect_y_value(pdf_in &in) {
 
     if(hit_y(in, 0.001f, FLT_MAX, rec)){
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.light_direction.squared_length();
-        float cosine = fabs(dot(in.light_direction, rec.normal) / in.light_direction.length());
+        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
         return distance_squared / (cosine * area);
     }
     else
@@ -89,8 +89,8 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
 
     if(hit_z(in, 0.001f, FLT_MAX, rec)){
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.light_direction.squared_length();
-        float cosine = fabs(dot(in.light_direction, rec.normal) / in.light_direction.length());
+        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
         return distance_squared / (cosine * area);
     }
     else
@@ -99,18 +99,18 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
 
 RT_CALLABLE_PROGRAM float3 rect_x_generate(pdf_in &in, DRand48 &rnd) {
     float3 random_point = make_float3(k, a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0));
-    in.light_direction = vec3f(random_point - in.origin.as_float3());
-    return in.light_direction.as_float3();
+    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
+    return in.scattered_direction.as_float3();
 }
 
 RT_CALLABLE_PROGRAM float3 rect_y_generate(pdf_in &in, DRand48 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), k, b0 + rnd() * (b1 - b0));
-    in.light_direction = vec3f(random_point - in.origin.as_float3());
-    return in.light_direction.as_float3();
+    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
+    return in.scattered_direction.as_float3();
 }
 
 RT_CALLABLE_PROGRAM float3 rect_z_generate(pdf_in &in, DRand48 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0), k);
-    in.light_direction = vec3f(random_point - in.origin.as_float3());
-    return in.light_direction.as_float3();
+    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
+    return in.scattered_direction.as_float3();
 }

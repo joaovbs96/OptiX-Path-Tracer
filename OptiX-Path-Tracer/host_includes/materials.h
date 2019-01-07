@@ -121,4 +121,12 @@ struct Isotropic : public Material {
   const Texture* texture;
 };
 
+optix::Program Lambertian_PDF(optix::Context &g_context) {
+  return g_context->createProgramFromPTXString(embedded_lambertian_programs, "scattering_pdf");
+}
+
+optix::Program Diffuse_Light_PDF(optix::Context &g_context) {
+  return g_context->createProgramFromPTXString(embedded_diffuse_light_programs, "scattering_pdf");
+}
+
 #endif

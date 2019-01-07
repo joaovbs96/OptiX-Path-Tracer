@@ -20,6 +20,14 @@
 #include "DRand48.h"
 
 typedef enum {
+  Lambertian,
+  Diffuse_Light,
+  Metal,
+  Dielectric,
+  Isotropic
+} Material_Type;
+
+typedef enum {
   /*! ray could get properly bounced, and is still alive */
   rayGotBounced,
   /*! ray could not get scattered, and should get cancelled */
@@ -27,6 +35,14 @@ typedef enum {
   /*! ray didn't hit anything, and went into the environemnt */
   rayDidntHitAnything
 } ScatterEvent;
+
+struct Hit_Record {
+  vec3f normal;
+  vec3f p;
+  float distance;
+  float u;
+  float v;
+};
 
 /*! "per ray data" (PRD) for our sample's rays. In the simple example, there is only
   one ray type, and it only ever returns one thing, which is a color (everything else
@@ -38,13 +54,13 @@ struct PerRayData {
     float time;
   } in;
   struct {
-    ScatterEvent scatterEvent;
-    vec3f        scattered_origin;
-    vec3f        scattered_direction;
-    vec3f        normal;
-    vec3f        emitted;
-    vec3f        attenuation;
-    float        pdf;
-    float        scattered_pdf;
+    ScatterEvent  scatterEvent;
+    vec3f         origin;
+    vec3f         direction;
+    vec3f         normal;
+    vec3f         emitted;
+    vec3f         attenuation;
+    bool          is_specular;
+    Material_Type type;
   } out;
 };

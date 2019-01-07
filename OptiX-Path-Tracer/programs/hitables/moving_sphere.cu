@@ -28,10 +28,7 @@ rtDeclareVariable(float,  time1, , );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -40,8 +37,8 @@ inline __device__ void get_sphere_uv(const vec3f& p) {
 	float phi = atan2(p.z, p.x);
 	float theta = asin(p.y); 
 
-	hit_rec_u = 1 - (phi + CUDART_PI_F) / (2 * CUDART_PI_F);
-	hit_rec_v = (theta + CUDART_PI_F / 2) / CUDART_PI_F;
+	hit_rec.u = 1 - (phi + CUDART_PI_F) / (2 * CUDART_PI_F);
+	hit_rec.v = (theta + CUDART_PI_F / 2) / CUDART_PI_F;
 }
 
 __device__ float3 center(float time) {
@@ -79,15 +76,17 @@ RT_PROGRAM void hit_sphere(int pid) {
   // if the first root was a hit,
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
+      hit_rec.distance = temp;
+
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec_p = hit_point;
+      hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec_p - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p.as_float3() - center(prd.in.time)) / radius;
       normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec_normal = normal;
+      hit_rec.normal = normal;
       
-      get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
+      get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
       
       rtReportIntersection(0);
     }
@@ -97,15 +96,17 @@ RT_PROGRAM void hit_sphere(int pid) {
   temp = (-b + sqrtf(discriminant)) / a;
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
+      hit_rec.distance = temp;
+      
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec_p = hit_point;
+      hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec_p - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p.as_float3() - center(prd.in.time)) / radius;
       normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec_normal = normal;
+      hit_rec.normal = normal;
 
-      get_sphere_uv((hit_rec_p - center(prd.in.time)) / radius);
+      get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
       
       rtReportIntersection(0);
     }

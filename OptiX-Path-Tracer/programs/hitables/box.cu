@@ -13,10 +13,7 @@ rtDeclareVariable(float3, boxmax, , );
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -38,16 +35,18 @@ RT_PROGRAM void hit_box(int pid) {
       bool check_second = true;
       
       if(rtPotentialIntersection(tmin)) {
+        hit_rec.distance = tmin;
+
         float3 hit_point = ray.origin + tmin * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-        hit_rec_p = hit_point;
+        hit_rec.p = hit_point;
         
-        hit_rec_u = 0.f;
-        hit_rec_v = 0.f;
+        hit_rec.u = 0.f;
+        hit_rec.v = 0.f;
 
         float3 normal = boxnormal(tmin, t0, t1);
         normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-        hit_rec_normal = normal;
+        hit_rec.normal = normal;
         
         if(rtReportIntersection(0))
             check_second = false;
@@ -55,16 +54,18 @@ RT_PROGRAM void hit_box(int pid) {
       
       if(check_second) {
         if(rtPotentialIntersection(tmax)) {
+            hit_rec.distance = tmax;
+
             float3 hit_point = ray.origin + tmax * ray.direction;
             hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-            hit_rec_p = hit_point;
+            hit_rec.p = hit_point;
 
-            hit_rec_u = 0.f;
-            hit_rec_v = 0.f;
+            hit_rec.u = 0.f;
+            hit_rec.v = 0.f;
             
             float3 normal = boxnormal(tmax, t0, t1);
             normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-            hit_rec_normal = normal;
+            hit_rec.normal = normal;
             
             rtReportIntersection(0);
         }

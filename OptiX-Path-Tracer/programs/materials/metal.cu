@@ -16,42 +16,29 @@
 
 #include "material.h"
 
-/*! the implicit state's ray we will intersect against */
+// the implicit state's ray we will intersect against
 rtDeclareVariable(optix::Ray, ray,   rtCurrentRay, );
-/*! the per ray data we operate on */
+
+// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd,   rtPayload, );
 rtDeclareVariable(rtObject,   world, , );
 
+// the attributes we use to communicate between intersection programs and hit program
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
-/*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
-
-/*! and finally - that particular material's parameters */
+// and finally - that particular material's parameters
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 rtDeclareVariable(float,  fuzz,   , );
 
-/*! the actual scatter function - in Pete's reference code, that's a
-  virtual function, but since we have a different function per program
-  we do not need this here */
-inline __device__ bool scatter(const optix::Ray &ray_in,
-                               DRand48 &rndState,
-                               vec3f &scattered_origin,
-                               vec3f &scattered_direction,
-                               vec3f &attenuation,
-                               float &pdf) {
-  float3 hrn = hit_rec_normal;
-  vec3f reflected = reflect(unit_vector(ray_in.direction), hit_rec_normal);
-  scattered_origin    = hit_rec_p;
-  scattered_direction = (reflected + fuzz * random_in_unit_sphere(rndState));
-  attenuation         = sample_texture(hit_rec_u, hit_rec_v, hit_rec_p);
-  return (dot(scattered_direction, hrn) > 0.f);
-}
-
-inline __device__ float scattering_pdf(){
-  return false;
+inline __device__ bool scatter(const optix::Ray &ray_in) {
+  vec3f reflected = reflect(unit_vector(ray_in.direction), hit_rec.normal);
+  prd.out.is_specular = true;
+  prd.out.origin = hit_rec.p;
+  prd.out.direction = reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
+  prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.normal = hit_rec.normal;
+  prd.out.type = Metal;
+  return true;
 }
 
 inline __device__ float3 emitted(){
@@ -60,15 +47,5 @@ inline __device__ float3 emitted(){
 
 RT_PROGRAM void closest_hit() {
   prd.out.emitted = emitted();
-  prd.out.normal = hit_rec_normal;
-  prd.out.scatterEvent
-    = scatter(ray,
-              *prd.in.randState,
-              prd.out.scattered_origin,
-              prd.out.scattered_direction,
-              prd.out.attenuation,
-              prd.out.pdf)
-    ? rayGotBounced
-    : rayGotCancelled;
-  prd.out.scattered_pdf = scattering_pdf();
+  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

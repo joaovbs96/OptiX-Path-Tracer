@@ -37,6 +37,8 @@ cuda_compile_and_embed( embedded_volume_box_programs programs/hitables/volume_bo
 cuda_compile_and_embed( embedded_cosine_pdf_programs programs/pdfs/cosine_pdf.cu )
 cuda_compile_and_embed( embedded_rect_pdf_programs programs/pdfs/rect_pdf.cu )
 cuda_compile_and_embed( embedded_mixture_pdf_programs programs/pdfs/mixture_pdf.cu )
+cuda_compile_and_embed( embedded_sphere_pdf_programs programs/pdfs/sphere_pdf.cu )
+cuda_compile_and_embed( embedded_buffer_pdf_programs programs/pdfs/buffer_pdf.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -72,6 +74,8 @@ add_executable(OptiX-Path-Tracer
   ${embedded_cosine_pdf_programs}
   ${embedded_rect_pdf_programs}
   ${embedded_mixture_pdf_programs}
+  ${embedded_sphere_pdf_programs}
+  ${embedded_buffer_pdf_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer

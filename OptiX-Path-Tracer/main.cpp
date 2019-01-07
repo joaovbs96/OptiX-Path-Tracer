@@ -63,8 +63,8 @@ int main(int ac, char **av) {
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 1000;
-  int scene = 2;
+  const int samples = 100;
+  int scene = 1;
 
   // set number of samples
   g_context["samples"]->setInt(samples);
@@ -85,7 +85,7 @@ int main(int ac, char **av) {
       world = Cornell(g_context, camera, Nx, Ny);
       break;
     case 3:
-      //Nx = Ny = 1080;
+      Nx = Ny = 1080;
       world = Final_Next_Week(g_context, camera, Nx, Ny);
       break;
     default:
@@ -110,18 +110,18 @@ int main(int ac, char **av) {
   renderFrame(0, 0);
   auto t3 = std::chrono::system_clock::now();
   auto buildTime = std::chrono::duration<double>(t3 - t2).count();
-  printf("Done building OptiX data structures, which took %4f seconds.\n", buildTime);
+  printf("Done building OptiX data structures, which took %.2f seconds.\n", buildTime);
 
   // Render scene
   auto t4 = std::chrono::system_clock::now();
   for(int i = 0; i < samples; i++){
     g_context["run"]->setInt(i);
     renderFrame(Nx, Ny);
-    printf("Progress: %2f%%\r", (i * 100.f / samples));
+    printf("Progress: %.2f%%\r", (i * 100.f / samples));
   }
   auto t5 = std::chrono::system_clock::now();
   auto renderTime = std::chrono::duration<double>(t5 - t4).count();
-  printf("Done rendering, which took %4f seconds.\n", renderTime);
+  printf("Done rendering, which took %.2f seconds.\n", renderTime);
        
   // Save buffer to a PNG file
 	unsigned char *arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
@@ -144,7 +144,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/royl-ch7.png";
+  std::string output = "output/royl-ch10_mov_final_100.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

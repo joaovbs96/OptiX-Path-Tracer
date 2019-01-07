@@ -24,10 +24,7 @@ rtDeclareVariable(PerRayData, prd,   rtPayload, );
 rtDeclareVariable(rtObject,   world, , );
 
 /*! the attributes we use to communicate between intersection programs and hit program */
-rtDeclareVariable(float3, hit_rec_normal, attribute hit_rec_normal, );
-rtDeclareVariable(float3, hit_rec_p, attribute hit_rec_p, );
-rtDeclareVariable(float, hit_rec_u, attribute hit_rec_u, );
-rtDeclareVariable(float, hit_rec_v, attribute hit_rec_v, );
+rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(float, ref_idx, , );
@@ -36,50 +33,41 @@ rtDeclareVariable(float, ref_idx, , );
 /*! the actual scatter function - in Pete's reference code, that's a
   virtual function, but since we have a different function per program
   we do not need this here */
-inline __device__ bool scatter(const optix::Ray &ray_in,
-                               DRand48 &rnd,
-                               vec3f &scattered_origin,
-                               vec3f &scattered_direction,
-                               vec3f &attenuation,
-                               float &pdf) {
+inline __device__ bool scatter(const optix::Ray &ray_in) {
+  prd.out.is_specular = true;
+  prd.out.origin = hit_rec.p;
+  prd.out.attenuation = vec3f(1.f);
+  prd.out.normal = hit_rec.normal;
+  prd.out.type = Dielectric;
+  
   vec3f outward_normal;
-  vec3f reflected = reflect(ray_in.direction, hit_rec_normal);
   float ni_over_nt;
-
-  attenuation = vec3f(1.f, 1.f, 1.f); 
+  float cosine;
+  if (dot(ray_in.direction, hit_rec.normal) > 0.f) {
+    outward_normal = -1 * hit_rec.normal;
+    ni_over_nt = ref_idx;
+    cosine = ref_idx * dot(ray_in.direction, hit_rec.normal) / vec3f(ray_in.direction).length();
+  }
+  else {
+    outward_normal = hit_rec.normal;
+    ni_over_nt = 1.f / ref_idx;
+    cosine = -dot(ray_in.direction, hit_rec.normal) / vec3f(ray_in.direction).length();
+  }
   
   vec3f refracted;
   float reflect_prob;
-  float cosine;
-  
-  if (dot(ray_in.direction, hit_rec_normal) > 0.f) {
-    outward_normal = -hit_rec_normal;
-    ni_over_nt = ref_idx;
-    cosine = dot(ray_in.direction, hit_rec_normal) / vec3f(ray_in.direction).length();
-    cosine = sqrtf(1.f - ref_idx * ref_idx * (1.f - cosine * cosine));
-  }
-  else {
-    outward_normal = hit_rec_normal;
-    ni_over_nt = 1.f / ref_idx;
-    cosine = -dot(ray_in.direction, hit_rec_normal) / vec3f(ray_in.direction).length();
-  }
-  
   if (refract(ray_in.direction, outward_normal, ni_over_nt, refracted)) 
     reflect_prob = schlick(cosine, ref_idx);
   else 
     reflect_prob = 1.f;
 
-  scattered_origin = hit_rec_p;
-  if (rnd() < reflect_prob) 
-    scattered_direction = reflected;
+  vec3f reflected = reflect(ray_in.direction, hit_rec.normal);
+  if ((*prd.in.randState)() < reflect_prob) 
+    prd.out.direction = reflected;
   else 
-    scattered_direction = refracted;
+    prd.out.direction = refracted;
   
   return true;
-}
-
-inline __device__ float scattering_pdf(){
-  return false;
 }
 
 inline __device__ float3 emitted(){
@@ -88,15 +76,5 @@ inline __device__ float3 emitted(){
 
 RT_PROGRAM void closest_hit() {
   prd.out.emitted = emitted();
-  prd.out.normal = hit_rec_normal;
-  prd.out.scatterEvent
-    = scatter(ray,
-              *prd.in.randState,
-              prd.out.scattered_origin,
-              prd.out.scattered_direction,
-              prd.out.attenuation,
-              prd.out.pdf)
-    ? rayGotBounced
-    : rayGotCancelled;
-  prd.out.scattered_pdf = scattering_pdf();
+  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

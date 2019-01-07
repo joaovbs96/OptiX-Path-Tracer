@@ -14,8 +14,23 @@
 #include "programs.h"
 
 optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
-  // Set the exception, ray generation and miss shader programs of the scene
-  setRayGenerationProgram(g_context);
+  // configure sampling
+  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  //Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
+  /*std::vector<PDF*> buffer;
+  buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
+  buffer.push_back(new Sphere_PDF(vec3f(0.f, 1.f, 0.f), 1.f));*/
+  Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
+
+  // add material PDFs
+  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
+  optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[ 0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+  material_pdfs->unmap();
+
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, mixture, material_pdfs);
   setMissProgram(g_context);
   setExceptionProgram(g_context);
 
@@ -64,8 +79,21 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
 }
 
 optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
-  // Set the exception, ray generation and miss shader programs of the scene
-  setRayGenerationProgram(g_context);
+  // configure sampling
+  //std::vector<PDF*> buffer;
+  //buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
+  //buffer.push_back(new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
+  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
+
+  // add material PDFs
+  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
+  optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[ 0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+  material_pdfs->unmap();
+
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, mixture, material_pdfs);
   setMissProgram(g_context);
   setExceptionProgram(g_context);
 
@@ -114,12 +142,22 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
 
 optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
-  //Cosine_PDF mixture;
-  //Rect_Y_PDF mixture(213.f, 343.f, 227.f, 332.f, 554.f);
+  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  //Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
+  std::vector<PDF*> buffer;
+  buffer.push_back(new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  buffer.push_back(new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
+  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
+
+  // add material PDFs
+  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
+  optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[ 0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+  material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, mixture);
+  setRayGenerationProgram(g_context, mixture, material_pdfs);
   setMissProgram(g_context);
   setExceptionProgram(g_context);
 
@@ -130,8 +168,10 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
   Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
-  Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
+  Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
+  Material *glass = new Dielectric(1.5f);
+  //Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
+  //Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
 
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall
@@ -139,18 +179,19 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
+  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context), group, g_context);
   
   // big box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
+  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *aluminium, g_context),
                                                                                  15.f, g_context), 
                                                              vec3f(265.f, 0.f, 295.f), g_context),
                                                                                 group, g_context);
 
   // small box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 165.f, 165.f), *white, g_context),
+  /*addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 165.f, 165.f), *white, g_context),
                                                                                 -18.f, g_context), 
                                                               vec3f(130.f, 0.f, 65.f), g_context),
-                                                                                group, g_context);
+                                                                                group, g_context);*/
 
   // big box
   /*addChild(translate(rotateY(createVolumeBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), 0.01f, *black_fog, g_context),
@@ -181,8 +222,18 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
 }
 
 optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
-  // Set the exception, ray generation and miss shader programs of the scene
-  setRayGenerationProgram(g_context);
+  // configure sampling
+  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(113.f, 443.f, 127.f, 432.f, 554.f));
+
+  // add material PDFs
+  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
+  optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[ 0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+  material_pdfs->unmap();
+
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, mixture, material_pdfs);
   setMissProgram(g_context);
   setExceptionProgram(g_context);
 
@@ -206,7 +257,7 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
 
   // light
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  addChild(createYRect(113.f, 443.f, 127.f, 432.f, 554.f, false, *light, g_context), group, g_context);
+  addChild(createYRect(113.f, 443.f, 127.f, 432.f, 554.f, true, *light, g_context), group, g_context);
 
   // brown moving sphere
   vec3f center(400.f, 400.f, 200.f);
@@ -248,11 +299,6 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
   for (int i = 0; i < d_list.size(); i++)
     box->setChild(i, d_list[i]);
   addChild(translate(rotateY(box, 15.f, g_context), vec3f(-100.f, 270.f, 395.f), g_context), group, g_context);
-  
-  // set raygen program of the scene
-  optix::Program raygen = g_context->createProgramFromPTXString(embedded_raygen_program, "renderPixel");
-  g_context->setEntryPointCount(1);
-  g_context->setRayGenerationProgram(/*program ID:*/0, raygen);
 
   // configure camera
   const vec3f lookfrom(478.f, 278.f, -600.f);
