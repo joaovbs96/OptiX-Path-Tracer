@@ -15,11 +15,6 @@
 
 optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
-  //Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
-  /*std::vector<PDF*> buffer;
-  buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
-  buffer.push_back(new Sphere_PDF(vec3f(0.f, 1.f, 0.f), 1.f));*/
   Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
 
   // add material PDFs
@@ -80,9 +75,6 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
 
 optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  //std::vector<PDF*> buffer;
-  //buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
-  //buffer.push_back(new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
   Mixture_PDF mixture(new Cosine_PDF(), new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
 
   // add material PDFs
@@ -142,8 +134,6 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
 
 optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
-  //Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
   std::vector<PDF*> buffer;
   buffer.push_back(new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
   buffer.push_back(new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
