@@ -73,19 +73,26 @@ int main(int ac, char **av) {
   Camera camera;
   optix::Group world;
   
+  std::string output;
   switch(scene){
     case 0: 
+      Nx = Ny = 1080;
+      output = "output/royl/iow-";
       world = InOneWeekend(g_context, camera, Nx, Ny);
       break;
     case 1:
+      Nx = Ny = 1080;
+      output = "output/royl/moving-";
       world = MovingSpheres(g_context, camera, Nx, Ny);
       break;
     case 2:
       Nx = Ny = 1080;
+      output = "output/royl/royl-";
       world = Cornell(g_context, camera, Nx, Ny);
       break;
     case 3:
       Nx = Ny = 1080;
+      output = "output/royl/tnw-final-";
       world = Final_Next_Week(g_context, camera, Nx, Ny);
       break;
     default:
@@ -144,7 +151,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/royl-ch10_mov_final_100_test_white.png";
+  output += std::to_string(samples) + ".png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

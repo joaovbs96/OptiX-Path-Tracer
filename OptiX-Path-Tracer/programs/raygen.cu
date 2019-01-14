@@ -68,6 +68,7 @@ struct Camera {
       + s * camera_horizontal
       + t * camera_vertical
       - origin;
+
     return optix::make_Ray(/* origin   : */ origin.as_float3(),
                            /* direction: */ direction.as_float3(),
                            /* ray type : */ 0,
@@ -83,6 +84,7 @@ inline __device__ vec3f missColor(const optix::Ray &ray) {
     const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
     return c;
   }
+  
   else
     return vec3f(0.f);
 }

@@ -51,12 +51,10 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
       }
     }
   }
-  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  //addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
-  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
   addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
-  //addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
-  
+  addChild(createSphere(vec3f(0.f, 1.f, 0.5f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  addChild(createSphere(vec3f(-4.f, 1.f, 1.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
+
   // configure camera
   const vec3f lookfrom(13, 2, 3);
   const vec3f lookat(0, 0, 0);
@@ -75,7 +73,10 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
 
 optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
+  std::vector<PDF*> buffer;
+  buffer.push_back(new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
+  buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
+  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
   optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
@@ -111,10 +112,10 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
       }
     }
   }
-  addChild(createSphere(vec3f(-4.f, 1.f, 0.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
-  addChild(createSphere(vec3f(0.f, 1.f, 0.f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
-  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -2.f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
+  addChild(createSphere(vec3f(4.f, 1.f, 1.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  addChild(createSphere(vec3f(0.f, 1.f, 1.5f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
+  addChild(createSphere(vec3f(-4.f, 1.f, 2.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
+  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
 
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -169,10 +170,10 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
-  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *light, g_context), group, g_context);
+  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context), group, g_context);// glass sphere
   
   // big box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
+  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *aluminium, g_context),
                                                                                  15.f, g_context), 
                                                              vec3f(265.f, 0.f, 295.f), g_context),
                                                                                 group, g_context);
@@ -213,7 +214,10 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
 
 optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
   // configure sampling
-  Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(113.f, 443.f, 127.f, 432.f, 554.f));
+  std::vector<PDF*> buffer;
+  buffer.push_back(new Rect_Y_PDF(113.f, 443.f, 127.f, 432.f, 554.f));
+  buffer.push_back(new Sphere_PDF(vec3f(260.f, 150.f, 45.f), 50.f));
+  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
   optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);

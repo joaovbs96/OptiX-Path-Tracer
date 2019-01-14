@@ -110,4 +110,6 @@ his repository.
 - 12/08/18 - Added image textures;
 - 12/09/18 - Added lights and rectangles;
 - 12/12/18 - Added boxes and transforms(scale, rotations and translation);
-- 12/21/18 - Added volumes. Major changes were made to the random number generator to allow the renderer to escale to several thousand samples.
+- 12/21/18 - Added volumes. Changes made to RNG to allow the render to escale;
+- 12/24/18 - Finished "Ray Tracing: The Next Week";
+- 01/14/19 - Finished "Ray Tracing: The Rest of Your Life".

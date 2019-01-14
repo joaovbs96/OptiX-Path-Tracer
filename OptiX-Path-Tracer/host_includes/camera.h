@@ -26,6 +26,7 @@ struct Camera {
     float half_height = tan(theta / 2.0f);
     float half_width = aspect * half_height;
     
+    // where camera is looking from
     origin = lookfrom;
     
     w = unit_vector(lookfrom - lookat);
