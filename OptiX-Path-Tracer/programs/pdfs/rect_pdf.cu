@@ -1,11 +1,13 @@
 #include "pdf.h"
 
+// Boundary variables
 rtDeclareVariable(float,  a0, , );
 rtDeclareVariable(float,  a1, , );
 rtDeclareVariable(float,  b0, , );
 rtDeclareVariable(float,  b1, , );
 rtDeclareVariable(float,  k, , );
 
+// Boundary functions
 inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
     float t = (k - in.origin.x) / in.scattered_direction.x;        
 
@@ -58,6 +60,7 @@ inline __device__ bool hit_z(pdf_in &in, const float tmin, const float tmax, pdf
 }
 
 
+// Value Programs
 RT_CALLABLE_PROGRAM float rect_x_value(pdf_in &in) {
     pdf_rec rec;
 
@@ -97,6 +100,7 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
         return 0.f;
 }
 
+// Generate Programs
 RT_CALLABLE_PROGRAM float3 rect_x_generate(pdf_in &in, DRand48 &rnd) {
     float3 random_point = make_float3(k, a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0));
     in.scattered_direction = vec3f(random_point - in.origin.as_float3());

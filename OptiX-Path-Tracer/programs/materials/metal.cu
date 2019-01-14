@@ -37,7 +37,6 @@ inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.direction = reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
   prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
   prd.out.normal = hit_rec.normal;
-  prd.out.type = Metal;
   return true;
 }
 
@@ -46,6 +45,7 @@ inline __device__ float3 emitted(){
 }
 
 RT_PROGRAM void closest_hit() {
+  prd.out.type = Metal;
   prd.out.emitted = emitted();
   prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

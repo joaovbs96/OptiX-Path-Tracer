@@ -190,7 +190,7 @@ struct Buffer_PDF : public PDF {
         optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(pdfs->map());
         
         for(int i = 0; i < buffer_vector.size(); i++)
-            f_data[i] = optix::callableProgramId<int(int)> (buffer_vector[i]->assignGenerate(g_context)->getId());
+            f_data[i] = optix::callableProgramId<int(int)>(buffer_vector[i]->assignGenerate(g_context)->getId());
         
         pdfs->unmap();
 
@@ -207,7 +207,7 @@ struct Buffer_PDF : public PDF {
         optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(pdfs->map());
         
         for(int i = 0; i < buffer_vector.size(); i++)
-            f_data[i] = optix::callableProgramId<int(int)> (buffer_vector[i]->assignValue(g_context)->getId());
+            f_data[i] = optix::callableProgramId<int(int)>(buffer_vector[i]->assignValue(g_context)->getId());
         
         pdfs->unmap();
 

@@ -169,10 +169,10 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
   addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
   addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
-  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context), group, g_context);
+  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *light, g_context), group, g_context);
   
   // big box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *aluminium, g_context),
+  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *white, g_context),
                                                                                  15.f, g_context), 
                                                              vec3f(265.f, 0.f, 295.f), g_context),
                                                                                 group, g_context);

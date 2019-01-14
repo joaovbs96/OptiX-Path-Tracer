@@ -64,7 +64,7 @@ int main(int ac, char **av) {
   int Nx = 4480;
   int Ny = 1080;
   const int samples = 100;
-  int scene = 1;
+  int scene = 2;
 
   // set number of samples
   g_context["samples"]->setInt(samples);
@@ -144,7 +144,7 @@ int main(int ac, char **av) {
 			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
     }
 
-  std::string output = "output/royl-ch10_mov_final_100.png";
+  std::string output = "output/royl-ch10_mov_final_100_test_white.png";
   stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 

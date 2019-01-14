@@ -92,9 +92,8 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  // current color 
+  // current color: i.e. the return values from the books
   vec3f current_color = 1.f;
-  // 'albedo' from the books is our prd.out.attenuation
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
@@ -104,11 +103,13 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
       return current_color * missColor(ray);
     }
 
+    // ray was absorbed
     else if (prd.out.scatterEvent == rayGotCancelled)
-      return current_color * prd.out.emitted; // TODO: Can't we just return current_color? Test this with other night scenes
+      return current_color * prd.out.emitted;
 
-    else { // ray is still alive, and got properly bounced
-      if(prd.out.is_specular){
+    // ray is still alive, and got properly bounced
+    else {
+      if(prd.out.is_specular){ // TODO: how to deal with isotropics?
         current_color = prd.out.attenuation * current_color;
 
         ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),
@@ -123,9 +124,10 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
         float pdf_val = value(in);
         
         current_color = prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val;
+        // note that 'albedo' from the books is our prd.out.attenuation
 
         ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
-                              /* direction: */ pdf_direction,
+                              /* direction: */ in.scattered_direction.as_float3(),
                               /* ray type : */ 0,
                               /* tmin     : */ 1e-3f,
                               /* tmax     : */ RT_DEFAULT_MAX);

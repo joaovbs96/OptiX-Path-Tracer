@@ -5,11 +5,11 @@ rtDeclareVariable(int, size, , );
 rtBuffer< rtCallableProgramId<float(pdf_in&)> > values;
 
 RT_CALLABLE_PROGRAM float buffer_value(pdf_in &in) {
-    float weight = 1.f / size;
-    float sum;
+    float sum = 0.f;
     
     for(int i = 0; i < size; i++)
-        sum += weight * values[i](in);
+        sum += values[i](in);
+    sum /= size;
 
     return sum;
 }

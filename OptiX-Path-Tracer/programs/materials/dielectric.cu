@@ -16,29 +16,25 @@
 
 #include "material.h"
 
-/*! the implicit state's ray we will intersect against */
+// the implicit state's ray we will intersect against
 rtDeclareVariable(optix::Ray, ray,   rtCurrentRay, );
 
-/*! the per ray data we operate on */
+// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd,   rtPayload, );
 rtDeclareVariable(rtObject,   world, , );
 
-/*! the attributes we use to communicate between intersection programs and hit program */
+// the attributes we use to communicate between intersection programs and hit program
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
-/*! and finally - that particular material's parameters */
+// and finally - that particular material's parameters
 rtDeclareVariable(float, ref_idx, , );
 
 
-/*! the actual scatter function - in Pete's reference code, that's a
-  virtual function, but since we have a different function per program
-  we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
   prd.out.attenuation = vec3f(1.f);
   prd.out.normal = hit_rec.normal;
-  prd.out.type = Dielectric;
   
   vec3f outward_normal;
   float ni_over_nt;
@@ -75,6 +71,7 @@ inline __device__ float3 emitted(){
 }
 
 RT_PROGRAM void closest_hit() {
+  prd.out.type = Dielectric;
   prd.out.emitted = emitted();
   prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

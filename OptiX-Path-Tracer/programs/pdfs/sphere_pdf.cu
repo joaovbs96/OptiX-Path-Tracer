@@ -1,8 +1,10 @@
 #include "pdf.h"
 
+// Boundary variables
 rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float,  radius, , );
 
+// Boundary intersection function
 inline __device__ bool hit_boundary(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
     const vec3f oc = in.origin - vec3f(center);
     
@@ -43,7 +45,7 @@ inline __device__ bool hit_boundary(pdf_in &in, const float tmin, const float tm
     return false;
 }
 
-
+// Value program
 RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
     pdf_rec rec;
 
@@ -56,6 +58,7 @@ RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
         return 0.f;
 }
 
+// Utility function: generate random directions towards the sphere
 inline __device__ float3 random_to_sphere(float distance_squared, DRand48 &rnd) {
     float r1 = rnd();
     float r2 = rnd();
@@ -70,6 +73,7 @@ inline __device__ float3 random_to_sphere(float distance_squared, DRand48 &rnd) 
     return make_float3(x, y, z);
 }
 
+// Generate program: generate directions relative to the sphere
 RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, DRand48 &rnd) {
     vec3f direction(center - in.origin);
     float distance_squared = direction.squared_length();
