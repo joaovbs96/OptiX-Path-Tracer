@@ -13,9 +13,6 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 /*! and finally - that particular material's parameters */
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
 
-/*! the actual scatter function - in Pete's reference code, that's a
-  virtual function, but since we have a different function per program
-  we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = true; // TODO: It's not specular, but shouldn't it be treated in the same way?
   prd.out.origin = hit_rec.p;

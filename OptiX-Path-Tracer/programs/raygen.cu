@@ -89,6 +89,16 @@ inline __device__ vec3f missColor(const optix::Ray &ray) {
     return vec3f(0.f);
 }
 
+// Clamp color values
+inline __device__ vec3f clamp(const vec3f& c) {
+  vec3f temp = c;
+  if(temp.x > 1.f) temp.x = 1.f;
+  if(temp.y > 1.f) temp.y = 1.f;
+  if(temp.z > 1.f) temp.z = 1.f;
+
+  return temp;
+}
+
 inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
@@ -125,7 +135,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
         float3 pdf_direction = generate(in, rnd);
         float pdf_val = value(in);
         
-        current_color = prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val;
+        current_color = clamp(prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val);
         // note that 'albedo' from the books is our prd.out.attenuation
 
         ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
@@ -141,6 +151,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   return vec3f(0.f);
 }
 
+// Remove NaN values
 inline __device__ vec3f de_nan(const vec3f& c) {
   vec3f temp = c;
   if(!(temp.x == temp.x)) temp.x = 0.f;

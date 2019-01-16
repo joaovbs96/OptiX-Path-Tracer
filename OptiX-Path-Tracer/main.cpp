@@ -63,8 +63,8 @@ int main(int ac, char **av) {
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 100;
-  int scene = 2;
+  const int samples = 10000;
+  int scene = 1;
 
   // set number of samples
   g_context["samples"]->setInt(samples);
