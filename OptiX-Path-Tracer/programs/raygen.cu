@@ -24,24 +24,21 @@
 #include "prd.h"
 #include "pdfs/pdf.h"
 
-/*! the 'builtin' launch index we need to render a frame */
+// the 'builtin' launch index we need to render a frame
 rtDeclareVariable(uint2, pixelID,   rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim,   );
 
-/*! the ray related state */
+// the ray related state
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-/*! the 2D, float3-type color frame buffer we'll write into */
-rtBuffer<float3, 2> fb;
-rtBuffer<unsigned int, 2> seed;
+rtBuffer<float3, 2> fb; // float3 color frame buffer
+rtBuffer<unsigned int, 2> seed; // uint seed buffer
 
-rtDeclareVariable(int, samples, , );
-rtDeclareVariable(int, run, , );
+rtDeclareVariable(int, samples, , ); // number of samples
+rtDeclareVariable(int, run, , ); // current sample
 
-rtDeclareVariable(rtObject, world, , );
-
-rtDeclareVariable(int, light, , );
+rtDeclareVariable(rtObject, world, , ); // scene variable
 
 rtDeclareVariable(float3, camera_lower_left_corner, , );
 rtDeclareVariable(float3, camera_horizontal, , );
@@ -77,18 +74,6 @@ struct Camera {
   }
 };
 
-inline __device__ vec3f missColor(const optix::Ray &ray) {
-  if(light){
-    const vec3f unit_direction = normalize(ray.direction);
-    const float t = 0.5f*(unit_direction.y + 1.0f);
-    const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
-    return c;
-  }
-  
-  else
-    return vec3f(0.f);
-}
-
 // Clamp color values
 inline __device__ vec3f clamp(const vec3f& c) {
   vec3f temp = c;
@@ -104,15 +89,14 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  // current color: i.e. the return values from the books
   vec3f current_color = 1.f;
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
     if (prd.out.scatterEvent == rayDidntHitAnything){
-      // ray got 'lost' to the environment - 'light' it with miss shader
-      return current_color * missColor(ray);
+      // ray got 'lost' to the environment - return attenuation set by miss shader
+      return current_color * prd.out.attenuation;
     }
 
     // ray was absorbed
@@ -121,7 +105,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
 
     // ray is still alive, and got properly bounced
     else {
-      if(prd.out.is_specular){ // TODO: how to deal with isotropics?
+      if(prd.out.is_specular){ // TODO: how to properly deal with isotropics?
         current_color = prd.out.attenuation * current_color;
 
         ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),
@@ -136,7 +120,6 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
         float pdf_val = value(in);
         
         current_color = clamp(prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val);
-        // note that 'albedo' from the books is our prd.out.attenuation
 
         ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
                               /* direction: */ in.scattered_direction.as_float3(),

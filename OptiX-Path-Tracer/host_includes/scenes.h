@@ -26,7 +26,7 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context);
+  setMissProgram(g_context, SKY);
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
@@ -65,9 +65,6 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   const float dist(10.f);
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
-  // configure background color
-  g_context["light"]->setInt(true);
-
   return group;
 }
 
@@ -87,7 +84,7 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context);
+  setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
@@ -127,9 +124,6 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   const float dist(10.f);
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
-  // configure background color
-  g_context["light"]->setInt(false);
-
   return group;
 }
 
@@ -149,7 +143,7 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context);
+  setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
@@ -206,9 +200,6 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   const float dist(10.f);
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
-  // configure background color
-  g_context["light"]->setInt(false);
-
   return group;
 }
 
@@ -228,7 +219,7 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context);
+  setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
@@ -304,8 +295,50 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
   const float dist(10.f);
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
-  // configure background color
-  g_context["light"]->setInt(false);
+  return group;
+}
+
+optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+  // configure sampling
+  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  Cosine_PDF mixture;
+
+  // add material PDFs
+  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
+  optix::callableProgramId<int(int)>* f_data = static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[ 0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+  material_pdfs->unmap();
+
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  setMissProgram(g_context, DARK);
+  setExceptionProgram(g_context);
+
+  optix::Group group = g_context->createGroup();
+  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+
+  Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
+  Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
+  Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
+
+  /*addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // left wall
+  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // right wall
+  addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, true, *light, g_context), group, g_context); // light
+  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
+  addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls*/
+  
+  addChild(Mesh("sponza.obj", g_context, "assets/", 1.f), group, g_context);
+  
+  // configure camera
+  const vec3f lookfrom(13, 2, 3);
+  const vec3f lookat(0, 0, 0);
+  const vec3f up(0, 1, 0);
+  const float fovy(20.0);
+  const float aspect(float(Nx) / float(Ny));
+  const float aperture(0.1f);
+  const float dist(10.f);
+  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 
   return group;
 }

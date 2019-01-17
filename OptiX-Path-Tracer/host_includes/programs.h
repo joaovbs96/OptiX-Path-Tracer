@@ -15,6 +15,11 @@ extern "C" const char embedded_miss_program[];
 extern "C" const char embedded_exception_program[];
 extern "C" const char embedded_raygen_program[];
 
+typedef enum {
+  SKY,
+  DARK
+} Miss_Programs;
+
 void setRayGenerationProgram(optix::Context &g_context, PDF &pdf, optix::Buffer &material_pdfs) {
   // set raygen program of the scene
   optix::Program raygen = g_context->createProgramFromPTXString(embedded_raygen_program, "renderPixel");
@@ -34,8 +39,18 @@ void setRayGenerationProgram(optix::Context &g_context) {
   g_context->setRayGenerationProgram(/*program ID:*/0, raygen);
 }
 
-void setMissProgram(optix::Context &g_context) {
-  optix::Program missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "miss_program");
+void setMissProgram(optix::Context &g_context, Miss_Programs id) {
+  optix::Program missProgram;
+
+  switch(id){
+    case SKY:
+      missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "sky");
+      break;
+    case DARK:
+      missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "dark");
+      break;
+  }
+  
   g_context->setMissProgram(/*program ID:*/0, missProgram);
 }
 

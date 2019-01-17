@@ -170,32 +170,41 @@ inline __host__ __device__ vec3f mod(const vec3f &a,const vec3f &b) {
   return vec3f(fmodf(a.x,b.x), fmodf(a.y,b.y), fmodf(a.z,b.z));
 }
 
-  // if (a < b), return a, else return b
-  inline __device__ float ffmin(float a, float b) {
-    return a < b ? a : b;
-  }
+// if (a < b), return a, else return b
+inline __device__ float ffmin(float a, float b) {
+  return a < b ? a : b;
+}
 
-  // if (a > b), return a, else return b
-  inline __device__ float ffmax(float a, float b) {
-    return a > b ? a : b;
-  }
+// if (a > b), return a, else return b
+inline __device__ float ffmax(float a, float b) {
+  return a > b ? a : b;
+}
 
-  // return pairwise min vector
-  inline __device__ vec3f min_vec(vec3f a, vec3f b) {
-    return vec3f(ffmin(a.x, b.x), ffmin(a.y, b.y), ffmin(a.z, b.z));
-  }
+// return pairwise min vector
+inline __device__ vec3f min_vec(vec3f a, vec3f b) {
+  return vec3f(ffmin(a.x, b.x), ffmin(a.y, b.y), ffmin(a.z, b.z));
+}
 
-  // return pairwise max vector
-  inline __device__ vec3f max_vec(vec3f a, vec3f b) {
-    return vec3f(ffmax(a.x, b.x), ffmax(a.y, b.y), ffmax(a.z, b.z));
-  }
+// return pairwise max vector
+inline __device__ vec3f max_vec(vec3f a, vec3f b) {
+  return vec3f(ffmax(a.x, b.x), ffmax(a.y, b.y), ffmax(a.z, b.z));
+}
 
-  // return max component of vector
-  inline __device__ float max_component(vec3f a){
-    return ffmax(ffmax(a.x, a.y), a.z);
-  }
+// return max component of vector
+inline __device__ float max_component(vec3f a){
+  return ffmax(ffmax(a.x, a.y), a.z);
+}
 
-  // return max component of vector
-  inline __device__ float min_component(vec3f a){
-    return ffmin(ffmin(a.x, a.y), a.z);
-  }
+// return max component of vector
+inline __device__ float min_component(vec3f a){
+  return ffmin(ffmin(a.x, a.y), a.z);
+}
+
+struct vec2f {
+  vec2f() : x(0.f), y(0.f) {}
+  vec2f(float xx) : x(xx), y(xx) {}
+  vec2f(float xx, float yy) : x(xx), y(yy) {}
+
+  float x;
+  float y;
+};

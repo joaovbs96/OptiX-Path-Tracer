@@ -16,11 +16,20 @@
 
 #include "materials/material.h"
 
-/*! the implicit state's ray we will intersect against */
+// the implicit state's ray we will intersect against
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
-/*! the per ray data we operate on */
+// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-RT_PROGRAM void miss_program() {
+RT_PROGRAM void sky() {
+  const vec3f unit_direction = normalize(ray.direction);
+  const float t = 0.5f*(unit_direction.y + 1.0f);
+  const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
+  prd.out.attenuation = c;
+  prd.out.scatterEvent = rayDidntHitAnything;
+}
+
+RT_PROGRAM void dark() {
+  prd.out.attenuation = vec3f(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }

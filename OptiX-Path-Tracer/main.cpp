@@ -63,8 +63,8 @@ int main(int ac, char **av) {
   // Set main parameters
   int Nx = 4480;
   int Ny = 1080;
-  const int samples = 10000;
-  int scene = 1;
+  const int samples = 100;
+  int scene = 4;
 
   // set number of samples
   g_context["samples"]->setInt(samples);
@@ -94,6 +94,11 @@ int main(int ac, char **av) {
       Nx = Ny = 1080;
       output = "output/royl/tnw-final-";
       world = Final_Next_Week(g_context, camera, Nx, Ny);
+      break;
+    case 4:
+      Nx = Ny = 1080;
+      output = "output/test-";
+      world = Test_Scene(g_context, camera, Nx, Ny);
       break;
     default:
       printf("Error: scene unknown.\n");
