@@ -14,7 +14,7 @@ struct onb {
         return a.x * u + a.y * v + a.z * w;
     }
 
-    __device__ void build_from_w(const vec3f& n){
+    __device__ void build_from_w(const vec3f& n) {
         w = unit_vector(n);
         
         vec3f a;

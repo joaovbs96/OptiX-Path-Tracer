@@ -191,12 +191,12 @@ inline __device__ vec3f max_vec(vec3f a, vec3f b) {
 }
 
 // return max component of vector
-inline __device__ float max_component(vec3f a){
+inline __device__ float max_component(vec3f a) {
   return ffmax(ffmax(a.x, a.y), a.z);
 }
 
 // return max component of vector
-inline __device__ float min_component(vec3f a){
+inline __device__ float min_component(vec3f a) {
   return ffmin(ffmin(a.x, a.y), a.z);
 }
 

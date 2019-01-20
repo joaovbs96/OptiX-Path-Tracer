@@ -11,7 +11,7 @@
 #include "../programs/vec.h"
 
 struct Camera {
-  Camera(){}
+  Camera() {}
 
   Camera(const vec3f &lookfrom, const vec3f &lookat, const vec3f &vup, 
          float vfov, float aspect, float aperture, float focus_dist, float t0, float t1) { 

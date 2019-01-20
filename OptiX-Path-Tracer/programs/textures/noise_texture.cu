@@ -44,7 +44,7 @@ inline __device__ float noise(float3 p) {
     return perlin_interp(c, u, v, w);
 }
 
-inline __device__ float turb(float3 p){
+inline __device__ float turb(float3 p) {
     float accum = 0;
     float3 temp_p = p;
     float weight = 1.0;

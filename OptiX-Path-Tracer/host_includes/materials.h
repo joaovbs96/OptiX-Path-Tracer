@@ -20,7 +20,7 @@ extern "C" const char embedded_isotropic_programs[];
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
 struct Material {
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const = 0;
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const = 0;
 };
 
 /*! host side code for the "Lambertian" material; the actual
@@ -29,14 +29,14 @@ struct Lambertian : public Material {
   Lambertian(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const override {
     optix::Material mat = g_context->createMaterial();
     
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
                               (embedded_lambertian_programs, "closest_hit"));
 
-    gi->setMaterial(/*ray type:*/0, mat);
-    texture->assignTo(gi, g_context);
+    gi->setMaterial(index, mat);
+    return texture->assignTo(gi, g_context);
   }
   const Texture* texture;
 };
@@ -47,20 +47,21 @@ struct Metal : public Material {
   Metal(const Texture *t, const float fuzz) : texture(t), fuzz(fuzz) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const override {
     optix::Material mat = g_context->createMaterial();
     
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
                               (embedded_metal_programs, "closest_hit"));
     
-    gi->setMaterial(/*ray type:*/0, mat);
-    texture->assignTo(gi, g_context);
+    gi->setMaterial(index, mat);
     
     // fuzz <= 1
     if(fuzz < 1.f)
       gi["fuzz"]->setFloat(fuzz);
     else
       gi["fuzz"]->setFloat(1.f);
+
+    return texture->assignTo(gi, g_context);
   }
   const Texture* texture;
   const float fuzz;
@@ -72,14 +73,17 @@ struct Dielectric : public Material {
   Dielectric(const float ref_idx) : ref_idx(ref_idx) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const override {
     optix::Material mat = g_context->createMaterial();
   
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
                               (embedded_dielectric_programs, "closest_hit"));
   
-    gi->setMaterial(/*ray type:*/0, mat);
+    gi->setMaterial(index, mat);
     gi["ref_idx"]->setFloat(ref_idx);
+
+    Constant_Texture foo(vec3f(0.f));
+    return foo.assignTo(gi, g_context);
   }
   
   const float ref_idx;
@@ -91,14 +95,14 @@ struct Diffuse_Light : public Material {
   Diffuse_Light(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const override {
     optix::Material mat = g_context->createMaterial();
     
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
                               (embedded_diffuse_light_programs, "closest_hit"));
 
-    gi->setMaterial(/*ray type:*/0, mat);
-    texture->assignTo(gi, g_context);
+    gi->setMaterial(index, mat);
+    return texture->assignTo(gi, g_context); // return texture callable program to add to a buffer outside
   }
   const Texture* texture;
 };
@@ -109,14 +113,14 @@ struct Isotropic : public Material {
   Isotropic(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
-  virtual void assignTo(optix::GeometryInstance gi, optix::Context &g_context) const override {
+  virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const override {
     optix::Material mat = g_context->createMaterial();
     
     mat->setClosestHitProgram(0, g_context->createProgramFromPTXString
                               (embedded_isotropic_programs, "closest_hit"));
     
-    gi->setMaterial(/*ray type:*/0, mat);
-    texture->assignTo(gi, g_context);
+    gi->setMaterial(index, mat);
+    return texture->assignTo(gi, g_context);
   }
   const Texture* texture;
 };

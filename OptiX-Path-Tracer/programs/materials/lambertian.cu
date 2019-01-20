@@ -27,7 +27,7 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 
 /*! the actual scatter function - in Pete's reference code, that's a
@@ -35,14 +35,14 @@ rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_text
   we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = false;
-  prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
   prd.out.origin = hit_rec.p;
   prd.out.normal = hit_rec.normal;
 
   return true;
 }
 
-RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in){
+RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
   float cosine = dot(unit_vector(in.normal), unit_vector(in.scattered_direction));
   
   if(cosine < 0.f)
@@ -51,7 +51,7 @@ RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in){
   return cosine / CUDART_PI_F;
 }
 
-inline __device__ float3 emitted(){
+inline __device__ float3 emitted() {
   return make_float3(0.f, 0.f, 0.f);
 }
 

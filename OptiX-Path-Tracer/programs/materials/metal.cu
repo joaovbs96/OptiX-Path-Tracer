@@ -27,7 +27,7 @@ rtDeclareVariable(rtObject,   world, , );
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 rtDeclareVariable(float,  fuzz,   , );
 
 inline __device__ bool scatter(const optix::Ray &ray_in) {
@@ -35,12 +35,12 @@ inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
   prd.out.direction = reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
-  prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
   prd.out.normal = hit_rec.normal;
   return true;
 }
 
-inline __device__ float3 emitted(){
+inline __device__ float3 emitted() {
   return make_float3(0.f, 0.f, 0.f);
 }
 

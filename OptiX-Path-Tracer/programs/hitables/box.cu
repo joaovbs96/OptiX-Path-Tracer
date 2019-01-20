@@ -47,6 +47,8 @@ RT_PROGRAM void hit_box(int pid) {
         float3 normal = boxnormal(tmin, t0, t1);
         normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
         hit_rec.normal = normal;
+
+        hit_rec.index = 0;
         
         if(rtReportIntersection(0))
             check_second = false;
@@ -66,6 +68,8 @@ RT_PROGRAM void hit_box(int pid) {
             float3 normal = boxnormal(tmax, t0, t1);
             normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
             hit_rec.normal = normal;
+
+            hit_rec.index = 0;
             
             rtReportIntersection(0);
         }

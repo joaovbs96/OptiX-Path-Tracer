@@ -73,8 +73,9 @@ int main(int ac, char **av) {
   Camera camera;
   optix::Group world;
   
+  auto t0 = std::chrono::system_clock::now();
   std::string output;
-  switch(scene){
+  switch(scene) {
     case 0: 
       Nx = Ny = 1080;
       output = "output/royl/iow-";
@@ -97,7 +98,7 @@ int main(int ac, char **av) {
       break;
     case 4:
       Nx = Ny = 1080;
-      output = "output/test-";
+      output = "output/3D-models-";
       world = Test_Scene(g_context, camera, Nx, Ny);
       break;
     default:
@@ -107,6 +108,9 @@ int main(int ac, char **av) {
   }
   camera.set(g_context);
   g_context["world"]->set(world);
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<double>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 
   // Create a frame buffer
   optix::Buffer fb = createFrameBuffer(Nx, Ny);
@@ -126,7 +130,7 @@ int main(int ac, char **av) {
 
   // Render scene
   auto t4 = std::chrono::system_clock::now();
-  for(int i = 0; i < samples; i++){
+  for(int i = 0; i < samples; i++) {
     g_context["run"]->setInt(i);
     renderFrame(Nx, Ny);
     printf("Progress: %.2f%%\r", (i * 100.f / samples));

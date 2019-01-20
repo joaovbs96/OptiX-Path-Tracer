@@ -43,7 +43,7 @@ inline __device__ vec3f random_in_unit_sphere(DRand48 &rnd) {
   return res;
 }
 
-inline __device__ vec3f random_cosine_direction(DRand48 &rnd){
+inline __device__ vec3f random_cosine_direction(DRand48 &rnd) {
 	float r1 = rnd();
 	float r2 = rnd();
 

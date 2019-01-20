@@ -94,7 +94,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
-    if (prd.out.scatterEvent == rayDidntHitAnything){
+    if (prd.out.scatterEvent == rayDidntHitAnything) {
       // ray got 'lost' to the environment - return attenuation set by miss shader
       return current_color * prd.out.attenuation;
     }
@@ -105,7 +105,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
 
     // ray is still alive, and got properly bounced
     else {
-      if(prd.out.is_specular){ // TODO: how to properly deal with isotropics?
+      if(prd.out.is_specular) { // TODO: how to properly deal with isotropics?
         current_color = prd.out.attenuation * current_color;
 
         ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),

@@ -37,6 +37,7 @@ typedef enum {
 } ScatterEvent;
 
 struct Hit_Record {
+  int index;
   vec3f normal;
   vec3f p;
   float distance;

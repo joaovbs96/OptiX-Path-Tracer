@@ -11,20 +11,20 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   return false;
 }
 
-RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in){
+RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
   return false;
 }
 
-inline __device__ float3 emitted(){
+inline __device__ float3 emitted() {
   if(dot(hit_rec.normal, ray.direction) < 0.f)
-    return sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+    return sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
   else
     return make_float3(0.f);
 }

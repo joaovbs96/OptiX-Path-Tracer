@@ -27,6 +27,7 @@ rtDeclareVariable(rtObject,   world, , );
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture; // no need to use this here
 rtDeclareVariable(float, ref_idx, , );
 
 
@@ -66,7 +67,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in) {
   return true;
 }
 
-inline __device__ float3 emitted(){
+inline __device__ float3 emitted() {
   return make_float3(0.f, 0.f, 0.f);
 }
 

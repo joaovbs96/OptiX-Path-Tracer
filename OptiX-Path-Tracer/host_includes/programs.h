@@ -42,7 +42,7 @@ void setRayGenerationProgram(optix::Context &g_context) {
 void setMissProgram(optix::Context &g_context, Miss_Programs id) {
   optix::Program missProgram;
 
-  switch(id){
+  switch(id) {
     case SKY:
       missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "sky");
       break;

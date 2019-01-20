@@ -16,7 +16,7 @@ inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax, pdf
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
-    if (t < tmax && t > tmin){
+    if (t < tmax && t > tmin) {
         rec.normal = make_float3(1.f, 0.f, 0.f);
         rec.distance = t;
         return true;
@@ -33,7 +33,7 @@ inline __device__ bool hit_y(pdf_in &in, const float tmin, const float tmax, pdf
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
-    if (t < tmax && t > tmin){
+    if (t < tmax && t > tmin) {
         rec.normal = make_float3(0.f, 1.f, 0.f);
         rec.distance = t;
         return true;
@@ -50,7 +50,7 @@ inline __device__ bool hit_z(pdf_in &in, const float tmin, const float tmax, pdf
     if (a < a0 || a > a1 || b < b0 || b > b1)
         return false;
     
-    if (t < tmax && t > tmin){
+    if (t < tmax && t > tmin) {
         rec.normal = make_float3(0.f, 0.f, 1.f);
         rec.distance = t;
         return true;
@@ -64,7 +64,7 @@ inline __device__ bool hit_z(pdf_in &in, const float tmin, const float tmax, pdf
 RT_CALLABLE_PROGRAM float rect_x_value(pdf_in &in) {
     pdf_rec rec;
 
-    if(hit_x(in, 0.001f, FLT_MAX, rec)){
+    if(hit_x(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
         float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
         float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
@@ -77,7 +77,7 @@ RT_CALLABLE_PROGRAM float rect_x_value(pdf_in &in) {
 RT_CALLABLE_PROGRAM float rect_y_value(pdf_in &in) {
     pdf_rec rec;
 
-    if(hit_y(in, 0.001f, FLT_MAX, rec)){
+    if(hit_y(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
         float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
         float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
@@ -90,7 +90,7 @@ RT_CALLABLE_PROGRAM float rect_y_value(pdf_in &in) {
 RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
     pdf_rec rec;
 
-    if(hit_z(in, 0.001f, FLT_MAX, rec)){
+    if(hit_z(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
         float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
         float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());

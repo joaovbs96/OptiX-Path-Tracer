@@ -227,8 +227,8 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
 
   // ground
   Material *ground = new Lambertian(new Constant_Texture(vec3f(0.48f, 0.83f, 0.53f)));
-  for(int i = 0; i < 20; i++){
-    for(int j = 0; j < 20; j++){
+  for(int i = 0; i < 20; i++) {
+    for(int j = 0; j < 20; j++) {
       float w = 100.f;
       float x0 = -1000 + i * w;
       float z0 = -1000 + j * w;
@@ -278,11 +278,11 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
   for(int j = 0; j < 1000; j++) {
     d_list.push_back(createSphere(vec3f(165 * rnd(), 165 * rnd(), 165 * rnd()), 10.f, *white, g_context));
   }
+
   optix::GeometryGroup box = g_context->createGeometryGroup();
   box->setAcceleration(g_context->createAcceleration("Trbvh"));
-  box->setChildCount((int)d_list.size());
   for (int i = 0; i < d_list.size(); i++)
-    box->setChild(i, d_list[i]);
+    box->addChild(d_list[i]);
   addChild(translate(rotateY(box, 15.f, g_context), vec3f(-100.f, 270.f, 395.f), g_context), group, g_context);
 
   // configure camera
@@ -312,31 +312,41 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context, DARK);
+  setMissProgram(g_context, SKY);
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
-  Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
+  Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
+  Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
+  Material *glass = new Dielectric(1.5f);
+  Material *grass = new Lambertian(new Image_Texture("assets/other_textures/roof.jpg"));
+  
+  // Lucy
+  /*float scale = 80.f;
+  optix::GeometryInstance model = Load_Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", scale);
+  if(model == NULL)
+    system("PAUSE");
+  else
+    addChild(translate(model, vec3f(300.f, 0.f, 300.f), g_context), group, g_context);
+  
+  addChild(createPlane(0.f, Y_AXIS, false, *grass, g_context), group, g_context);*/
+  
+  // Sponza
+  float scale = 0.5f;
+  optix::GeometryInstance model = Load_Mesh("sponza.obj", g_context, *white, false, "assets/sponza/", scale);
+  addChild(translate(rotateY(model, 90.f, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);
 
-  /*addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // left wall
-  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // right wall
-  addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, true, *light, g_context), group, g_context); // light
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
-  addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls*/
-  
-  addChild(Mesh("sponza.obj", g_context, "assets/", 1.f), group, g_context);
-  
   // configure camera
-  const vec3f lookfrom(13, 2, 3);
-  const vec3f lookat(0, 0, 0);
-  const vec3f up(0, 1, 0);
-  const float fovy(20.0);
+  const vec3f lookfrom(278.f, 278.f, -800.f);
+  const vec3f lookat(278.f, 278.f, 0.f);
+  const vec3f up(0.f, 1.f, 0.f);
+  const float fovy(40.0f);
   const float aspect(float(Nx) / float(Ny));
-  const float aperture(0.1f);
+  const float aperture(0.f);
   const float dist(10.f);
   camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
 

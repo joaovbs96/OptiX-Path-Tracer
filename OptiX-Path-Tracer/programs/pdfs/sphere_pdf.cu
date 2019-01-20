@@ -36,7 +36,7 @@ inline __device__ bool hit_boundary(pdf_in &in, const float tmin, const float tm
     
     // if the second root was a hit,
     temp = (-b + sqrtf(discriminant)) / a;
-    if (temp < tmax && temp > tmin){
+    if (temp < tmax && temp > tmin) {
         rec.distance = temp;
         rec.normal = ((in.origin + temp * in.scattered_direction) - center) / radius;
         return true;
@@ -49,7 +49,7 @@ inline __device__ bool hit_boundary(pdf_in &in, const float tmin, const float tm
 RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
     pdf_rec rec;
 
-    if(hit_boundary(in, 0.001f, FLT_MAX, rec)){
+    if(hit_boundary(in, 0.001f, FLT_MAX, rec)) {
         float cos_theta_max = sqrtf(1.f - radius * radius / vec3f(center - in.origin).squared_length());
         float solid_angle = 2.f * CUDART_PI_F * (1.f - cos_theta_max);
         return 1.f / solid_angle;

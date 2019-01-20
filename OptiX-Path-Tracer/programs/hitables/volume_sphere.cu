@@ -45,7 +45,7 @@ inline __device__ bool hit_boundary(const float tmin, const float tmax, float &r
   
   // if the second root was a hit,
   temp = (-b + sqrtf(discriminant)) / a;
-  if (temp < tmax && temp > tmin){
+  if (temp < tmax && temp > tmin) {
     rec = temp;
     return true;
   }
@@ -63,7 +63,7 @@ RT_PROGRAM void hit_sphere(int pid) {
   float rec1, rec2;
 
   if(hit_boundary(-FLT_MAX, FLT_MAX, rec1))
-    if(hit_boundary(rec1 + 0.0001, FLT_MAX, rec2)){
+    if(hit_boundary(rec1 + 0.0001, FLT_MAX, rec2)) {
       if(rec1 < ray.tmin)
         rec1 = ray.tmin;
 
@@ -95,6 +95,8 @@ RT_PROGRAM void hit_sphere(int pid) {
   
         hit_rec.u = 0.f;
         hit_rec.v = 0.f;
+
+        hit_rec.index = 0;
   
         rtReportIntersection(0);
       }

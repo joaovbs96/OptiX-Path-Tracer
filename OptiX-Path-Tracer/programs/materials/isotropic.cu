@@ -11,20 +11,20 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3)>, sample_texture, , );
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = true; // TODO: It's not specular, but shouldn't it be treated in the same way?
   prd.out.origin = hit_rec.p;
   prd.out.direction = random_in_unit_sphere(*prd.in.randState);
   prd.out.normal = hit_rec.normal;
-  prd.out.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
   prd.out.type = Isotropic;
 
   return true;
 }
 
-inline __device__ float3 emitted(){
+inline __device__ float3 emitted() {
   return make_float3(0.f, 0.f, 0.f);
 }
 

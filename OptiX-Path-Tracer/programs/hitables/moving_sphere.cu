@@ -87,6 +87,8 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.normal = normal;
       
       get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
+
+      hit_rec.index = 0;
       
       rtReportIntersection(0);
     }
@@ -107,6 +109,8 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.normal = normal;
 
       get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
+
+      hit_rec.index = 0;
       
       rtReportIntersection(0);
     }

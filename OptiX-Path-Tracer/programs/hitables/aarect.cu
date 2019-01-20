@@ -44,6 +44,8 @@ RT_PROGRAM void hit_rect_X(int pid) {
 
         hit_rec.u = (a - a0) / (a1 - a0);
         hit_rec.v = (b - b0) / (b1 - b0);
+
+        hit_rec.index = 0;
         
         rtReportIntersection(0);
     }
@@ -75,6 +77,8 @@ RT_PROGRAM void hit_rect_Y(int pid) {
         hit_rec.u = (a - a0) / (a1 - a0);
         hit_rec.v = (b - b0) / (b1 - b0);
 
+        hit_rec.index = 0;
+
         rtReportIntersection(0);
     }
 }
@@ -104,6 +108,8 @@ RT_PROGRAM void hit_rect_Z(int pid) {
 
         hit_rec.u = (a - a0) / (a1 - a0);
         hit_rec.v = (b - b0) / (b1 - b0);
+
+        hit_rec.index = 0;
 
         rtReportIntersection(0);
     }
