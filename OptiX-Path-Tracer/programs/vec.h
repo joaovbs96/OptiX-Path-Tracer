@@ -29,6 +29,8 @@
 #define CUDART_PI_F 3.141592654f
 #endif
 
+#define M_PI   3.14159265358979323846264338327950288
+
 struct vec3f {
   inline __host__ __device__ vec3f() {}
 

@@ -310,9 +310,14 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
-  // Set the exception, ray generation and miss shader programs
+  // Set the ray generation program
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context, SKY);
+  
+  // Set the miss program w/ Environmental Mapping
+  // Photo by shontz photography on Unsplash - https://unsplash.com/photos/y4v96Sy2ne4
+  setMissProgram(g_context, IMG, "assets/other_textures/shontz.jpg");
+
+  // Set the exception program
   setExceptionProgram(g_context);
 
   optix::Group group = g_context->createGroup();
@@ -323,23 +328,41 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
   Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
   Material *glass = new Dielectric(1.5f);
-  Material *grass = new Lambertian(new Image_Texture("assets/other_textures/roof.jpg"));
+  Material *floor = new Lambertian(new Image_Texture("assets/other_textures/wood.jpg"));
   
+  // Test model
+  /*float scale = 1400.f;
+  optix::GeometryInstance model = Load_Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", scale);
+  if(model == NULL)
+    system("PAUSE");
+  else
+    addChild(translate(rotateY(model, 180.f, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);*/
+
   // Lucy
-  /*float scale = 80.f;
+  float scale = 150.f;
   optix::GeometryInstance model = Load_Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", scale);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(model, vec3f(300.f, 0.f, 300.f), g_context), group, g_context);
+    addChild(translate(model, vec3f(0.f, -550.f, 0.f), g_context), group, g_context);
+
+  //addChild(createSphere(vec3f(0.f), 1000.f, Lambertian(new Image_Texture("assets/sphere_maps/ennis.hdr")), g_context), group, g_context);
   
-  addChild(createPlane(0.f, Y_AXIS, false, *grass, g_context), group, g_context);*/
-  
+  // configure camera
+  const vec3f lookfrom(0.f, 0.f, -800.f);
+  const vec3f lookat(0.f, 0.f, 0.f);
+  const vec3f up(0.f, 1.f, 0.f);
+  const float fovy(100.0f);
+  const float aspect(float(Nx) / float(Ny));
+  const float aperture(0.0f);
+  const float dist(0.8f);
+  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+
   // Sponza
-  float scale = 0.5f;
+  /*float scale = 0.5f;
   optix::GeometryInstance model = Load_Mesh("sponza.obj", g_context, *white, false, "assets/sponza/", scale);
   addChild(translate(rotateY(model, 90.f, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);
-
+  
   // configure camera
   const vec3f lookfrom(278.f, 278.f, -800.f);
   const vec3f lookat(278.f, 278.f, 0.f);
@@ -348,7 +371,7 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);*/
 
   return group;
 }

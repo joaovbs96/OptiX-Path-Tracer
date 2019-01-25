@@ -33,3 +33,20 @@ RT_PROGRAM void dark() {
   prd.out.attenuation = vec3f(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }
+
+rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+
+RT_PROGRAM void box() {
+  prd.out.attenuation = vec3f(0.f);
+  prd.out.scatterEvent = rayDidntHitAnything;
+}
+
+RT_PROGRAM void environmental_mapping() {
+  float theta = atan2f(ray.direction.x, ray.direction.z);
+  float phi   = M_PIf * 0.5f - acosf(ray.direction.y);
+  float u     = (theta + M_PIf) * (0.5f * M_1_PIf);
+  float v     = 0.5f * (1.0f + sinf(phi));
+  
+  prd.out.attenuation = sample_texture[0](u, v, make_float3(0.f));
+  prd.out.scatterEvent = rayDidntHitAnything;
+}

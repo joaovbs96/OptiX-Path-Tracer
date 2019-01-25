@@ -34,9 +34,17 @@ RT_PROGRAM void hit_plane(int pid) {
       hit_rec.p = hit_point;
 
       hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-
-      hit_rec.u = hit_rec.p.x / 2500.f;
-      hit_rec.v = hit_rec.p.z / 2500.f;
+      
+      if(normal.x != 0) {
+        hit_rec.u = hit_rec.p.y / 2500.f;
+        hit_rec.v = hit_rec.p.z / 2500.f;
+      } else if(normal.y != 0) {
+        hit_rec.u = hit_rec.p.x / 2500.f;
+        hit_rec.v = hit_rec.p.z / 2500.f;
+      } else {
+        hit_rec.u = hit_rec.p.x / 2500.f;
+        hit_rec.v = hit_rec.p.y / 2500.f;
+      }
 
       hit_rec.index = 0;
 

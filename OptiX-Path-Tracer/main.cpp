@@ -24,6 +24,7 @@
 // Programs(RT_PROGRAM) that act in the device side. Note 
 // that we can use host functions as usual in these headers.
 #include "host_includes/scenes.h"
+//#include "host_includes/scene_parser.h"
 
 optix::Context g_context;
 
@@ -72,6 +73,8 @@ int main(int ac, char **av) {
   // Create and set the world and camera
   Camera camera;
   optix::Group world;
+
+  //Parser(g_context, camera, "main.json");
   
   auto t0 = std::chrono::system_clock::now();
   std::string output;

@@ -58,7 +58,13 @@ RT_PROGRAM void mesh_intersection(int index) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal_buffer[index]));
+      float3 a_n = normal_buffer[3 * index];
+      float3 b_n = normal_buffer[3 * index + 1];
+      float3 c_n = normal_buffer[3 * index + 2];
+      float3 normal = (a_n * (1.0 - u - v) + b_n * u + c_n * v); // TODO: test it out
+      // float3 normal = normal_buffer[index];
+
+      hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
       hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
       hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);

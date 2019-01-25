@@ -36,7 +36,7 @@ struct Lambertian : public Material {
                               (embedded_lambertian_programs, "closest_hit"));
 
     gi->setMaterial(index, mat);
-    return texture->assignTo(gi, g_context);
+    return texture->assignTo(g_context);
   }
   const Texture* texture;
 };
@@ -61,7 +61,7 @@ struct Metal : public Material {
     else
       gi["fuzz"]->setFloat(1.f);
 
-    return texture->assignTo(gi, g_context);
+    return texture->assignTo(g_context);
   }
   const Texture* texture;
   const float fuzz;
@@ -83,7 +83,7 @@ struct Dielectric : public Material {
     gi["ref_idx"]->setFloat(ref_idx);
 
     Constant_Texture foo(vec3f(0.f));
-    return foo.assignTo(gi, g_context);
+    return foo.assignTo(g_context);
   }
   
   const float ref_idx;
@@ -102,7 +102,7 @@ struct Diffuse_Light : public Material {
                               (embedded_diffuse_light_programs, "closest_hit"));
 
     gi->setMaterial(index, mat);
-    return texture->assignTo(gi, g_context); // return texture callable program to add to a buffer outside
+    return texture->assignTo(g_context); // return texture callable program to add to a buffer outside
   }
   const Texture* texture;
 };
@@ -120,7 +120,7 @@ struct Isotropic : public Material {
                               (embedded_isotropic_programs, "closest_hit"));
     
     gi->setMaterial(index, mat);
-    return texture->assignTo(gi, g_context);
+    return texture->assignTo(g_context);
   }
   const Texture* texture;
 };

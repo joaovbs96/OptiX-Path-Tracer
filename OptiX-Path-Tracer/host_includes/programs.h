@@ -5,7 +5,10 @@
 #include <optixu/optixpp.h>
 
 #include "../programs/vec.h"
+#include "textures.h"
 #include "pdfs.h"
+
+#include <string>
 
 /*! the precompiled programs/raygen.cu code (in ptx) that our
   cmake magic will precompile (to ptx) and link to the generated
@@ -14,11 +17,6 @@
 extern "C" const char embedded_miss_program[];
 extern "C" const char embedded_exception_program[];
 extern "C" const char embedded_raygen_program[];
-
-typedef enum {
-  SKY,
-  DARK
-} Miss_Programs;
 
 void setRayGenerationProgram(optix::Context &g_context, PDF &pdf, optix::Buffer &material_pdfs) {
   // set raygen program of the scene
@@ -39,23 +37,64 @@ void setRayGenerationProgram(optix::Context &g_context) {
   g_context->setRayGenerationProgram(/*program ID:*/0, raygen);
 }
 
-void setMissProgram(optix::Context &g_context, Miss_Programs id) {
+typedef enum {
+  SKY,
+  DARK,
+  BOX,
+  IMG,
+  HDR
+} Miss_Programs;
+
+void setMissProgram(optix::Context &g_context, Miss_Programs id, std::string fileName="file") {
   optix::Program missProgram;
 
-  switch(id) {
-    case SKY:
-      missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "sky");
-      break;
-    case DARK:
-      missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "dark");
-      break;
+  if(id == SKY)
+    missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "sky");
+  else if(id == DARK)
+    missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "dark");
+  else if(id == BOX)
+    missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "box");
+  else if(id == IMG) {
+    missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "environmental_mapping");
+
+    Image_Texture img(fileName);
+    optix::GeometryInstance foo;
+
+    optix::Buffer texture_buffers = 
+              g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
+
+    optix::callableProgramId<int(int)>* tex_data = 
+              static_cast<optix::callableProgramId<int(int)>*>(texture_buffers->map());
+      
+    optix::Program texture = img.assignTo(g_context);
+    tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+    texture_buffers->unmap();
+    missProgram["sample_texture"]->setBuffer(texture_buffers);
+  }
+  else {
+    missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "environmental_mapping");
+
+    HDR_Texture img(fileName);
+    optix::GeometryInstance foo;
+
+    optix::Buffer texture_buffers = 
+              g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
+
+    optix::callableProgramId<int(int)>* tex_data = 
+              static_cast<optix::callableProgramId<int(int)>*>(texture_buffers->map());
+      
+    optix::Program texture = img.assignTo(g_context);
+    tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+    texture_buffers->unmap();
+    missProgram["sample_texture"]->setBuffer(texture_buffers);
   }
   
   g_context->setMissProgram(/*program ID:*/0, missProgram);
 }
 
 void setExceptionProgram(optix::Context &g_context) {
-  optix::Program exceptionProgram = g_context->createProgramFromPTXString(embedded_exception_program, "exception_program");
+  optix::Program exceptionProgram = 
+            g_context->createProgramFromPTXString(embedded_exception_program, "exception_program");
   g_context->setExceptionProgram(/*program ID:*/0, exceptionProgram);
 }
 

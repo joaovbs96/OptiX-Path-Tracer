@@ -280,6 +280,9 @@ struct Triangle {
            vec2f &aa_uv, // texcoord
            vec2f &bb_uv, 
            vec2f &cc_uv,
+           vec3f &aa_n,
+           vec3f &bb_n, 
+           vec3f &cc_n, 
            int id) : 
            index(i), 
            a(aa), 
@@ -288,16 +291,21 @@ struct Triangle {
            a_uv(aa_uv), 
            b_uv(bb_uv), 
            c_uv(cc_uv),
+           a_n(aa_n),
+           b_n(bb_n),
+           c_n(cc_n),
            material_id(id) {
              e1 = b - a;
              e2 = c - a;
-             normal = unit_vector(cross(e1, e2));
            }
   int index, material_id;
   vec3f a, b, c;
   vec2f a_uv, b_uv, c_uv;
-  vec3f e1, e2, normal;
+  vec3f e1, e2;
+  vec3f a_n, b_n, c_n;
 };
+
+// TODO: use scale transformations
 
 // Triangle constructor
 optix::GeometryInstance createTriangle(const vec3f &a, 
@@ -439,9 +447,22 @@ optix::GeometryInstance Load_Mesh(const std::string &fileName,
       c_uv = vec2f(curMesh.Vertices[ic].TextureCoordinate.X,
                    curMesh.Vertices[ic].TextureCoordinate.Y);
 
+      // get vertex normal of the current triangle
+      vec3f a_n(curMesh.Vertices[ia].Normal.X,
+                curMesh.Vertices[ia].Normal.Y,
+                curMesh.Vertices[ia].Normal.Z);
+      
+      vec3f b_n(curMesh.Vertices[ib].Normal.X,
+                curMesh.Vertices[ib].Normal.Y,
+                curMesh.Vertices[ib].Normal.Z);
+
+      vec3f c_n(curMesh.Vertices[ic].Normal.X,
+                curMesh.Vertices[ic].Normal.Y,
+                curMesh.Vertices[ic].Normal.Z);
+
       int ind = (int)triangles.size();
       std::string name = curMesh.MeshMaterial.name;
-      triangles.push_back(Triangle(ind, a, b, c, a_uv, b_uv, c_uv, material_map[name]));
+      triangles.push_back(Triangle(ind, a, b, c, a_uv, b_uv, c_uv, a_n, b_n, c_n, material_map[name]));
     }
   }
 
@@ -476,12 +497,14 @@ optix::GeometryInstance Load_Mesh(const std::string &fileName,
   e_buffer->unmap();
 
   // create normal_buffer
-  optix::Buffer normal_buffer = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, size);
+  optix::Buffer normal_buffer = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 3 * size);
   float3 *n_map = static_cast<float3*>(normal_buffer->map());
 
   for (int i = 0; i < size; i++){
     printf("Normal Buffer Assigned - %2.f%%  \r", i * 100.f / size);
-    n_map[i] = make_float3(triangles[i].normal.x, triangles[i].normal.y, triangles[i].normal.z);
+    n_map[3 * i] = make_float3(triangles[i].a_n.x, triangles[i].a_n.y, triangles[i].a_n.z);
+    n_map[3 * i + 1] = make_float3(triangles[i].b_n.x, triangles[i].b_n.y, triangles[i].b_n.z);
+    n_map[3 * i + 2] = make_float3(triangles[i].c_n.x, triangles[i].c_n.y, triangles[i].c_n.z);
   }
   printf("\n");
   normal_buffer->unmap();
