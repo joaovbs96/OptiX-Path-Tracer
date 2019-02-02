@@ -51,7 +51,7 @@ RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
 
     if(hit_boundary(in, 0.001f, FLT_MAX, rec)) {
         float cos_theta_max = sqrtf(1.f - radius * radius / vec3f(center - in.origin).squared_length());
-        float solid_angle = 2.f * CUDART_PI_F * (1.f - cos_theta_max);
+        float solid_angle = 2.f * PI_F * (1.f - cos_theta_max);
         return 1.f / solid_angle;
     }
     else
@@ -59,13 +59,13 @@ RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
 }
 
 // Utility function: generate random directions towards the sphere
-inline __device__ float3 random_to_sphere(float distance_squared, DRand48 &rnd) {
+inline __device__ float3 random_to_sphere(float distance_squared, XorShift32 &rnd) {
     float r1 = rnd();
     float r2 = rnd();
     
     float z = 1.f + r2 * (sqrtf(1.f - radius * radius / distance_squared) - 1.f);
     
-    float phi = 2.f * CUDART_PI_F * r1;
+    float phi = 2.f * PI_F * r1;
 
     float x = cosf(phi) * sqrtf(1.f - z * z);
     float y = sinf(phi) * sqrtf(1.f - z * z);
@@ -74,7 +74,7 @@ inline __device__ float3 random_to_sphere(float distance_squared, DRand48 &rnd) 
 }
 
 // Generate program: generate directions relative to the sphere
-RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, DRand48 &rnd) {
+RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
     vec3f direction(center - in.origin);
     float distance_squared = direction.squared_length();
     

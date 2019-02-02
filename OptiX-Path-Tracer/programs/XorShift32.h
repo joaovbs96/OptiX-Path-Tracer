@@ -22,7 +22,7 @@
 // Original class implementation by Ingo Wald
 // Adapted to use Aras Pranckevicius' version of XorShift32
 // source: https://github.com/aras-p/ToyPathTracer/blob/master/Cpp/Source/Maths.cpp#L5-L18
-struct DRand48 {
+struct XorShift32 {
   // initialize the random number generator with a new seed (usually per pixel)
   inline __device__ void init(unsigned int seed = 1) {
     state = seed;

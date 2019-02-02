@@ -19,10 +19,7 @@
 #include <chrono>
 #include <cstdlib>
 
-// Host include
-// Host side constructors and functions. We also have OptiX 
-// Programs(RT_PROGRAM) that act in the device side. Note 
-// that we can use host functions as usual in these headers.
+// Host side constructors and functions
 #include "host_includes/scenes.h"
 //#include "host_includes/scene_parser.h"
 
@@ -33,12 +30,19 @@ inline float clamp(float value) {
 	return value > 1.0f ? 1.0f : value;
 }
 
-void renderFrame(int Nx, int Ny) {
+float renderFrame(int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // Validate settings
   g_context->validate();
 
   // Launch ray generation program
   g_context->launch(/*program ID:*/0, /*launch dimensions:*/Nx, Ny);
+
+  auto t1 = std::chrono::system_clock::now();
+  auto time = std::chrono::duration<float>(t1 - t0).count();
+
+  return (float)time;
 }
 
 optix::Buffer createFrameBuffer(int Nx, int Ny) {
@@ -59,61 +63,63 @@ int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
-  g_context->setStackSize( 5000 ); // keep it under 10k, it's per core
+  g_context->setStackSize( 5000 ); // it's recommended to keep it under 10k, it's per core
   
-  // Set main parameters
-  int Nx = 4480;
-  int Ny = 1080;
-  const int samples = 100;
+  // Main parameters
+  int Nx, Ny;
   int scene = 4;
 
-  // set number of samples
+  // Set number of samples
+  const int samples = 100;
   g_context["samples"]->setInt(samples);
 
-  // Create and set the world and camera
-  Camera camera;
-  optix::Group world;
-
-  //Parser(g_context, camera, "main.json");
-  
-  auto t0 = std::chrono::system_clock::now();
+  // Create and set the world
   std::string output;
   switch(scene) {
-    case 0: 
+    case 0: // Peter Shirley's "In One Weekend" scene
       Nx = Ny = 1080;
-      output = "output/royl/iow-";
-      world = InOneWeekend(g_context, camera, Nx, Ny);
+      output = "output/iow-";
+      InOneWeekend(g_context, Nx, Ny);
       break;
-    case 1:
+    
+    case 1: // Moving Spheres test scene
       Nx = Ny = 1080;
-      output = "output/royl/moving-";
-      world = MovingSpheres(g_context, camera, Nx, Ny);
+      output = "output/moving-";
+      MovingSpheres(g_context, Nx, Ny);
       break;
-    case 2:
+    
+    case 2: // Cornell Box scene
       Nx = Ny = 1080;
-      output = "output/royl/royl-";
-      world = Cornell(g_context, camera, Nx, Ny);
+      output = "output/royl-";
+      Cornell(g_context, Nx, Ny);
       break;
-    case 3:
+    
+    case 3: // Peter Shirley's "The Next Week" final scene
       Nx = Ny = 1080;
-      output = "output/royl/tnw-final-";
-      world = Final_Next_Week(g_context, camera, Nx, Ny);
+      output = "output/tnw-final-";
+      Final_Next_Week(g_context, Nx, Ny);
       break;
-    case 4:
+    
+    case 4: // 3D models test scene
       Nx = Ny = 1080;
       output = "output/3D-models-";
-      world = Test_Scene(g_context, camera, Nx, Ny);
+      Test_Scene(g_context, Nx, Ny);
       break;
+    
+    case 5: // Scene parser
+      Nx = Ny = 1080;
+      output = "output/parsed-";
+      //Parser(g_context, "main.json");
+      printf("Error: Scene parser not yet implemented.\n");
+      system("PAUSE");
+      return 1;
+      break;
+    
     default:
       printf("Error: scene unknown.\n");
       system("PAUSE");
       return 1;
   }
-  camera.set(g_context);
-  g_context["world"]->set(world);
-  auto t1 = std::chrono::system_clock::now();
-  auto sceneTime = std::chrono::duration<double>(t1 - t0).count();
-  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 
   // Create a frame buffer
   optix::Buffer fb = createFrameBuffer(Nx, Ny);
@@ -123,26 +129,22 @@ int main(int ac, char **av) {
   optix::Buffer seed = createSeedBuffer(Nx, Ny);
   g_context["seed"]->set(seed);
 
-  // Check OptiX scene build time
-  auto t2 = std::chrono::system_clock::now();
+  // Build scene
   g_context["run"]->setInt(0);
-  renderFrame(0, 0);
-  auto t3 = std::chrono::system_clock::now();
-  auto buildTime = std::chrono::duration<double>(t3 - t2).count();
+  float buildTime = renderFrame(0, 0);
   printf("Done building OptiX data structures, which took %.2f seconds.\n", buildTime);
 
   // Render scene
-  auto t4 = std::chrono::system_clock::now();
+  float renderTime = 0.f;
   for(int i = 0; i < samples; i++) {
     g_context["run"]->setInt(i);
-    renderFrame(Nx, Ny);
+    renderTime += renderFrame(Nx, Ny);
+    
     printf("Progress: %.2f%%\r", (i * 100.f / samples));
   }
-  auto t5 = std::chrono::system_clock::now();
-  auto renderTime = std::chrono::duration<double>(t5 - t4).count();
   printf("Done rendering, which took %.2f seconds.\n", renderTime);
        
-  // Save buffer to a PNG file
+  // Save frame buffer to a PNG file
 	unsigned char *arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
   const vec3f *cols = (const vec3f *)fb->map();
 

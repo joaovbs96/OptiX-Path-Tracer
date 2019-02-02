@@ -14,9 +14,9 @@ RT_CALLABLE_PROGRAM float buffer_value(pdf_in &in) {
     return sum;
 }
 
-rtBuffer< rtCallableProgramId<float3(pdf_in&, DRand48&)> > generators;
+rtBuffer< rtCallableProgramId<float3(pdf_in&, XorShift32&)> > generators;
 
-RT_CALLABLE_PROGRAM float3 buffer_generate(pdf_in &in, DRand48 &rnd) {
+RT_CALLABLE_PROGRAM float3 buffer_generate(pdf_in &in, XorShift32 &rnd) {
     int index = int(rnd() * size);
     return generators[index](in, rnd);
 }

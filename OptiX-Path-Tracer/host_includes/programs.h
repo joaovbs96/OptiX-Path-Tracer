@@ -10,10 +10,8 @@
 
 #include <string>
 
-/*! the precompiled programs/raygen.cu code (in ptx) that our
-  cmake magic will precompile (to ptx) and link to the generated
-  executable (ie, we can simply declare and use this here as
-  'extern'.  */
+/*! The precompiled programs code (in ptx) that our cmake script 
+will precompile (to ptx) and link to the generated executable */
 extern "C" const char embedded_miss_program[];
 extern "C" const char embedded_exception_program[];
 extern "C" const char embedded_raygen_program[];
@@ -48,13 +46,13 @@ typedef enum {
 void setMissProgram(optix::Context &g_context, Miss_Programs id, std::string fileName="file") {
   optix::Program missProgram;
 
-  if(id == SKY)
+  if(id == SKY) // Blue sky pattern
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "sky");
-  else if(id == DARK)
+  else if(id == DARK) // Dark/Black background
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "dark");
-  else if(id == BOX)
+  else if(id == BOX) //TODO: implement a proper skybox
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "box");
-  else if(id == IMG) {
+  else if(id == IMG) { // Spherical Environmental Mapping
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "environmental_mapping");
 
     Image_Texture img(fileName);
@@ -68,10 +66,12 @@ void setMissProgram(optix::Context &g_context, Miss_Programs id, std::string fil
       
     optix::Program texture = img.assignTo(g_context);
     tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+    
     texture_buffers->unmap();
+    
     missProgram["sample_texture"]->setBuffer(texture_buffers);
   }
-  else {
+  else if(id == HDR) { // FIXME: HDR textures aren't working yet, check advanced samples
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "environmental_mapping");
 
     HDR_Texture img(fileName);
@@ -85,8 +85,13 @@ void setMissProgram(optix::Context &g_context, Miss_Programs id, std::string fil
       
     optix::Program texture = img.assignTo(g_context);
     tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+    
     texture_buffers->unmap();
+    
     missProgram["sample_texture"]->setBuffer(texture_buffers);
+  }
+  else {
+    printf("Error: Miss Program unknown or not yet implemented.\n");
   }
   
   g_context->setMissProgram(/*program ID:*/0, missProgram);

@@ -101,19 +101,19 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
 }
 
 // Generate Programs
-RT_CALLABLE_PROGRAM float3 rect_x_generate(pdf_in &in, DRand48 &rnd) {
+RT_CALLABLE_PROGRAM float3 rect_x_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(k, a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0));
     in.scattered_direction = vec3f(random_point - in.origin.as_float3());
     return in.scattered_direction.as_float3();
 }
 
-RT_CALLABLE_PROGRAM float3 rect_y_generate(pdf_in &in, DRand48 &rnd) {
+RT_CALLABLE_PROGRAM float3 rect_y_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), k, b0 + rnd() * (b1 - b0));
     in.scattered_direction = vec3f(random_point - in.origin.as_float3());
     return in.scattered_direction.as_float3();
 }
 
-RT_CALLABLE_PROGRAM float3 rect_z_generate(pdf_in &in, DRand48 &rnd) {
+RT_CALLABLE_PROGRAM float3 rect_z_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0), k);
     in.scattered_direction = vec3f(random_point - in.origin.as_float3());
     return in.scattered_direction.as_float3();

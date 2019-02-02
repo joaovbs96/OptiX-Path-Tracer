@@ -52,11 +52,11 @@ rtDeclareVariable(float, time1, , );
 
 // PDF callable programs
 rtDeclareVariable(rtCallableProgramId<float(pdf_in&)>, value, , );
-rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, DRand48&)>, generate, , );
+rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, XorShift32&)>, generate, , );
 rtBuffer< rtCallableProgramId<float(pdf_in&)> > scattering_pdf;
 
 struct Camera {
-  static __device__ optix::Ray generateRay(float s, float t, DRand48 &rnd) {
+  static __device__ optix::Ray generateRay(float s, float t, XorShift32 &rnd) {
     const vec3f rd = camera_lens_radius * random_in_unit_disk(rnd);
     const vec3f lens_offset = camera_u * rd.x + camera_v * rd.y;
     const vec3f origin = camera_origin + lens_offset;
@@ -84,7 +84,7 @@ inline __device__ vec3f clamp(const vec3f& c) {
   return temp;
 }
 
-inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
+inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
@@ -105,7 +105,7 @@ inline __device__ vec3f color(optix::Ray &ray, DRand48 &rnd) {
 
     // ray is still alive, and got properly bounced
     else {
-      if(prd.out.is_specular) { // TODO: how to properly deal with isotropics?
+      if(prd.out.is_specular) {
         current_color = prd.out.attenuation * current_color;
 
         ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),
@@ -148,7 +148,7 @@ inline __device__ vec3f de_nan(const vec3f& c) {
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
-  DRand48 rnd; 
+  XorShift32 rnd; 
   
   if(run == 0) {
     unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;

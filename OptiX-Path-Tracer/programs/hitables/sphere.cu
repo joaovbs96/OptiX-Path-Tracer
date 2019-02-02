@@ -34,8 +34,8 @@ inline __device__ void get_sphere_uv(const vec3f& p) {
 	float phi = atan2(p.z, p.x);
 	float theta = asin(p.y); 
 
-	hit_rec.u = 1 - (phi + CUDART_PI_F) / (2 * CUDART_PI_F);
-	hit_rec.v = (theta + CUDART_PI_F / 2) / CUDART_PI_F;
+	hit_rec.u = 1.f - (phi + PI_F) / (2.f * PI_F);
+	hit_rec.v = (theta + PI_F / 2.f) / PI_F;
 }
 
 // Program that performs the ray-sphere intersection

@@ -48,7 +48,7 @@ RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
   if(cosine < 0.f)
     cosine = 0.f;
   
-  return cosine / CUDART_PI_F;
+  return cosine / PI_F;
 }
 
 inline __device__ float3 emitted() {

@@ -25,11 +25,15 @@
 #else
 #endif
 
-#ifndef CUDART_PI_F
-#define CUDART_PI_F 3.141592654f
+#ifndef PI_F
+#define PI_F 3.141592654f
 #endif
 
-#define M_PI   3.14159265358979323846264338327950288
+#ifndef PI_D
+#define PI_D 3.14159265358979323846264338327950288
+#endif
+
+// TODO: look into dropping vec3f and vec2f to make use of float3 and float2 types only
 
 struct vec3f {
   inline __host__ __device__ vec3f() {}

@@ -4,6 +4,8 @@
 #include <optix.h>
 #include <optixu/optixpp.h>
 
+#include <chrono>
+
 #include "../programs/vec.h"
 #include "camera.h"
 #include "materials.h"
@@ -13,7 +15,9 @@
 #include "pdfs.h"
 #include "programs.h"
 
-optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+void InOneWeekend(optix::Context &g_context, int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // configure sampling
   Mixture_PDF mixture(new Cosine_PDF(), new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
 
@@ -29,31 +33,32 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   setMissProgram(g_context, SKY);
   setExceptionProgram(g_context);
 
+  // Set acceleration structure
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   //Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
 
-  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f))), g_context), group, g_context);
+  addChild(Sphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(new Constant_Texture(vec3f(0.5f))), g_context), group, g_context);
 
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
       float choose_mat = rnd();
       vec3f center(a + rnd(), 0.2f, b + rnd());
       if (choose_mat < 0.8f) {
-        addChild(createSphere(center, 0.2f, Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context), group, g_context);
+        addChild(Sphere(center, 0.2f, Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context), group, g_context);
       }
       else if (choose_mat < 0.95f) {
-        addChild(createSphere(center, 0.2f, Metal(new Constant_Texture(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()))), 0.5f*rnd()), g_context), group, g_context);
+        addChild(Sphere(center, 0.2f, Metal(new Constant_Texture(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()))), 0.5f*rnd()), g_context), group, g_context);
       }
       else {
-        addChild(createSphere(center, 0.2f, Dielectric(1.5f), g_context), group, g_context);
+        addChild(Sphere(center, 0.2f, Dielectric(1.5f), g_context), group, g_context);
       }
     }
   }
-  addChild(createSphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
-  addChild(createSphere(vec3f(0.f, 1.f, 0.5f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(-4.f, 1.f, 1.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
+  addChild(Sphere(vec3f(4.f, 1.f, 0.f), 1.f, Metal(new Constant_Texture(vec3f(0.7f, 0.6f, 0.5f)), 0.0f), g_context), group, g_context);
+  addChild(Sphere(vec3f(0.f, 1.f, 0.5f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  addChild(Sphere(vec3f(-4.f, 1.f, 1.f), 1.f, Lambertian(new Constant_Texture(vec3f(0.4f, 0.2f, 0.1f))), g_context), group, g_context);
 
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -63,15 +68,22 @@ optix::Group InOneWeekend(optix::Context &g_context, Camera &camera, int Nx, int
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.1f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);
 
-  return group;
+  g_context["world"]->set(group);
+
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+void MovingSpheres(optix::Context &g_context, int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // configure sampling
   std::vector<PDF*> buffer;
-  buffer.push_back(new Rect_Z_PDF(3.f, 5.f, 1.f, 3.f, -2.f));
+  buffer.push_back(new Rectangle_PDF(3.f, 5.f, 1.f, 3.f, -2.f, Z_AXIS));
   buffer.push_back(new Sphere_PDF(vec3f(4.f, 1.f, 0.f), 1.f));
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
@@ -92,27 +104,28 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
 
   Texture *checker = new Checker_Texture(new Constant_Texture(vec3f(0.2f, 0.3f, 0.1f)), new Constant_Texture(vec3f(0.9f, 0.9f, 0.9f)));
 
-  addChild(createSphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker), g_context), group, g_context);
+  addChild(Sphere(vec3f(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker), g_context), group, g_context);
 
   for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
       float choose_mat = rnd();
       vec3f center(a + rnd(), 0.2f, b + rnd());
       if (choose_mat < 0.8f) {
-        addChild(createMovingSphere(center, center + vec3f(0.f, 0.5f * rnd(), 0.f), 0.f, 1.f, 0.2f, Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context), group, g_context);
+        addChild(Moving_Sphere(center, center + vec3f(0.f, 0.5f * rnd(), 0.f), 0.f, 1.f, 0.2f, Lambertian(new Constant_Texture(vec3f(rnd()*rnd(), rnd()*rnd(), rnd()*rnd()))), g_context), group, g_context);
       }
       else if (choose_mat < 0.95f) {
-        addChild(createSphere(center, 0.2f, Metal(new Constant_Texture(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()))), 0.5f*rnd()), g_context), group, g_context);
+        addChild(Sphere(center, 0.2f, Metal(new Constant_Texture(vec3f(0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()), 0.5f*(1.0f + rnd()))), 0.5f*rnd()), g_context), group, g_context);
       }
       else {
-        addChild(createSphere(center, 0.2f, Dielectric(1.5f), g_context), group, g_context);
+        addChild(Sphere(center, 0.2f, Dielectric(1.5f), g_context), group, g_context);
       }
     }
   }
-  addChild(createSphere(vec3f(4.f, 1.f, 1.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
-  addChild(createSphere(vec3f(0.f, 1.f, 1.5f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
-  addChild(createSphere(vec3f(-4.f, 1.f, 2.f), 1.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
-  addChild(createZRect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
+  addChild(Sphere(vec3f(4.f, 1.f, 1.f), 1.f, Dielectric(1.5f), g_context), group, g_context);
+  addChild(Sphere(vec3f(0.f, 1.f, 1.5f), 1.f, Metal(new Noise_Texture(4.0), 0.0f), g_context), group, g_context);
+  addChild(Sphere(vec3f(-4.f, 1.f, 2.f), 1.f, Lambertian(new Image_Texture("assets/other_textures/map.jpg")), g_context), group, g_context);
+  addChild(Rectangle(3.f, 5.f, 1.f, 3.f, -0.5f, false, Z_AXIS, Diffuse_Light(new Constant_Texture(vec3f(4.f, 4.f, 4.f))), g_context), group, g_context);
+  g_context["world"]->set(group);
 
   // configure camera
   const vec3f lookfrom(13, 2, 3);
@@ -122,15 +135,20 @@ optix::Group MovingSpheres(optix::Context &g_context, Camera &camera, int Nx, in
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.1f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);
 
-  return group;
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+void Cornell(optix::Context &g_context, int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // configure sampling
   std::vector<PDF*> buffer;
-  buffer.push_back(new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
+  buffer.push_back(new Rectangle_PDF(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS));
   buffer.push_back(new Sphere_PDF(vec3f(190.f, 90.f, 190.f), 90.f));
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
@@ -155,40 +173,45 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
   Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
   Material *glass = new Dielectric(1.5f);
-  //Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
-  //Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
+  Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
+  Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
 
-  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
-  addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall
-  addChild(createYRect(213.f, 343.f, 227.f, 332.f, 554.f, true, *light, g_context), group, g_context); // light
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // roof
-  addChild(createYRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *white, g_context), group, g_context); // ground
-  addChild(createZRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *white, g_context), group, g_context); // back walls
-  addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context), group, g_context);// glass sphere
+  addChild(Rectangle(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, *green, g_context), group, g_context); // left wall
+  addChild(Rectangle(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, *red, g_context), group, g_context); // right wall
+  addChild(Rectangle(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, *light, g_context), group, g_context); // light
+  addChild(Rectangle(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, *white, g_context), group, g_context); // roof
+  addChild(Rectangle(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, *white, g_context), group, g_context); // ground
+  addChild(Rectangle(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, *white, g_context), group, g_context); // back walls
+  addChild(Sphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context), group, g_context);// glass sphere
   
   // big box
-  addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *aluminium, g_context),
-                                                                                 15.f, g_context), 
-                                                             vec3f(265.f, 0.f, 295.f), g_context),
-                                                                                group, g_context);
+  addChild(translate(rotate(Box(vec3f(0.f), vec3f(165.f, 330.f, 165.f), *aluminium, g_context),
+                                                                      15.f, Y_AXIS, g_context), 
+                                                          vec3f(265.f, 0.f, 295.f), g_context),
+                                                                              group, g_context);
 
   // small box
-  /*addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 165.f, 165.f), *white, g_context),
-                                                                                -18.f, g_context), 
-                                                              vec3f(130.f, 0.f, 65.f), g_context),
-                                                                                group, g_context);*/
+  /*
+  addChild(translate(rotate(Box(vec3f(0.f), vec3f(165.f, 165.f, 165.f), *white, g_context),
+                                                                  -18.f, Y_AXIS, g_context), 
+                                                        vec3f(130.f, 0.f, 65.f), g_context),
+                                                                          group, g_context);
+  */
 
   // big box
-  /*addChild(translate(rotateY(createVolumeBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f), 0.01f, *black_fog, g_context),
-                                                                                                 15.f, g_context),
-                                                                             vec3f(265.f, 0.f, 295.f), g_context),
-                                                                                                group, g_context);
+  /*
+  addChild(translate(rotate(Volume_Box(vec3f(0.f), vec3f(165.f, 330.f, 165.f), 0.01f, *black_fog, g_context),
+                                                                                    15.f, Y_AXIS, g_context),
+                                                                        vec3f(265.f, 0.f, 295.f), g_context),
+                                                                                          group, g_context);
 
   // small box
-  addChild(translate(rotateY(createVolumeBox(vec3f(0.f), vec3f(165.f, 165.f, 165.f), 0.01f, *white_fog, g_context),
-                                                                                                 -18.f, g_context), 
-                                                                               vec3f(130.f, 0.f, 65.f), g_context),
-                                                                                                group, g_context);*/
+  addChild(translate(rotate(Volume_Box(vec3f(0.f), vec3f(165.f, 165.f, 165.f), 0.01f, *white_fog, g_context),
+                                                                                  -18.f, Y_AXIS, g_context), 
+                                                                        vec3f(130.f, 0.f, 65.f), g_context),
+                                                                                          group, g_context);
+  */
+  g_context["world"]->set(group);
   
   // configure camera
   const vec3f lookfrom(278.f, 278.f, -800.f);
@@ -198,15 +221,20 @@ optix::Group Cornell(optix::Context &g_context, Camera &camera, int Nx, int Ny) 
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);
 
-  return group;
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+void Final_Next_Week(optix::Context &g_context, int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // configure sampling
   std::vector<PDF*> buffer;
-  buffer.push_back(new Rect_Y_PDF(113.f, 443.f, 127.f, 432.f, 554.f));
+  buffer.push_back(new Rectangle_PDF(113.f, 443.f, 127.f, 432.f, 554.f, Y_AXIS));
   buffer.push_back(new Sphere_PDF(vec3f(260.f, 150.f, 45.f), 50.f));
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
@@ -236,54 +264,56 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
       float x1 = x0 + w;
       float y1 = 100 * (rnd() + 0.01f);
       float z1 = z0 + w;
-      addChild(createBox(vec3f(x0, y0, z0), vec3f(x1, y1, z1), *ground, g_context), group, g_context);
+      addChild(Box(vec3f(x0, y0, z0), vec3f(x1, y1, z1), *ground, g_context), group, g_context);
     }
   }
 
   // light
   Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  addChild(createYRect(113.f, 443.f, 127.f, 432.f, 554.f, true, *light, g_context), group, g_context);
+  addChild(Rectangle(113.f, 443.f, 127.f, 432.f, 554.f, true, Y_AXIS, *light, g_context), group, g_context);
 
   // brown moving sphere
   vec3f center(400.f, 400.f, 200.f);
   Material *brown = new Lambertian(new Constant_Texture(vec3f(0.7f, 0.3f, 0.1f)));
-  addChild(createMovingSphere(center, center + vec3f(30.f, 0.f, 0.f), 0.f, 1.f, 50.f, *brown, g_context), group, g_context);
+  addChild(Moving_Sphere(center, center + vec3f(30.f, 0.f, 0.f), 0.f, 1.f, 50.f, *brown, g_context), group, g_context);
 
   // glass sphere
-  addChild(createSphere(vec3f(260.f, 150.f, 45.f), 50.f, Dielectric(1.5), g_context), group, g_context);
+  addChild(Sphere(vec3f(260.f, 150.f, 45.f), 50.f, Dielectric(1.5), g_context), group, g_context);
 
   // metal sphere
-  addChild(createSphere(vec3f(0.f, 150.f, 145.f), 50.f, Metal(new Constant_Texture(vec3f(0.8f, 0.8f, 0.9f)), 10.f), g_context), group, g_context);
+  addChild(Sphere(vec3f(0.f, 150.f, 145.f), 50.f, Metal(new Constant_Texture(vec3f(0.8f, 0.8f, 0.9f)), 10.f), g_context), group, g_context);
 
   // blue sphere
   // glass sphere
-  addChild(createSphere(vec3f(360.f, 150.f, 45.f), 70.f, Dielectric(1.5), g_context), group, g_context);
+  addChild(Sphere(vec3f(360.f, 150.f, 45.f), 70.f, Dielectric(1.5), g_context), group, g_context);
   // blue fog
   Material *blue_fog = new Isotropic(new Constant_Texture(vec3f(0.2f, 0.4f, 0.9f)));
-  addChild(createVolumeSphere(vec3f(360.f, 150.f, 45.f), 70.f, 0.2f, *blue_fog, g_context), group, g_context);
+  addChild(Volume_Sphere(vec3f(360.f, 150.f, 45.f), 70.f, 0.2f, *blue_fog, g_context), group, g_context);
 
   // fog
   Material *fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
-  addChild(createVolumeSphere(vec3f(0.f), 5000.f, 0.0001f, *fog, g_context), group, g_context);
+  addChild(Volume_Sphere(vec3f(0.f), 5000.f, 0.0001f, *fog, g_context), group, g_context);
 
   // earth
-  addChild(createSphere(vec3f(400.f, 200.f, 400.f), 100.f, Lambertian(new Image_Texture("assets/map.jpg")), g_context), group, g_context);
+  addChild(Sphere(vec3f(400.f, 200.f, 400.f), 100.f, Lambertian(new Image_Texture("assets/other_textures/map.jpg")), g_context), group, g_context);
 
   // Perlin sphere
-  addChild(createSphere(vec3f(220.f, 280.f, 300.f), 80.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
+  addChild(Sphere(vec3f(220.f, 280.f, 300.f), 80.f, Lambertian(new Noise_Texture(0.1f)), g_context), group, g_context);
 
   // group of small spheres
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
   std::vector<optix::GeometryInstance> d_list;
   for(int j = 0; j < 1000; j++) {
-    d_list.push_back(createSphere(vec3f(165 * rnd(), 165 * rnd(), 165 * rnd()), 10.f, *white, g_context));
+    d_list.push_back(Sphere(vec3f(165 * rnd(), 165 * rnd(), 165 * rnd()), 10.f, *white, g_context));
   }
 
   optix::GeometryGroup box = g_context->createGeometryGroup();
   box->setAcceleration(g_context->createAcceleration("Trbvh"));
   for (int i = 0; i < d_list.size(); i++)
     box->addChild(d_list[i]);
-  addChild(translate(rotateY(box, 15.f, g_context), vec3f(-100.f, 270.f, 395.f), g_context), group, g_context);
+  addChild(translate(rotate(box, 15.f, Y_AXIS, g_context), vec3f(-100.f, 270.f, 395.f), g_context), group, g_context);
+  
+  g_context["world"]->set(group);
 
   // configure camera
   const vec3f lookfrom(478.f, 278.f, -600.f);
@@ -293,14 +323,18 @@ optix::Group Final_Next_Week(optix::Context &g_context, Camera &camera, int Nx, 
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);
 
-  return group;
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int Ny) {
+void Test_Scene(optix::Context &g_context, int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
   // configure sampling
-  //Mixture_PDF mixture(new Cosine_PDF(), new Rect_Y_PDF(213.f, 343.f, 227.f, 332.f, 554.f));
   Cosine_PDF mixture;
 
   // add material PDFs
@@ -331,23 +365,21 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   Material *floor = new Lambertian(new Image_Texture("assets/other_textures/wood.jpg"));
   
   // Test model
-  /*float scale = 1400.f;
-  optix::GeometryInstance model = Load_Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", scale);
+  float scale_factor = 1400.f;
+  optix::GeometryInstance model = Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.0f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(rotateY(model, 180.f, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);*/
+    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);
 
   // Lucy
-  float scale = 150.f;
-  optix::GeometryInstance model = Load_Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", scale);
+  /*float scale_factor = 150.f;
+  optix::GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", 1.f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(model, vec3f(0.f, -550.f, 0.f), g_context), group, g_context);
+    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -550.f, 0.f), g_context), group, g_context);*/
 
-  //addChild(createSphere(vec3f(0.f), 1000.f, Lambertian(new Image_Texture("assets/sphere_maps/ennis.hdr")), g_context), group, g_context);
-  
   // configure camera
   const vec3f lookfrom(0.f, 0.f, -800.f);
   const vec3f lookat(0.f, 0.f, 0.f);
@@ -356,12 +388,13 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.0f);
   const float dist(0.8f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);
 
   // Sponza
   /*float scale = 0.5f;
-  optix::GeometryInstance model = Load_Mesh("sponza.obj", g_context, *white, false, "assets/sponza/", scale);
-  addChild(translate(rotateY(model, 90.f, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);
+  optix::GeometryInstance model = Mesh("sponza.obj", g_context, *white, false, "assets/sponza/", scale);
+  addChild(translate(rotate(model, 90.f, Y_AXIS, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);
   
   // configure camera
   const vec3f lookfrom(278.f, 278.f, -800.f);
@@ -371,9 +404,14 @@ optix::Group Test_Scene(optix::Context &g_context, Camera &camera, int Nx, int N
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
-  camera = Camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);*/
+  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+  camera.set(g_context);*/
 
-  return group;
+  g_context["world"]->set(group);
+
+  auto t1 = std::chrono::system_clock::now();
+  auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
+  printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
 #endif

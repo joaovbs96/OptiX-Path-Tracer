@@ -1,6 +1,13 @@
 #include <optix_world.h>
 #include "../prd.h"
 
+// Triangle intersection function from McGuire's Graphics Codex:
+// http://graphicscodex.com
+
+// Shading Normal interpolation:
+// https://computergraphics.stackexchange.com/q/5486
+// https://computergraphics.stackexchange.com/q/5006
+
 // mesh buffers
 rtDeclareVariable(int, single_mat, , );
 rtBuffer<float3, 1>  vertex_buffer; // x3 number of faces
@@ -58,11 +65,11 @@ RT_PROGRAM void mesh_intersection(int index) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
+      // Interpolate shading normal
       float3 a_n = normal_buffer[3 * index];
       float3 b_n = normal_buffer[3 * index + 1];
       float3 c_n = normal_buffer[3 * index + 2];
-      float3 normal = (a_n * (1.0 - u - v) + b_n * u + c_n * v); // TODO: test it out
-      // float3 normal = normal_buffer[index];
+      float3 normal = (a_n * (1.0 - u - v) + b_n * u + c_n * v);
 
       hit_rec.normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
@@ -82,22 +89,18 @@ RT_PROGRAM void mesh_intersection(int index) {
 // returns the bounding box of the pid'th primitive in this geometry.
 RT_PROGRAM void mesh_bounds(int index, float result[6]) {
   optix::Aabb* aabb = (optix::Aabb*)result;
-  //int index = index_buffer[pid];
   float3 a = vertex_buffer[3 * index];
   float3 b = vertex_buffer[3 * index + 1];
   float3 c = vertex_buffer[3 * index + 2];
 
-  // find min and max iterating through vertices
-  // min(minX, minY, minZ)
-  float minX = ffmin(ffmin(a.x, b.x), c.x);
-  float minY = ffmin(ffmin(a.y, b.y), c.y);
-  float minZ = ffmin(ffmin(a.z, b.z), c.z);
-    
-  // max(maxX, maxY, maxZ)
-  float maxX = ffmax(ffmax(a.x, b.x), c.x);
-  float maxY = ffmax(ffmax(a.y, b.y), c.y);
-  float maxZ = ffmax(ffmax(a.z, b.z), c.z);
+  float3 e1 = e_buffer[2 * index];
+  float3 e2 = e_buffer[2 * index + 1];
+  const float area = vec3f(cross(e1, e2)).length();
 
-  aabb->m_min = make_float3(minX - 0.0001f, minY - 0.0001f, minZ - 0.0001f);
-  aabb->m_max = make_float3(maxX + 0.0001f, maxY + 0.0001f, maxZ + 0.0001f);
+  if(area > 0.0f && !isinf(area)) {
+    aabb->m_min = fminf( fminf( a, b), c );
+    aabb->m_max = fmaxf( fmaxf( a, b), c );
+  } else {
+    aabb->invalidate();
+  }
 }

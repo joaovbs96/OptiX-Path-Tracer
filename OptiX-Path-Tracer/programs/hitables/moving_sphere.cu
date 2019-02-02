@@ -37,8 +37,8 @@ inline __device__ void get_sphere_uv(const vec3f& p) {
 	float phi = atan2(p.z, p.x);
 	float theta = asin(p.y); 
 
-	hit_rec.u = 1 - (phi + CUDART_PI_F) / (2 * CUDART_PI_F);
-	hit_rec.v = (theta + CUDART_PI_F / 2) / CUDART_PI_F;
+	hit_rec.u = 1 - (phi + PI_F) / (2 * PI_F);
+	hit_rec.v = (theta + PI_F / 2) / PI_F;
 }
 
 __device__ float3 center(float time) {

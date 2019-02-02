@@ -17,7 +17,7 @@
 #pragma once
 
 #include "vec.h"
-#include "DRand48.h"
+#include "XorShift32.h"
 
 typedef enum {
   Lambertian,
@@ -51,7 +51,7 @@ struct Hit_Record {
   carry recursion state, which in this case are recursion depth and random number state */
 struct PerRayData {
   struct {
-    DRand48 *randState;
+    XorShift32 *randState;
     float time;
   } in;
   struct {

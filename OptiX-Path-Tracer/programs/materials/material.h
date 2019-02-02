@@ -21,7 +21,7 @@
 
 #include "../prd.h"
 #include "../pdfs/pdf.h"
-#include "../DRand48.h"
+#include "../XorShift32.h"
 #include "../sampling.h"
 
 
