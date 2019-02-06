@@ -60,6 +60,17 @@ optix::Buffer createSeedBuffer(int Nx, int Ny) {
 }
 
 int main(int ac, char **av) {
+   // XXX Presently, the execution strategy mode has to be set very early on,
+   //     otherwise the API call will return without error, but the OptiX
+   //     runtime will ignore the state change and continue with the existing
+   //     execution strategy (e.g. the default of '0' if set too late...)
+   int rtxonoff = 1;
+   if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(rtxonoff), &rtxonoff) != RT_SUCCESS) {
+     printf("Error setting RT_GLOBAL_ATTRIBUTE_ENABLE_RTX!!!\n");
+   } else {
+    printf("OptiX RTX execution mode is %s.\n", (rtxonoff) ? "on" : "off");
+  }
+
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
@@ -67,10 +78,10 @@ int main(int ac, char **av) {
   
   // Main parameters
   int Nx, Ny;
-  int scene = 4;
+  int scene = 2;
 
   // Set number of samples
-  const int samples = 100;
+  const int samples = 400;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world

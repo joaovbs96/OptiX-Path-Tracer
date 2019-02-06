@@ -30,6 +30,8 @@
 
 # Our initial guess will be within the SDK.
 
+#[[
+
 if (WIN32)
 #		set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.1.0" CACHE PATH "Path to OptiX installed location.")
 	find_path(searched_OptiX_INSTALL_DIR
@@ -46,6 +48,10 @@ if (WIN32)
 else()
   set(OptiX_INSTALL_DIR $ENV{OptiX_INSTALL_DIR} CACHE PATH "Path to OptiX installed location.")
 endif()
+
+#]]
+
+set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0" CACHE PATH "Path to OptiX installed location.")
 
 # The distribution contains both 32 and 64 bit libraries.  Adjust the library
 # search path based on the bit-ness of the build.  (i.e. 64: bin64, lib64; 32:
@@ -78,9 +84,17 @@ macro(OPTIX_find_api_library name version)
   endif()
 endmacro()
 
+#[[
+
 OPTIX_find_api_library(optix 51)
 OPTIX_find_api_library(optixu 1)
 OPTIX_find_api_library(optix_prime 1)
+
+#]]
+
+OPTIX_find_api_library(optix 6.0.0)
+OPTIX_find_api_library(optixu 6.0.0)
+OPTIX_find_api_library(optix_prime 6.0.0)
 
 # Include
 find_path(OptiX_INCLUDE

@@ -128,6 +128,15 @@ inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
                               /* tmax     : */ RT_DEFAULT_MAX);
       }
     }
+
+    // Russian Roulette
+    float p = max_component(current_color);
+    if(depth > 10) {
+      if(rnd() >= p)
+        return current_color;
+      else
+        current_color *= 1/p;
+    }
   }
   
   // recursion did not terminate - cancel it

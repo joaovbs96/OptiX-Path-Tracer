@@ -358,27 +358,23 @@ void Test_Scene(optix::Context &g_context, int Nx, int Ny) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
-  Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
   Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
-  Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
-  Material *glass = new Dielectric(1.5f);
-  Material *floor = new Lambertian(new Image_Texture("assets/other_textures/wood.jpg"));
   
   // Test model
-  float scale_factor = 1400.f;
+  /*float scale_factor = 1400.f;
   optix::GeometryInstance model = Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.0f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);
+    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);*/
 
   // Lucy
-  /*float scale_factor = 150.f;
+  float scale_factor = 150.f;
   optix::GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", 1.f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -550.f, 0.f), g_context), group, g_context);*/
+    addChild(translate(scale(model, vec3f(scale_factor), g_context), vec3f(0.f, -550.f, 0.f), g_context), group, g_context);
 
   // configure camera
   const vec3f lookfrom(0.f, 0.f, -800.f);
