@@ -344,12 +344,9 @@ void Test_Scene(optix::Context &g_context, int Nx, int Ny) {
   f_data[ 1 ] = optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
-  // Set the ray generation program
+  // Set the ray generation and miss programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  
-  // Set the miss program w/ Environmental Mapping
-  // Photo by shontz photography on Unsplash - https://unsplash.com/photos/y4v96Sy2ne4
-  setMissProgram(g_context, IMG, "assets/other_textures/shontz.jpg");
+  setMissProgram(g_context, IMG, "assets/other_textures/stone.jpg");
 
   // Set the exception program
   setExceptionProgram(g_context);
@@ -357,24 +354,32 @@ void Test_Scene(optix::Context &g_context, int Nx, int Ny) {
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
+  Material *white = new Lambertian(new Constant_Texture(vec3f(0.f, 0.73f, 0.73f)));
   Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
   
   // Test model
-  /*float scale_factor = 1400.f;
+  float scale_factor = 1400.f;
   optix::GeometryInstance model = Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.0f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);*/
+    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -300.f, 0.f), g_context), group, g_context);
 
   // Lucy
-  float scale_factor = 150.f;
+  /*float scale_factor = 150.f;
   optix::GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/", 1.f);
   if(model == NULL)
     system("PAUSE");
   else
-    addChild(translate(scale(model, vec3f(scale_factor), g_context), vec3f(0.f, -550.f, 0.f), g_context), group, g_context);
+    addChild(translate(scale(model, vec3f(scale_factor), g_context), vec3f(0.f, -550.f, 0.f), g_context), group, g_context);*/
+
+  // Dragon
+  /*float scale_factor = 400.f;
+  optix::GeometryInstance model = Mesh("dragon_cubic.obj", g_context, *white, true, "assets/dragon/", 1.f);
+  if(model == NULL)
+    system("PAUSE");
+  else
+    addChild(translate(rotate(scale(model, vec3f(scale_factor), g_context), 180.f, Y_AXIS, g_context), vec3f(0.f, -350.f, 200.f), g_context), group, g_context);*/
 
   // configure camera
   const vec3f lookfrom(0.f, 0.f, -800.f);
@@ -390,10 +395,10 @@ void Test_Scene(optix::Context &g_context, int Nx, int Ny) {
   // Sponza
   /*float scale = 0.5f;
   optix::GeometryInstance model = Mesh("sponza.obj", g_context, *white, false, "assets/sponza/", scale);
-  addChild(translate(rotate(model, 90.f, Y_AXIS, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);
+  addChild(translate(rotate(model, 90.f, Y_AXIS, g_context), vec3f(300.f, 5.f, -400.f), g_context), group, g_context);*/
   
   // configure camera
-  const vec3f lookfrom(278.f, 278.f, -800.f);
+  /*const vec3f lookfrom(278.f, 278.f, -800.f);
   const vec3f lookat(278.f, 278.f, 0.f);
   const vec3f up(0.f, 1.f, 0.f);
   const float fovy(40.0f);

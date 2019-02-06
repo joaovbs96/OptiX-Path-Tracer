@@ -54,6 +54,8 @@ add_executable(OptiX-Path-Tracer
   host_includes/camera.h
   lib/stb_image.h
   lib/stb_image_write.h
+  lib/hdr_reader.h
+  lib/hdr_reader.cpp
   main.cpp
   # embedded cuda kernels:
   ${embedded_exception_program}

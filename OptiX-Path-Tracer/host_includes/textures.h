@@ -13,6 +13,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb_image_write.h"
 
+#include "../lib/hdr_reader.h"
+
 // TODO: code cleanup and documentation
 
 float rnd() {
@@ -170,40 +172,39 @@ struct Image_Texture : public Texture{
   const std::string fileName;
 };
 
-// FIXME: isn't properly working yet. Check HDR loader from sutil.
+// FIXME: still needs proper tone mapping to be useable?
 struct HDR_Texture : public Texture{
   HDR_Texture(const std::string f) : fileName(f) {}
 
   optix::TextureSampler loadHDRTexture(optix::Context context, const std::string fileName) const {
     optix::TextureSampler sampler = context->createTextureSampler();
     sampler->setWrapMode(0, RT_WRAP_REPEAT);
-    sampler->setWrapMode(1, RT_WRAP_REPEAT);
-    sampler->setWrapMode(2, RT_WRAP_REPEAT);
+    sampler->setWrapMode(1, RT_WRAP_CLAMP_TO_EDGE);
     sampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
     sampler->setReadMode(RT_TEXTURE_READ_NORMALIZED_FLOAT);
     sampler->setMaxAnisotropy(1.0f);
     sampler->setMipLevelCount(1u);
     sampler->setArraySize(1u);
     
-    int nx, ny, nn;
-    float *tex_data = stbi_loadf((char*)fileName.c_str(), &nx, &ny, &nn, 0);
+    HdrInfo info;
+    unsigned char * tex_data = loadHdr((char*)fileName.c_str(), &info, /*convertToFloat=*/true);
 
-    optix::Buffer buffer = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT4, nx, ny);
+    optix::Buffer buffer = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT4, info.width, info.height);
     float* buffer_data = static_cast<float*>( buffer->map() );
 
-    for (int i = 0; i < nx; ++i)
-      for (int j = 0; j < ny; ++j) {
-        int bindex = (j * nx + i) * 4;
-        int iindex = ((ny - j - 1) * nx + i) * 4;
+    for (int i = 0; i < info.width; ++i)
+      for (int j = 0; j < info.height; ++j) {
+        int bindex = (j * info.width + i) * 4;
+        int iindex = ((info.height - j - 1) * info.width + i) * 4;
 
-        const int HDR_EXPON_BIAS = 128;
-        float s = (float)ldexp(1.0, (int(tex_data[iindex + 3]) - (HDR_EXPON_BIAS + 8)));
-        s *= 1.0f / 1.f;
-
-        buffer_data[bindex + 0] = (tex_data[iindex + 0] + 0.5f)*s;
-        buffer_data[bindex + 1] = (tex_data[iindex + 1] + 0.5f)*s;
-        buffer_data[bindex + 2] = (tex_data[iindex + 2] + 0.5f)*s;
-        buffer_data[bindex + 3] = tex_data[iindex + 3];
+        buffer_data[bindex + 0] = ((float)tex_data[iindex + 0]);
+        buffer_data[bindex + 1] = ((float)tex_data[iindex + 1]);
+        buffer_data[bindex + 2] = ((float)tex_data[iindex + 2]);
+        buffer_data[bindex + 3] = ((float)tex_data[iindex + 3]);
+        std::cout << buffer_data[bindex + 0] << ";"
+                  << buffer_data[bindex + 1] << ";"
+                  << buffer_data[bindex + 2] << ";"
+                  << buffer_data[bindex + 3] << std::endl;
       }
 
     buffer->unmap();

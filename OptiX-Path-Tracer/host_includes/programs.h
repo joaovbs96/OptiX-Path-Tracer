@@ -71,7 +71,7 @@ void setMissProgram(optix::Context &g_context, Miss_Programs id, std::string fil
     
     missProgram["sample_texture"]->setBuffer(texture_buffers);
   }
-  else if(id == HDR) { // FIXME: HDR textures aren't working yet, check advanced samples
+  else if(id == HDR) {
     missProgram = g_context->createProgramFromPTXString(embedded_miss_program, "environmental_mapping");
 
     HDR_Texture img(fileName);

@@ -36,7 +36,7 @@ rtBuffer<float3, 2> fb; // float3 color frame buffer
 rtBuffer<unsigned int, 2> seed; // uint seed buffer
 
 rtDeclareVariable(int, samples, , ); // number of samples
-rtDeclareVariable(int, run, , ); // current sample
+rtDeclareVariable(int, frame, , ); // current frame
 
 rtDeclareVariable(rtObject, world, , ); // scene variable
 
@@ -157,19 +157,18 @@ inline __device__ vec3f de_nan(const vec3f& c) {
   function parameters, but gets its paramters throught the 'pixelID'
   and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
-  XorShift32 rnd; 
-  
-  if(run == 0) {
+  XorShift32 rnd;
+
+  // init frame buffer and rng
+  if(frame == 0) {
     unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;
     rnd.init(init_index);
-  }
-  else{
-    rnd.state = seed[pixelID];
-  }
 
-  // initiate the color buffer if needed
-  if(run == 0)
+    // initiate the color buffer
     fb[pixelID] = make_float3(0.f, 0.f, 0.f);
+  }
+  else
+    rnd.state = seed[pixelID];
 
   float u = float(pixelID.x + rnd()) / float(launchDim.x);
   float v = float(pixelID.y + rnd()) / float(launchDim.y);

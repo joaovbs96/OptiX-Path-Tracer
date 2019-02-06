@@ -315,8 +315,8 @@ optix::GeometryInstance Triangle(const vec3f &a,
   const vec3f e2(c - a);
   geometry["e2"]->setFloat(e2.x, e2.y, e2.z);
 
-  // TODO: pass vertex normal to triangle primitive and add interpolation
-  const vec3f normal(unit_vector(cross(e1, e2))); // Geometric normal
+  // Geometric normal
+  const vec3f normal(unit_vector(cross(e1, e2))); 
   geometry["normal"]->setFloat(normal.x, normal.y, normal.z);
 
   // Create GeometryInstance

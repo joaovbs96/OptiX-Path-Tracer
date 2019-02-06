@@ -60,28 +60,26 @@ optix::Buffer createSeedBuffer(int Nx, int Ny) {
 }
 
 int main(int ac, char **av) {
-   // XXX Presently, the execution strategy mode has to be set very early on,
-   //     otherwise the API call will return without error, but the OptiX
-   //     runtime will ignore the state change and continue with the existing
-   //     execution strategy (e.g. the default of '0' if set too late...)
-   int rtxonoff = 1;
-   if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(rtxonoff), &rtxonoff) != RT_SUCCESS) {
-     printf("Error setting RT_GLOBAL_ATTRIBUTE_ENABLE_RTX!!!\n");
-   } else {
-    printf("OptiX RTX execution mode is %s.\n", (rtxonoff) ? "on" : "off");
-  }
+  // Set RTX global attribute
+  // Should be done before creating the context
+  const int RTX = true;
+  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX) != RT_SUCCESS)
+    printf("Error setting RTX mode. \n");
+  else
+    printf("OptiX RTX execution mode is %s.\n", (RTX) ? "on" : "off");
 
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
   g_context->setStackSize( 5000 ); // it's recommended to keep it under 10k, it's per core
+  // TODO: investigate new OptiX stack size API(sets number of recursions rather than bytes)
   
   // Main parameters
   int Nx, Ny;
-  int scene = 2;
+  int scene = 4;
 
   // Set number of samples
-  const int samples = 400;
+  const int samples = 100;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -141,14 +139,14 @@ int main(int ac, char **av) {
   g_context["seed"]->set(seed);
 
   // Build scene
-  g_context["run"]->setInt(0);
+  g_context["frame"]->setInt(0);
   float buildTime = renderFrame(0, 0);
   printf("Done building OptiX data structures, which took %.2f seconds.\n", buildTime);
 
   // Render scene
   float renderTime = 0.f;
   for(int i = 0; i < samples; i++) {
-    g_context["run"]->setInt(i);
+    g_context["frame"]->setInt(i);
     renderTime += renderFrame(Nx, Ny);
     
     printf("Progress: %.2f%%\r", (i * 100.f / samples));

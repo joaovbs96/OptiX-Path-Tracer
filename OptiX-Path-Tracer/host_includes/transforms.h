@@ -16,7 +16,6 @@ typedef enum{
   Z_AXIS
 } AXIS;
 
-// TODO: implement proper exceptions
 // debug functions to check if children are NULL
 void check_child(optix::GeometryInstance gi) {
   if(!gi) { // if NULL
