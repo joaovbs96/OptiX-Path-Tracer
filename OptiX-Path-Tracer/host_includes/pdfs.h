@@ -1,8 +1,6 @@
 #ifndef PDFSH
 #define PDFSH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
 #include <random>
 
 #include "../programs/vec.h"
@@ -132,14 +130,14 @@ struct Mixture_PDF : public PDF {
 };
 
 struct Sphere_PDF : public PDF {
-    Sphere_PDF(const vec3f c, const float r) : center(c), radius(r) {}
+    Sphere_PDF(const float3 c, const float r) : center(c), radius(r) {}
 
     virtual optix::Program assignGenerate(optix::Context &g_context) const override {
         // create PDF generate callable program
         optix::Program generate = g_context->createProgramFromPTXString(embedded_sphere_pdf_programs, "sphere_generate");
 
         // Basic parameters
-        generate["center"]->set3fv(&center.x);
+        generate["center"]->setFloat(center.x, center.y, center.z);
         generate["radius"]->setFloat(radius);
 
         return generate;
@@ -150,14 +148,14 @@ struct Sphere_PDF : public PDF {
         optix::Program value = g_context->createProgramFromPTXString(embedded_sphere_pdf_programs, "sphere_value");
 
         // Basic parameters
-        value["center"]->set3fv(&center.x);
+        value["center"]->setFloat(center.x, center.y, center.z);
         value["radius"]->setFloat(radius);
         
         return value;
     }
 
     float radius;
-    vec3f center;
+    float3 center;
 };
 
 struct Buffer_PDF : public PDF {

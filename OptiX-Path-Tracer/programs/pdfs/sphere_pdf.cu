@@ -6,7 +6,7 @@ rtDeclareVariable(float,  radius, , );
 
 // Boundary intersection function
 inline __device__ bool hit_boundary(pdf_in &in, const float tmin, const float tmax, pdf_rec &rec) {
-    const vec3f oc = in.origin - vec3f(center);
+    const float3 oc = in.origin - center;
     
     // if the ray hits the sphere, the following equation has two roots:
     // tdot(B, B) + 2tdot(B,A-C) + dot(A-C,A-C) - R = 0
@@ -50,7 +50,7 @@ RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
     pdf_rec rec;
 
     if(hit_boundary(in, 0.001f, FLT_MAX, rec)) {
-        float cos_theta_max = sqrtf(1.f - radius * radius / vec3f(center - in.origin).squared_length());
+        float cos_theta_max = sqrtf(1.f - radius * radius / squared_length(center - in.origin));
         float solid_angle = 2.f * PI_F * (1.f - cos_theta_max);
         return 1.f / solid_angle;
     }
@@ -75,13 +75,13 @@ inline __device__ float3 random_to_sphere(float distance_squared, XorShift32 &rn
 
 // Generate program: generate directions relative to the sphere
 RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
-    vec3f direction(center - in.origin);
-    float distance_squared = direction.squared_length();
+    float3 direction = center - in.origin;
+    float distance_squared = squared_length(direction);
     
     in.uvw.build_from_w(direction);
 
-    vec3f temp(random_to_sphere(distance_squared, rnd));
+    float3 temp = random_to_sphere(distance_squared, rnd);
     in.scattered_direction = in.uvw.local(temp);
 
-    return in.scattered_direction.as_float3();
+    return in.scattered_direction;
 }

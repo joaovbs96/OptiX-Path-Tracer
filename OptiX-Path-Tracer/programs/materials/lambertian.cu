@@ -35,7 +35,7 @@ rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
   we do not need this here */
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = false;
-  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   prd.out.origin = hit_rec.p;
   prd.out.normal = hit_rec.normal;
 

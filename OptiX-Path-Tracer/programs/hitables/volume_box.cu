@@ -1,4 +1,3 @@
-#include <optix_world.h>
 #include "../prd.h"
 
 /*! the parameters that describe each individual sphere geometry */
@@ -57,10 +56,10 @@ RT_PROGRAM void hit_volume(int pid) {
         rec1 = 0.f;
 
       float distance_inside_boundary = rec2 - rec1;
-      distance_inside_boundary *= vec3f(ray.direction).length();
+      distance_inside_boundary *= length(ray.direction);
 
       float hit_distance = -(1.f / density) * log((*prd.in.randState)());
-      float temp = rec1 + hit_distance / vec3f(ray.direction).length();
+      float temp = rec1 + hit_distance / length(ray.direction);
 
       if (rtPotentialIntersection(temp)) {
         hit_rec.distance = temp;

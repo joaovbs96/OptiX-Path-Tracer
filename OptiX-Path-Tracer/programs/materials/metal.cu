@@ -31,11 +31,11 @@ rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 rtDeclareVariable(float,  fuzz,   , );
 
 inline __device__ bool scatter(const optix::Ray &ray_in) {
-  vec3f reflected = reflect(unit_vector(ray_in.direction), hit_rec.normal);
+  float3 reflected = reflect(unit_vector(ray_in.direction), hit_rec.normal);
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
   prd.out.direction = reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
-  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   prd.out.normal = hit_rec.normal;
   return true;
 }

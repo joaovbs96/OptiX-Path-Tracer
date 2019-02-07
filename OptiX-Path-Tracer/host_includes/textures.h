@@ -1,8 +1,6 @@
 #ifndef TEXTURESH
 #define TEXTURESH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
 #include <random>
 
 #include "../programs/vec.h"
@@ -35,7 +33,7 @@ struct Texture {
 };
 
 struct Constant_Texture : public Texture{
-  Constant_Texture(const vec3f &c) : color(c) {}
+  Constant_Texture(const float3 &c) : color(c) {}
   
   virtual optix::Program assignTo(optix::Context &g_context) const override {
     optix::Program textProg = g_context->createProgramFromPTXString(embedded_constant_texture_programs, "sample_texture");
@@ -45,7 +43,7 @@ struct Constant_Texture : public Texture{
     return textProg;
   }
   
-  const vec3f color;
+  const float3 color;
 };
 
 struct Checker_Texture : public Texture{

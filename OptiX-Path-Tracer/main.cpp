@@ -155,7 +155,7 @@ int main(int ac, char **av) {
        
   // Save frame buffer to a PNG file
 	unsigned char *arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
-  const vec3f *cols = (const vec3f *)fb->map();
+  const float3 *cols = (const float3 *)fb->map();
 
 	for (int j = Ny - 1; j >= 0; j--)
 		for (int i = 0; i < Nx; i++) {
@@ -163,10 +163,10 @@ int main(int ac, char **av) {
 			int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
       // average matrix of samples
-      vec3f col = cols[col_index] / float(samples);
+      float3 col = cols[col_index] / float(samples);
   
       // gamma correction
-      col = vec3f(sqrt(col.x), sqrt(col.y), sqrt(col.z));
+      col = make_float3(sqrt(col.x), sqrt(col.y), sqrt(col.z));
 
       // from float to RGB [0, 255]
 			arr[pixel_index + 0] = int(255.99 * clamp(col.x)); // R

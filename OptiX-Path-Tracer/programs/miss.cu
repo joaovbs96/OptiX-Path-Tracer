@@ -22,22 +22,22 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 RT_PROGRAM void sky() {
-  const vec3f unit_direction = normalize(ray.direction);
-  const float t = 0.5f*(unit_direction.y + 1.0f);
-  const vec3f c = (1.0f - t) * vec3f(1.0f, 1.0f, 1.0f) + t * vec3f(0.5f, 0.7f, 1.0f);
+  const float3 unit_direction = normalize(ray.direction);
+  const float t = 0.5f * (unit_direction.y + 1.0f);
+  const float3 c = (1.0f - t) * make_float3(1.0f, 1.0f, 1.0f) + t * make_float3(0.5f, 0.7f, 1.0f);
   prd.out.attenuation = c;
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
 RT_PROGRAM void dark() {
-  prd.out.attenuation = vec3f(0.f);
+  prd.out.attenuation = make_float3(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
 rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 RT_PROGRAM void box() {
-  prd.out.attenuation = vec3f(0.f);
+  prd.out.attenuation = make_float3(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 

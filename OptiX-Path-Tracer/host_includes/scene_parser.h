@@ -1,10 +1,6 @@
 #ifndef PARSERH
 #define PARSERH
 
-
-#include <optix.h>
-#include <optixu/optixpp.h>
-
 #include "../programs/vec.h"
 #include "camera.h"
 #include "materials.h"
@@ -111,14 +107,14 @@ optix::Group Parser(optix::Context &g_context, std::string filename) {
   optix::Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  Material *red = new Lambertian(new Constant_Texture(vec3f(0.65f, 0.05f, 0.05f)));
-  Material *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
-  Material *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
-  Material *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
-  Material *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
-  Material *glass = new Dielectric(1.5f);
-  //Material *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
-  //Material *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
+  Materials *red = new Lambertian(new Constant_Texture(vec3f(0.65f, 0.05f, 0.05f)));
+  Materials *white = new Lambertian(new Constant_Texture(vec3f(0.73f, 0.73f, 0.73f)));
+  Materials *green = new Lambertian(new Constant_Texture(vec3f(0.12f, 0.45f, 0.15f)));
+  Materials *light = new Diffuse_Light(new Constant_Texture(vec3f(7.f, 7.f, 7.f)));
+  Materials *aluminium = new Metal(new Constant_Texture(vec3f(0.8f, 0.85f, 0.88f)), 0.0);
+  Materials *glass = new Dielectric(1.5f);
+  //Materials *black_fog = new Isotropic(new Constant_Texture(vec3f(0.f)));
+  //Materials *white_fog = new Isotropic(new Constant_Texture(vec3f(1.f)));
 
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 555.f, true, *green, g_context), group, g_context); // left wall
   addChild(createXRect(0.f, 555.f, 0.f, 555.f, 0.f, false, *red, g_context), group, g_context); // right wall

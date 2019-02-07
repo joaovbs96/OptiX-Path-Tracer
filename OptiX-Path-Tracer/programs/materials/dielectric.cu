@@ -34,31 +34,31 @@ rtDeclareVariable(float, ref_idx, , );
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
-  prd.out.attenuation = vec3f(1.f);
+  prd.out.attenuation = make_float3(1.f);
   prd.out.normal = hit_rec.normal;
   
-  vec3f outward_normal;
+  float3 outward_normal;
   float ni_over_nt;
   float cosine;
   if (dot(ray_in.direction, hit_rec.normal) > 0.f) {
     outward_normal = -1 * hit_rec.normal;
     ni_over_nt = ref_idx;
-    cosine = ref_idx * dot(ray_in.direction, hit_rec.normal) / vec3f(ray_in.direction).length();
+    cosine = ref_idx * dot(ray_in.direction, hit_rec.normal) / length(ray_in.direction);
   }
   else {
     outward_normal = hit_rec.normal;
     ni_over_nt = 1.f / ref_idx;
-    cosine = -dot(ray_in.direction, hit_rec.normal) / vec3f(ray_in.direction).length();
+    cosine = -dot(ray_in.direction, hit_rec.normal) / length(ray_in.direction);
   }
   
-  vec3f refracted;
+  float3 refracted;
   float reflect_prob;
   if (refract(ray_in.direction, outward_normal, ni_over_nt, refracted)) 
     reflect_prob = schlick(cosine, ref_idx);
   else 
     reflect_prob = 1.f;
 
-  vec3f reflected = reflect(ray_in.direction, hit_rec.normal);
+  float3 reflected = reflect(ray_in.direction, hit_rec.normal);
   if ((*prd.in.randState)() < reflect_prob) 
     prd.out.direction = reflected;
   else 

@@ -18,7 +18,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in) {
   prd.out.origin = hit_rec.p;
   prd.out.direction = random_in_unit_sphere(*prd.in.randState);
   prd.out.normal = hit_rec.normal;
-  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   prd.out.type = Isotropic;
 
   return true;

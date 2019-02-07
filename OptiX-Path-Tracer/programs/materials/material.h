@@ -16,14 +16,13 @@
 
 #pragma once
 
-#define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
-#include <optix_world.h>
-
 #include "../prd.h"
 #include "../pdfs/pdf.h"
 #include "../XorShift32.h"
 #include "../sampling.h"
 
+// TODO: use built in functions and types whenever possible
+// TODO: create 'common.h' header, move common definitions and includes from vec and float3_functions to there
 
 __device__ float schlick(float cosine, float ref_idx) {
   float r0 = (1.0f - ref_idx) / (1.0f + ref_idx);
@@ -31,8 +30,8 @@ __device__ float schlick(float cosine, float ref_idx) {
   return r0 + (1.0f - r0) * pow((1.0f - cosine), 5.0f);
 }
 
-__device__ bool refract(const vec3f& v, const vec3f& n, float ni_over_nt, vec3f& refracted) {
-  vec3f uv = unit_vector(v);
+__device__ bool refract(const float3& v, const float3& n, float ni_over_nt, float3& refracted) {
+  float3 uv = unit_vector(v);
   float dt = dot(uv, n);
   float discriminant = 1.0f - ni_over_nt * ni_over_nt*(1 - dt * dt);
   
@@ -42,9 +41,5 @@ __device__ bool refract(const vec3f& v, const vec3f& n, float ni_over_nt, vec3f&
   }
   else
     return false;
-}
-
-inline __device__ vec3f reflect(const vec3f &v, const vec3f &n) {
-  return v - 2.0f*dot(v, n)*n;
 }
 

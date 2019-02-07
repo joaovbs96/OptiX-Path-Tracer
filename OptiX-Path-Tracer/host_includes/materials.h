@@ -1,9 +1,6 @@
 #ifndef MATERIALSH
 #define MATERIALSH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
-
 #include "../programs/vec.h"
 #include "textures.h"
 
@@ -17,13 +14,13 @@ extern "C" const char embedded_isotropic_programs[];
 
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
-struct Material {
+struct Materials {
   virtual optix::Program assignTo(optix::GeometryInstance gi, optix::Context &g_context, int index = 0) const = 0;
 };
 
 /*! host side code for the "Lambertian" material; the actual
   sampling code is in the programs/lambertian.cu closest hit program */
-struct Lambertian : public Material {
+struct Lambertian : public Materials {
   Lambertian(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
@@ -45,7 +42,7 @@ optix::Program Lambertian_PDF(optix::Context &g_context) {
 
 /*! host side code for the "Metal" material; the actual
   sampling code is in the programs/metal.cu closest hit program */
-struct Metal : public Material {
+struct Metal : public Materials {
   Metal(const Texture *t, const float fuzz) : texture(t), fuzz(fuzz) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
@@ -71,7 +68,7 @@ struct Metal : public Material {
 
 /*! host side code for the "Dielectric" material; the actual
   sampling code is in the programs/dielectric.cu closest hit program */
-struct Dielectric : public Material {
+struct Dielectric : public Materials {
   Dielectric(const float ref_idx) : ref_idx(ref_idx) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
@@ -84,7 +81,7 @@ struct Dielectric : public Material {
     gi->setMaterial(index, mat);
     gi["ref_idx"]->setFloat(ref_idx);
 
-    Constant_Texture foo(vec3f(0.f));
+    Constant_Texture foo(make_float3(0.f));
     return foo.assignTo(g_context);
   }
   
@@ -93,7 +90,7 @@ struct Dielectric : public Material {
 
 /*! host side code for the "Diffuse Light" material; the actual
   sampling code is in the programs/diffuse_light.cu closest hit program */
-struct Diffuse_Light : public Material {
+struct Diffuse_Light : public Materials {
   Diffuse_Light(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */
@@ -115,7 +112,7 @@ optix::Program Diffuse_Light_PDF(optix::Context &g_context) {
 
 /*! host side code for the "Diffuse Light" material; the actual
   sampling code is in the programs/diffuse_light.cu closest hit program */
-struct Isotropic : public Material {
+struct Isotropic : public Materials {
   Isotropic(const Texture *t) : texture(t) {}
   
   /* create optix material, and assign mat and mat values to geom instance */

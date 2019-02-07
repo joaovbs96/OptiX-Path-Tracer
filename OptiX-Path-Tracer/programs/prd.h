@@ -38,8 +38,8 @@ typedef enum {
 
 struct Hit_Record {
   int index;
-  vec3f normal;
-  vec3f p;
+  float3 normal;
+  float3 p;
   float distance;
   float u;
   float v;
@@ -56,11 +56,11 @@ struct PerRayData {
   } in;
   struct {
     ScatterEvent  scatterEvent;
-    vec3f         origin;
-    vec3f         direction;
-    vec3f         normal;
-    vec3f         emitted;
-    vec3f         attenuation;
+    float3         origin;
+    float3         direction;
+    float3         normal;
+    float3         emitted;
+    float3         attenuation;
     bool          is_specular;
     Material_Type type;
   } out;

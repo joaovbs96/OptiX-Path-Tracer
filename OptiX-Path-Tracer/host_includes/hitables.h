@@ -1,11 +1,6 @@
 #ifndef HITABLESH
 #define HITABLESH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
-#include <optixu/optixpp_namespace.h>
-#include <optixu/optixu_matrix_namespace.h>
-
 #include "../programs/vec.h"
 #include "materials.h"
 #include "transforms.h"
@@ -27,10 +22,10 @@ extern "C" const char embedded_mesh_programs[];
 extern "C" const char embedded_plane_programs[];
 
 // Sphere constructor
-optix::GeometryInstance Sphere(const vec3f &center, 
-                                     const float radius, 
-                                     const Material &material, 
-                                     optix::Context &g_context) {
+optix::GeometryInstance Sphere(const float3 &center, 
+                               const float radius, 
+                               const Materials &material, 
+                               optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
@@ -66,11 +61,11 @@ optix::GeometryInstance Sphere(const vec3f &center,
 }
 
 // Sphere of volumetric material
-optix::GeometryInstance Volume_Sphere(const vec3f &center, 
-                                           const float radius, 
-                                           const float density, 
-                                           const Material &material, 
-                                           optix::Context &g_context) {
+optix::GeometryInstance Volume_Sphere(const float3 &center, 
+                                      const float radius, 
+                                      const float density, 
+                                      const Materials &material, 
+                                      optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
@@ -107,12 +102,12 @@ optix::GeometryInstance Volume_Sphere(const vec3f &center,
 }
 
 // Moving Sphere constructor
-optix::GeometryInstance Moving_Sphere(const vec3f &center0, 
-                                           const vec3f &center1, 
+optix::GeometryInstance Moving_Sphere(const float3 &center0, 
+                                           const float3 &center1, 
                                            const float t0, 
                                            const float t1,
                                            const float radius, 
-                                           const Material &material, 
+                                           const Materials &material, 
                                            optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
@@ -159,7 +154,7 @@ optix::GeometryInstance Rectangle(const float a0,
                                   const float k, 
                                   const bool flip, 
                                   const AXIS ax,
-                                  const Material &material, 
+                                  const Materials &material, 
                                   optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
@@ -211,9 +206,9 @@ optix::GeometryInstance Rectangle(const float a0,
 }
 
 // Box made of rectangle primitives
-optix::GeometryGroup Box(const vec3f& p0, 
-                               const vec3f& p1, 
-                               Material &material, 
+optix::GeometryGroup Box(const float3& p0, 
+                               const float3& p1, 
+                               Materials &material, 
                                optix::Context &g_context) {
   // Vector of primitives
   std::vector<optix::GeometryInstance> d_list;
@@ -237,10 +232,10 @@ optix::GeometryGroup Box(const vec3f& p0,
 }
 
 // Box of volumetric material
-optix::GeometryInstance Volume_Box(const vec3f& p0, 
-                                        const vec3f& p1, 
+optix::GeometryInstance Volume_Box(const float3& p0, 
+                                        const float3& p1, 
                                         const float density, 
-                                        Material &material, 
+                                        Materials &material, 
                                         optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
@@ -278,14 +273,14 @@ optix::GeometryInstance Volume_Box(const vec3f& p0,
 }
 
 // Triangle constructor
-optix::GeometryInstance Triangle(const vec3f &a, 
-                                       const vec2f &a_uv, 
-                                       const vec3f &b, 
-                                       const vec2f &b_uv, 
-                                       const vec3f &c, 
-                                       const vec2f &c_uv, 
+optix::GeometryInstance Triangle(const float3 &a, 
+                                       const float2 &a_uv, 
+                                       const float3 &b, 
+                                       const float2 &b_uv, 
+                                       const float3 &c, 
+                                       const float2 &c_uv, 
                                        const float scale, 
-                                       const Material &material, 
+                                       const Materials &material, 
                                        optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();
@@ -309,14 +304,14 @@ optix::GeometryInstance Triangle(const vec3f &a,
   geometry["scale"]->setFloat(scale);
 
   // precomputed variables
-  const vec3f e1(b - a);
+  const float3 e1(b - a);
   geometry["e1"]->setFloat(e1.x, e1.y, e1.z);
 
-  const vec3f e2(c - a);
+  const float3 e2(c - a);
   geometry["e2"]->setFloat(e2.x, e2.y, e2.z);
 
   // Geometric normal
-  const vec3f normal(unit_vector(cross(e1, e2))); 
+  const float3 normal(unit_vector(cross(e1, e2))); 
   geometry["normal"]->setFloat(normal.x, normal.y, normal.z);
 
   // Create GeometryInstance
@@ -340,10 +335,10 @@ optix::GeometryInstance Triangle(const vec3f &a,
 // Triangle auxiliar struct definition
 struct Triangle_Struct {
   Triangle_Struct(int &i,                                    // Primitive index
-                  vec3f &aa, vec3f &bb, vec3f &cc,           // Vertex
-                  vec2f &aa_uv, vec2f &bb_uv, vec2f &cc_uv,  // Texcoord
-                  vec3f &aa_n, vec3f &bb_n, vec3f &cc_n,     // Vertex normals
-                  int id) :                                  // Material ID
+                  float3 &aa, float3 &bb, float3 &cc,           // Vertex
+                  float2 &aa_uv, float2 &bb_uv, float2 &cc_uv,  // Texcoord
+                  float3 &aa_n, float3 &bb_n, float3 &cc_n,     // Vertex normals
+                  int id) :                                  // Materials ID
                   index(i), material_id(id), 
                   a(aa), b(bb), c(cc), 
                   a_uv(aa_uv), b_uv(bb_uv), c_uv(cc_uv),
@@ -354,16 +349,16 @@ struct Triangle_Struct {
   }
 
   int index, material_id;
-  vec3f a, b, c;
-  vec2f a_uv, b_uv, c_uv;
-  vec3f a_n, b_n, c_n;
-  vec3f e1, e2;
+  float3 a, b, c;
+  float2 a_uv, b_uv, c_uv;
+  float3 a_n, b_n, c_n;
+  float3 e1, e2;
 };
 
 // Load and convert mesh
 optix::GeometryInstance Mesh(const std::string &fileName, 
                                   optix::Context &g_context, 
-                                  Material &custom_material,
+                                  Materials &custom_material,
                                   bool use_custom_material = false,
                                   const std::string assetsFolder="assets/", 
                                   float scale = 1.f) {
@@ -384,7 +379,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
 
   // Load Materials
   std::map<std::string, int> material_map;
-  std::vector<Material*> material_list;
+  std::vector<Materials*> material_list;
   if(use_custom_material)
     material_list.push_back(&custom_material);
   else{
@@ -395,7 +390,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
         Texture *tex;
         // Mesh has no texture but has a defined color.
         if(Loader.LoadedMaterials[i].map_Kd.empty())
-          tex = new Constant_Texture(vec3f(Loader.LoadedMaterials[i].Kd.X, 
+          tex = new Constant_Texture(make_float3(Loader.LoadedMaterials[i].Kd.X, 
                                           Loader.LoadedMaterials[i].Kd.Y, 
                                           Loader.LoadedMaterials[i].Kd.Z));
         
@@ -411,7 +406,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
     
     // Model has no assigned MTL file, assign random color
     else {
-      material_list.push_back(new Lambertian(new Constant_Texture(vec3f(rnd()))));
+      material_list.push_back(new Lambertian(new Constant_Texture(make_float3(rnd()))));
     }
   }
 
@@ -421,45 +416,47 @@ optix::GeometryInstance Mesh(const std::string &fileName,
     objl::Mesh curMesh = Loader.LoadedMeshes[i];
 
     // Iterate over each face, going through every 3rd index
-    vec2f a_uv(0.f), b_uv(0.f), c_uv(0.f);
+    float2 a_uv = make_float2(0.f);
+    float2 b_uv = make_float2(0.f);
+    float2 c_uv = make_float2(0.f);
     for (int j = 0; j < curMesh.Indices.size(); j += 3) {
       printf("Mesh %d / %d - %2.f%% Converted  \r", i + 1, 
           (int)Loader.LoadedMeshes.size(), j * 100.f/curMesh.Indices.size());
 
       // Face vertex
       int ia = curMesh.Indices[j];
-      vec3f a(scale * curMesh.Vertices[ia].Position.X,
+      float3 a = make_float3(scale * curMesh.Vertices[ia].Position.X,
               scale * curMesh.Vertices[ia].Position.Y,
               scale * curMesh.Vertices[ia].Position.Z);
 
       int ib = curMesh.Indices[j + 1];
-      vec3f b(scale * curMesh.Vertices[ib].Position.X,
+      float3 b = make_float3(scale * curMesh.Vertices[ib].Position.X,
               scale * curMesh.Vertices[ib].Position.Y,
               scale * curMesh.Vertices[ib].Position.Z);
 
       int ic = curMesh.Indices[j + 2];
-      vec3f c(scale * curMesh.Vertices[ic].Position.X,
+      float3 c = make_float3(scale * curMesh.Vertices[ic].Position.X,
               scale * curMesh.Vertices[ic].Position.Y,
               scale * curMesh.Vertices[ic].Position.Z);
       
       // Face UV coordinates
-      a_uv = vec2f(curMesh.Vertices[ia].TextureCoordinate.X,
+      a_uv = make_float2(curMesh.Vertices[ia].TextureCoordinate.X,
                    curMesh.Vertices[ia].TextureCoordinate.Y);
-      b_uv = vec2f(curMesh.Vertices[ib].TextureCoordinate.X,
+      b_uv = make_float2(curMesh.Vertices[ib].TextureCoordinate.X,
                    curMesh.Vertices[ib].TextureCoordinate.Y);
-      c_uv = vec2f(curMesh.Vertices[ic].TextureCoordinate.X,
+      c_uv = make_float2(curMesh.Vertices[ic].TextureCoordinate.X,
                    curMesh.Vertices[ic].TextureCoordinate.Y);
 
       // Face vertex normal
-      vec3f a_n(curMesh.Vertices[ia].Normal.X,
+      float3 a_n = make_float3(curMesh.Vertices[ia].Normal.X,
                 curMesh.Vertices[ia].Normal.Y,
                 curMesh.Vertices[ia].Normal.Z);
       
-      vec3f b_n(curMesh.Vertices[ib].Normal.X,
+      float3 b_n = make_float3(curMesh.Vertices[ib].Normal.X,
                 curMesh.Vertices[ib].Normal.Y,
                 curMesh.Vertices[ib].Normal.Z);
 
-      vec3f c_n(curMesh.Vertices[ic].Normal.X,
+      float3 c_n = make_float3(curMesh.Vertices[ic].Normal.X,
                 curMesh.Vertices[ic].Normal.Y,
                 curMesh.Vertices[ic].Normal.Z);
 
@@ -601,7 +598,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
 optix::GeometryInstance Plane(const float &center, 
                                     const AXIS ax, 
                                     const bool invert_plane, 
-                                    const Material &material, 
+                                    const Materials &material, 
                                     optix::Context &g_context) {
   // Create Geometry variable
   optix::Geometry geometry = g_context->createGeometry();

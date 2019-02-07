@@ -1,4 +1,3 @@
-#include <optix_world.h>
 #include "../prd.h"
 
 // Triangle intersection function from McGuire's Graphics Codex:
@@ -39,19 +38,19 @@ RT_PROGRAM void mesh_intersection(int index) {
   float2 b_uv = texcoord_buffer[3 * index + 1];
   float2 c_uv = texcoord_buffer[3 * index + 2];
 
-  vec3f pvec(cross(ray.direction, e2));
+  float3 pvec = cross(ray.direction, e2);
 	float aNum(dot(pvec, e1));
 
 	// Backfacing / nearly parallel, or close to the limit of precision ?
 	if (abs(aNum) < 1E-8)
 		return;
 
-	vec3f tvec(ray.origin - a);
+	float3 tvec = ray.origin - a;
 	float u(dot(pvec, tvec) / aNum);
 	if (u < 0.0 || u > 1.0) 
 		return;
 
-	vec3f qVec(cross(tvec, e1));
+	float3 qVec = cross(tvec, e1);
 	float v(dot(qVec, ray.direction) / aNum);
 	if (v < 0.0 || u + v > 1.0) 
 		return;
@@ -95,7 +94,7 @@ RT_PROGRAM void mesh_bounds(int index, float result[6]) {
 
   float3 e1 = e_buffer[2 * index];
   float3 e2 = e_buffer[2 * index + 1];
-  const float area = vec3f(cross(e1, e2)).length();
+  const float area = length(cross(e1, e2));
 
   if(area > 0.0f && !isinf(area)) {
     aabb->m_min = fminf( fminf( a, b), c );

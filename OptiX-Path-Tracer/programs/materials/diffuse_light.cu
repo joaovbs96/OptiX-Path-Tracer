@@ -24,7 +24,7 @@ RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
 
 inline __device__ float3 emitted() {
   if(dot(hit_rec.normal, ray.direction) < 0.f)
-    return sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p.as_float3());
+    return sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   else
     return make_float3(0.f);
 }

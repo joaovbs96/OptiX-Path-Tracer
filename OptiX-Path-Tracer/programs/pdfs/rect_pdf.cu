@@ -66,8 +66,8 @@ RT_CALLABLE_PROGRAM float rect_x_value(pdf_in &in) {
 
     if(hit_x(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
-        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
+        float distance_squared = rec.distance * rec.distance * squared_length(in.scattered_direction);
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / length(in.scattered_direction));
         return distance_squared / (cosine * area);
     }
     else
@@ -79,8 +79,8 @@ RT_CALLABLE_PROGRAM float rect_y_value(pdf_in &in) {
 
     if(hit_y(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
-        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
+        float distance_squared = rec.distance * rec.distance * squared_length(in.scattered_direction);
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / length(in.scattered_direction));
         return distance_squared / (cosine * area);
     }
     else
@@ -92,8 +92,8 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
 
     if(hit_z(in, 0.001f, FLT_MAX, rec)) {
         float area = (a1 - a0) * (b1 - b0);
-        float distance_squared = rec.distance * rec.distance * in.scattered_direction.squared_length();
-        float cosine = fabs(dot(in.scattered_direction, rec.normal) / in.scattered_direction.length());
+        float distance_squared = rec.distance * rec.distance * squared_length(in.scattered_direction);
+        float cosine = fabs(dot(in.scattered_direction, rec.normal) / length(in.scattered_direction));
         return distance_squared / (cosine * area);
     }
     else
@@ -103,18 +103,18 @@ RT_CALLABLE_PROGRAM float rect_z_value(pdf_in &in) {
 // Generate Programs
 RT_CALLABLE_PROGRAM float3 rect_x_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(k, a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0));
-    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
-    return in.scattered_direction.as_float3();
+    in.scattered_direction = random_point - in.origin;
+    return in.scattered_direction;
 }
 
 RT_CALLABLE_PROGRAM float3 rect_y_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), k, b0 + rnd() * (b1 - b0));
-    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
-    return in.scattered_direction.as_float3();
+    in.scattered_direction = random_point - in.origin;
+    return in.scattered_direction;
 }
 
 RT_CALLABLE_PROGRAM float3 rect_z_generate(pdf_in &in, XorShift32 &rnd) {
     float3 random_point = make_float3(a0 + rnd() * (a1 - a0), b0 + rnd() * (b1 - b0), k);
-    in.scattered_direction = vec3f(random_point - in.origin.as_float3());
-    return in.scattered_direction.as_float3();
+    in.scattered_direction = random_point - in.origin;
+    return in.scattered_direction;
 }

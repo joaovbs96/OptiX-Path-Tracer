@@ -14,13 +14,6 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-// optix code:
-#include <optix.h>
-#include <optixu/optixu_math_namespace.h>
-
-#define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
-#include <optix_world.h>
-
 #include "prd.h"
 #include "pdfs/pdf.h"
 
@@ -57,17 +50,17 @@ rtBuffer< rtCallableProgramId<float(pdf_in&)> > scattering_pdf;
 
 struct Camera {
   static __device__ optix::Ray generateRay(float s, float t, XorShift32 &rnd) {
-    const vec3f rd = camera_lens_radius * random_in_unit_disk(rnd);
-    const vec3f lens_offset = camera_u * rd.x + camera_v * rd.y;
-    const vec3f origin = camera_origin + lens_offset;
-    const vec3f direction
+    const float3 rd = camera_lens_radius * random_in_unit_disk(rnd);
+    const float3 lens_offset = camera_u * rd.x + camera_v * rd.y;
+    const float3 origin = camera_origin + lens_offset;
+    const float3 direction
       = camera_lower_left_corner
       + s * camera_horizontal
       + t * camera_vertical
       - origin;
 
-    return optix::make_Ray(/* origin   : */ origin.as_float3(),
-                           /* direction: */ direction.as_float3(),
+    return optix::make_Ray(/* origin   : */ origin,
+                           /* direction: */ direction,
                            /* ray type : */ 0,
                            /* tmin     : */ 1e-6f,
                            /* tmax     : */ RT_DEFAULT_MAX);
@@ -75,8 +68,8 @@ struct Camera {
 };
 
 // Clamp color values
-inline __device__ vec3f clamp(const vec3f& c) {
-  vec3f temp = c;
+inline __device__ float3 clamp(const float3& c) {
+  float3 temp = c;
   if(temp.x > 1.f) temp.x = 1.f;
   if(temp.y > 1.f) temp.y = 1.f;
   if(temp.z > 1.f) temp.z = 1.f;
@@ -84,12 +77,12 @@ inline __device__ vec3f clamp(const vec3f& c) {
   return temp;
 }
 
-inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
+inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
-  vec3f current_color = 1.f;
+  float3 current_color = make_float3(1.f);
   
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
@@ -108,8 +101,8 @@ inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
       if(prd.out.is_specular) {
         current_color = prd.out.attenuation * current_color;
 
-        ray = optix::make_Ray(/* origin   : */ prd.out.origin.as_float3(),
-                              /* direction: */ prd.out.direction.as_float3(),
+        ray = optix::make_Ray(/* origin   : */ prd.out.origin,
+                              /* direction: */ prd.out.direction,
                               /* ray type : */ 0,
                               /* tmin     : */ 1e-3f,
                               /* tmax     : */ RT_DEFAULT_MAX);
@@ -121,8 +114,8 @@ inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
         
         current_color = clamp(prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val);
 
-        ray = optix::make_Ray(/* origin   : */ in.origin.as_float3(),
-                              /* direction: */ in.scattered_direction.as_float3(),
+        ray = optix::make_Ray(/* origin   : */ in.origin,
+                              /* direction: */ in.scattered_direction,
                               /* ray type : */ 0,
                               /* tmin     : */ 1e-3f,
                               /* tmax     : */ RT_DEFAULT_MAX);
@@ -140,12 +133,12 @@ inline __device__ vec3f color(optix::Ray &ray, XorShift32 &rnd) {
   }
   
   // recursion did not terminate - cancel it
-  return vec3f(0.f);
+  return make_float3(0.f);
 }
 
 // Remove NaN values
-inline __device__ vec3f de_nan(const vec3f& c) {
-  vec3f temp = c;
+inline __device__ float3 de_nan(const float3& c) {
+  float3 temp = c;
   if(!(temp.x == temp.x)) temp.x = 0.f;
   if(!(temp.y == temp.y)) temp.y = 0.f;
   if(!(temp.z == temp.z)) temp.z = 0.f;
@@ -176,9 +169,7 @@ RT_PROGRAM void renderPixel() {
   // trace ray
   optix::Ray ray = Camera::generateRay(u, v, rnd);
   
-  vec3f col = de_nan(color(ray, rnd));
-
-  fb[pixelID] += col.as_float3(); // accumulate color
+  fb[pixelID] += de_nan(color(ray, rnd)); // accumulate color
   seed[pixelID] = rnd.state; // save RND state
 }
 

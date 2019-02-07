@@ -1,4 +1,3 @@
-#include <optix_world.h>
 #include "../prd.h"
 
 /*! the parameters that describe each individual triangle geometry */

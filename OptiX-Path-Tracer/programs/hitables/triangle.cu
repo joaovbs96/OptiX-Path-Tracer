@@ -1,4 +1,3 @@
-#include <optix_world.h>
 #include "../prd.h"
 
 /*! the parameters that describe each individual triangle geometry */
@@ -28,19 +27,19 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 // Intersection program from McGuire's Graphics Codex - https://graphicscodex.com/
 // Program that performs the ray-triangle intersection
 RT_PROGRAM void hit_triangle(int pid) {
-  vec3f pvec(cross(ray.direction, e2));
+  float3 pvec = cross(ray.direction, e2);
 	float aNum(dot(pvec, e1));
 
 	// Backfacing / nearly parallel, or close to the limit of precision ?
 	if (abs(aNum) < 1E-8)
 		return;
 
-	vec3f tvec(ray.origin - a);
+	float3 tvec = ray.origin - a;
 	float u(dot(pvec, tvec) / aNum);
 	if (u < 0.0 || u > 1.0) 
 		return;
 
-	vec3f qVec(cross(tvec, e1));
+	float3 qVec = cross(tvec, e1);
 	float v(dot(qVec, ray.direction) / aNum);
 	if (v < 0.0 || u + v > 1.0) 
 		return;

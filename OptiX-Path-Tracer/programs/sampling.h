@@ -19,16 +19,16 @@
 #include "vec.h"
 #include "XorShift32.h"
 
-inline __device__ vec3f random_in_unit_disk(XorShift32 &rnd) {
+inline __device__ float3 random_in_unit_disk(XorShift32 &rnd) {
   float a = rnd() * 2.0f * 3.1415926f;
 
-	vec3f xy(sin(a), cos(a), 0);
+	float3 xy = make_float3(sin(a), cos(a), 0);
 	xy *= sqrt(rnd());
 	
   return xy;
 }
 
-inline __device__ vec3f random_in_unit_sphere(XorShift32 &rnd) {
+inline __device__ float3 random_in_unit_sphere(XorShift32 &rnd) {
   float z = rnd() * 2.0f - 1.0f;
 	
 	float t = rnd() * 2.0f * 3.1415926f;
@@ -37,13 +37,13 @@ inline __device__ vec3f random_in_unit_sphere(XorShift32 &rnd) {
 	float x = r * cos(t);
 	float y = r * sin(t);
 
-	vec3f res(x, y, z);
+	float3 res = make_float3(x, y, z);
 	res *= powf(rnd(), 1.0f / 3.0f);
 	
   return res;
 }
 
-inline __device__ vec3f random_cosine_direction(XorShift32 &rnd) {
+inline __device__ float3 random_cosine_direction(XorShift32 &rnd) {
 	float r1 = rnd();
 	float r2 = rnd();
 
@@ -53,5 +53,5 @@ inline __device__ vec3f random_cosine_direction(XorShift32 &rnd) {
 	float y = sin(phi) * 2.f * sqrt(r2);
 	float z = sqrt(1.f - r2);
 
-	return vec3f(x, y, z);
+	return make_float3(x, y, z);
 }

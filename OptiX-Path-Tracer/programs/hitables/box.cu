@@ -1,4 +1,3 @@
-#include <optix_world.h>
 #include "../prd.h"
 
 // references:

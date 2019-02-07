@@ -1,9 +1,6 @@
 #ifndef PROGRAMSH
 #define PROGRAMSH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
-
 #include "../programs/vec.h"
 #include "textures.h"
 #include "pdfs.h"

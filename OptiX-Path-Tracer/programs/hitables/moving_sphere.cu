@@ -14,7 +14,6 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include <optix_world.h>
 #include "../prd.h"
 
 /*! the parameters that describe each individual sphere geometry */
@@ -33,7 +32,7 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-inline __device__ void get_sphere_uv(const vec3f& p) {
+inline __device__ void get_sphere_uv(const float3& p) {
 	float phi = atan2(p.z, p.x);
 	float theta = asin(p.y); 
 
@@ -82,7 +81,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec.p.as_float3() - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
       normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
       
@@ -104,7 +103,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec.p.as_float3() - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
       normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 

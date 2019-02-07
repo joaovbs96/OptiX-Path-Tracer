@@ -1,9 +1,6 @@
 #ifndef CAMERAH
 #define CAMERAH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
-
 #define _USE_MATH_DEFINES 1
 #include <math.h>
 #include <cmath>
@@ -13,7 +10,7 @@
 struct Camera {
   Camera() {}
 
-  Camera(const vec3f &lookfrom, const vec3f &lookat, const vec3f &vup, 
+  Camera(const float3 &lookfrom, const float3 &lookat, const float3 &vup, 
          float vfov, float aspect, float aperture, float focus_dist, float t0, float t1) { 
     // vfov is top to bottom in degrees
     lens_radius = aperture / 2.0f;
@@ -51,11 +48,11 @@ struct Camera {
     g_context["camera_lens_radius"]->setFloat(lens_radius);
   }
 
-  vec3f origin;
-  vec3f lower_left_corner;
-  vec3f horizontal;
-  vec3f vertical;
-  vec3f u, v, w;
+  float3 origin;
+  float3 lower_left_corner;
+  float3 horizontal;
+  float3 vertical;
+  float3 u, v, w;
   float time0, time1;
   float lens_radius;
 

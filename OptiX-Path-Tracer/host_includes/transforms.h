@@ -1,11 +1,6 @@
 #ifndef TRANSFORMSH
 #define TRANSFORMSH
 
-#include <optix.h>
-#include <optixu/optixpp.h>
-#include <optixu/optixpp_namespace.h>
-#include <optixu/optixu_matrix_namespace.h>
-
 #include "../programs/vec.h"
 #include "materials.h"
 
@@ -69,11 +64,11 @@ void addChild(optix::Transform tr, optix::Group &d_world, optix::Context &g_cont
 }
 
 // translate functions
-optix::Transform translate(optix::GeometryInstance gi, vec3f& pos, optix::Context &g_context) {
+optix::Transform translate(optix::GeometryInstance gi, float3& pos, optix::Context &g_context) {
   check_child(gi); // check if child is NULL
 
   // get translate matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(make_float3(pos.x, pos.y, pos.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(pos);
 
   // add GeometryInstance to GeometryGroup
   optix::GeometryGroup group = g_context->createGeometryGroup();
@@ -88,11 +83,11 @@ optix::Transform translate(optix::GeometryInstance gi, vec3f& pos, optix::Contex
   return transform;
 }
 
-optix::Transform translate(optix::GeometryGroup gg, vec3f& pos, optix::Context &g_context) {
+optix::Transform translate(optix::GeometryGroup gg, float3& pos, optix::Context &g_context) {
   check_child(gg); // check if child is NULL
 
   // get translate matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(make_float3(pos.x, pos.y, pos.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(pos);
 
   // apply Transform to GeometryGroup
   optix::Transform transform = g_context->createTransform();
@@ -102,11 +97,11 @@ optix::Transform translate(optix::GeometryGroup gg, vec3f& pos, optix::Context &
   return transform;
 }
 
-optix::Transform translate(optix::Transform tr, vec3f& pos, optix::Context &g_context) {
+optix::Transform translate(optix::Transform tr, float3& pos, optix::Context &g_context) {
   check_child(tr); // check if child is NULL
 
   // get translate matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(make_float3(pos.x, pos.y, pos.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::translate(pos);
 
   // apply Transform to Transform
   optix::Transform transform = g_context->createTransform();
@@ -212,24 +207,12 @@ optix::Transform rotate(optix::Transform tr, float angle, AXIS ax, optix::Contex
   return transform;
 }
 
-optix::Matrix4x4 scaleMatrix(vec3f offset) {
-  float floatM[16] = {
-      offset.x, 0.0f, 0.0f, 0.f,
-      0.0f, offset.y, 0.0f, 0.f,
-      0.0f, 0.0f, offset.z, 0.f,
-      0.0f, 0.0f, 0.0f, 1.0f
-    };
-  optix::Matrix4x4 mm(floatM);
-
-  return mm;
-}
-
 // Scale functions
-optix::Transform scale(optix::GeometryInstance gi, vec3f& scale, optix::Context &g_context) {
+optix::Transform scale(optix::GeometryInstance gi, float3& scale, optix::Context &g_context) {
   check_child(gi); // check if child is NULL
 
   // get scale matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(scale);
 
   // add GeometryInstance to GeometryGroup
   optix::GeometryGroup group = g_context->createGeometryGroup();
@@ -244,11 +227,11 @@ optix::Transform scale(optix::GeometryInstance gi, vec3f& scale, optix::Context 
   return transform;
 }
 
-optix::Transform scale(optix::GeometryGroup gg, vec3f& scale, optix::Context &g_context) {
+optix::Transform scale(optix::GeometryGroup gg, float3& scale, optix::Context &g_context) {
   check_child(gg); // check if child is NULL
 
   // get scale matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(scale);
 
   // apply Transform to GeometryGroup
   optix::Transform transform = g_context->createTransform();
@@ -258,11 +241,11 @@ optix::Transform scale(optix::GeometryGroup gg, vec3f& scale, optix::Context &g_
   return transform;
 }
 
-optix::Transform scale(optix::Transform tr, vec3f& scale, optix::Context &g_context) {
+optix::Transform scale(optix::Transform tr, float3& scale, optix::Context &g_context) {
   check_child(tr); // check if child is NULL
 
   // get scale matrix
-  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(make_float3(scale.x, scale.y, scale.z));
+  optix::Matrix4x4 matrix = optix::Matrix4x4::scale(scale);
 
   // apply Transform to Transform
   optix::Transform transform = g_context->createTransform();
