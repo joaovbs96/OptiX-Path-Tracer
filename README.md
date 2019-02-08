@@ -98,4 +98,5 @@ the final binary;
 - Ingo Wald made two different versions of the code, a recursive one and
 an iterative one(better suited to GPUs). On my fork, I decided to keep 
 the iterative version only, but you can still check his original code on 
-his repository.
+his repository;
+- This project uses Clang-Format(Google's style with tab width equal to 2) to keep code style consistent.
