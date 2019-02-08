@@ -1,51 +1,64 @@
 # OptiX Path Tracer
 
-![alt text](ch9.png "'The Next Week' Chapter 9 - 4480x1080 w/ 10k spp")
+![various output images](outputs/imgs.jpg "Output of different scenes showing various features of the renderer")
 
 ## Overview
 
-Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing in one Weekend" series.
+Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing" series. The project is still being 
+expanded with new features being added even after being done with the three books. Accompanying blog posts describing 
+the implemention are available in the following links:
 
-I personally implemented a C++ version of all three minibooks before attempting
-to deal with a GPU based version, just so I could understand the underlining 
-theory. After that, I tried my luck with CUDA, based on Roger Allen's version,
-and only then I tried to implement an OptiX version based on Ingo Wald's code. 
-I would like to thank Peter Shirley, Roger Allen and Ingo Wald for help and tips whenever I needed.
+- ["Ray Tracing: The Next Week" In OptiX](https://joaovbs96.github.io/optix/2018/12/24/next-week.html)
+- ["Ray Tracing: The Rest of Your Life" In OptiX](https://joaovbs96.github.io/optix/2019/01/12/rest-life.html)
 
-- Ingo Wald's original OptiX code:
-https://github.com/ingowald/RTOW-OptiX
 
-- More info & tutorials:
-http://ingowald.blog
+## Features
 
-- Peter Shirley's original C++ code:
-https://github.com/petershirley/raytracinginoneweekend
+- NVIDIA's OptiX based GPU Path Tracer
+- Multiple Importance Sampling
+- Russian Roulette Path Termination
+- Triangle Meshes
+- Environmental Mapping
 
-- Peter Shirley's Ray Tracing books:
-https://www.amazon.com/Ray-Tracing-Weekend-Minibooks-Book-ebook/dp/B01B5AODD8
+### TODO:
+- [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
+- Tone Mapping & HDR Textures
+- OptiX's GeometryTriangles
+- [Pixar's OpenSubDiv](https://github.com/PixarAnimationStudios/OpenSubdiv)
+- [Pixar's USD](https://github.com/PixarAnimationStudios/USD)
+- Spectral Rendering
 
-- Roger Allen's CUDA version:
-https://devblogs.nvidia.com/accelerated-ray-tracing-cuda/
+
+## Further reading
+
+- [Peter Shirley's original C++ code](https://github.com/petershirley/raytracinginoneweekend)
+- [Peter Shirley's Ray Tracing books](https://www.amazon.com/Ray-Tracing-Weekend-Minibooks-Book-ebook/dp/B01B5AODD8)
+- [Roger Allen's blog post about his CUDA version of "In One Weekend"](https://devblogs.nvidia.com/accelerated-ray-tracing-cuda/)
+- [Ingo Wald's OptiX version of "In One Weekend"](https://github.com/ingowald/RTOW-OptiX)
+
 
 ## Prerequisites
 
-To buid this project, you need
-
-- a install of CUDA, preferably CUDA 10. Make sure to put your CUDA
-  binary directory into your path.
-
-- a install of OptiX, preferably (ie, tested with) OptiX 5.1.1. Under
+- A install of CUDA, preferably CUDA 10. Make sure to put your CUDA
+  binary directory into your path;
+- A install of OptiX, preferably (ie, tested with) OptiX 6.0.0. Under
   Linux, I'd suggest to put a ```export OptiX_INSTALL_DIR=...``` into your
-  ```.bashrc```.
+  ```.bashrc```;
+- Compiler and build tools - GCC, MSVC, CLang, etc;
+- CMake.
 
-- the usual compiler and build tools - gcc, clang, etc.
 
-- cmake, version 2.8 should do.
+## Included Third-Party Libraries
+
+- [Pixar's hdr_reader](https://github.com/PixarAnimationStudios/OpenSubdiv/blob/6b22e10875de77786d25c32ae23089f6558e994b/examples/common/hdr_reader.cpp)
+- nothings' [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) and [stb_image_write](https://github.com/nothings/stb/blob/master/stb_image_write.h)
+- [Bly7's OBJ-Loader](https://github.com/Bly7/OBJ-Loader)
+- [subh83's RSJp-cpp](https://github.com/subh83/RSJp-cpp)
 
 
 ## Building
 
-This project is built with cmake. On Linux, simply create a build
+- This project is built with CMake. On Linux, simply create a build
 directory, and start the build with with ccmake:
 
    mkdir build
@@ -53,11 +66,10 @@ directory, and start the build with with ccmake:
    cmake ..
    make
 
-Assuming you have NVCC (CUDA) in your path, and have set a
+- Assuming you have NVCC (CUDA) in your path, and have set a
 ```OptiX_INSTALL_DIR``` environment variable to point to the OptiX
-install dir, everything should be configured automatically.
-
-You can set NVCC flags through the macro cuda_compile_ptx in the file
+install dir, everything should be configured automatically;
+- You can set NVCC flags through the macro cuda_compile_ptx in the file
 ```OptiX-Path-Tracer/cmake/configure_optix.cmake```. Keep in mind that the flag 
 ```--relocatable-device-code=true;``` is needed to make use of callable 
 programs if you are building the project using the CUDA SDK 8.0 or superior.
@@ -66,50 +78,24 @@ An InvalidSource exception will happen if you fail to do so.
 
 ## Running
 
-Run the ./OptiX-Path-Tracer binary (OptiX-Path-Tracer.exe on windows). This
+- Run the ./OptiX-Path-Tracer binary (OptiX-Path-Tracer.exe on windows). This
 should render a PNG image under the output folder(that needs to be 
 created on ahead). To change image resolution, 
-and number of samples just edit ```OptiX-Path-Tracer/main.cpp```.
-
-On Windows, you might see a "DLL File is Missing" warning. Just copy the missing 
+and number of samples just edit ```OptiX-Path-Tracer/main.cpp```;
+- On Windows, you might see a "DLL File is Missing" warning. Just copy the missing 
 file from ```OptiX SDK X.X.X/SDK-precompiled-samples``` to the build folder.
 
+
 ## Code Overview
-
-- The main host cost is in main.cpp. This sets up the optix
-  node graph, creates and compiles all programs, etc.
   
-- Host functions and constructors are separated into different header files 
-under the ```host_includes/``` folder..
-
-- All OptiX device programs are in ```OptiX-Path-Tracer/programs/```:
-  - raygen.cu - ray generation program (the main render launch)
-  - under ```hitables/```: sphere.cu for the sphere intersection and bounding box codes
-  - under ```materials/```: metal/dielectric/lambertian.cu for the three material types
-  - some other headers with device helper functions.
-
+- Host code, functions and constructors are separated into the main.cpp and different header files 
+under the ```host_includes/``` folder;
+- Device related code is in the ```programs/``` folder;
 - The ```OptiX-Path-Tracer/CMakeLists``` scripts sets up the build; in
 particular, it defines all the cmake rules for compiling the device
 programs, embedding them into host object files, and linking them to
-the final binary.
-
+the final binary;
 - Ingo Wald made two different versions of the code, a recursive one and
 an iterative one(better suited to GPUs). On my fork, I decided to keep 
 the iterative version only, but you can still check his original code on 
 his repository.
-
-
-## ChangeLog
-
-- 11/16/18 - Initial Release by Ingo Wald;
-- 11/18/18 - Iterative Version Release;
-- 11/20/18 - Switched random number generator to DRand48;
-- 11/26/18 - Project Forked: Added PNG output, gamma SQRT correction, changed sampling functions to non-loop versions, moved contructors to separate files under the 'header_include' folder;
-- 11/27/18 - Added moving spheres;
-- 12/07/18 - Added constant, checkered and Perlin noise textures;
-- 12/08/18 - Added image textures;
-- 12/09/18 - Added lights and rectangles;
-- 12/12/18 - Added boxes and transforms(scale, rotations and translation);
-- 12/21/18 - Added volumes. Changes made to RNG(XorShift32) to allow the render to escale;
-- 12/24/18 - Finished "Ray Tracing: The Next Week";
-- 01/14/19 - Finished "Ray Tracing: The Rest of Your Life".
