@@ -78,10 +78,12 @@ RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
     float3 direction = center - in.origin;
     float distance_squared = squared_length(direction);
     
-    in.uvw.build_from_w(direction);
+    // optix::Onb doesn't normalize the input vector on its own
+    Onb uvw(unit_vector(direction));
 
     float3 temp = random_to_sphere(distance_squared, rnd);
-    in.scattered_direction = in.uvw.local(temp);
-
+    uvw.inverse_transform(temp);
+    in.scattered_direction = temp;
+    
     return in.scattered_direction;
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../vec.h"
-#include "../onb.h"
 #include "../sampling.h"
 
 // communication between hit functions and the value programs
@@ -17,5 +16,4 @@ struct pdf_in {
     const float3 origin;
     const float3 normal;
     float3 scattered_direction;
-    onb uvw;
 };
