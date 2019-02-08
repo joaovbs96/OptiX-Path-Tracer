@@ -18,8 +18,8 @@
 
 #include "common.h"
 
-inline __host__ __device__ float squared_length(const float3 &a) { 
-    return length(a) * length(a);
+inline __host__ __device__ float squared_length(const float3 &a) {
+  return length(a) * length(a);
 }
 
 // returns true if all components are zero
@@ -32,14 +32,14 @@ inline __host__ __device__ float3 abs(const float3 &v) {
   return make_float3(fabsf(v.x), fabsf(v.y), fabsf(v.z));
 }
 
-/* return unit vector */ 
+/* return unit vector */
 inline __host__ __device__ float3 unit_vector(const float3 &v) {
   return v / length(v);
 }
 
 /*! return mod between two vectors */
-inline __host__ __device__ float3 mod(const float3 &a,const float3 &b) {
-  return make_float3(fmodf(a.x,b.x), fmodf(a.y,b.y), fmodf(a.z,b.z));
+inline __host__ __device__ float3 mod(const float3 &a, const float3 &b) {
+  return make_float3(fmodf(a.x, b.x), fmodf(a.y, b.y), fmodf(a.z, b.z));
 }
 
 // if (a < b), return a, else return b
@@ -68,6 +68,6 @@ inline __host__ __device__ float max_component(float3 a) {
 }
 
 // return max component of vector
-inline __host__  __device__ float min_component(float3 a) {
+inline __host__ __device__ float min_component(float3 a) {
   return ffmin(ffmin(a.x, a.y), a.z);
 }

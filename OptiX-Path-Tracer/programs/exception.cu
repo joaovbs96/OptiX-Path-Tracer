@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright (c) 2013-2018, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,19 +28,20 @@
 
 #include <optix.h>
 
-// The original exception program used as a base can be found in the 
+// The original exception program used as a base can be found in the
 // OptiX Advanced samples repository.
 // https://github.com/nvpro-samples/optix_advanced_samples/blob/master/src/optixIntroduction/optixIntro_01/shaders/exception.cu
 
 rtDeclareVariable(uint2, theLaunchIndex, rtLaunchIndex, );
 
-RT_PROGRAM void exception_program( void ) {
-    const unsigned int code = rtGetExceptionCode();
+RT_PROGRAM void exception_program(void) {
+  const unsigned int code = rtGetExceptionCode();
 
-    if (RT_EXCEPTION_USER <= code) {
-        rtPrintf("User exception %d at (%d, %d)\n", code - RT_EXCEPTION_USER, theLaunchIndex.x, theLaunchIndex.y);
-    }
-    else {
-        rtPrintf("Exception code 0x%X at (%d, %d)\n", code, theLaunchIndex.x, theLaunchIndex.y);
-    }
+  if (RT_EXCEPTION_USER <= code) {
+    rtPrintf("User exception %d at (%d, %d)\n", code - RT_EXCEPTION_USER,
+             theLaunchIndex.x, theLaunchIndex.y);
+  } else {
+    rtPrintf("Exception code 0x%X at (%d, %d)\n", code, theLaunchIndex.x,
+             theLaunchIndex.y);
+  }
 }

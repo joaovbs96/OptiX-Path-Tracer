@@ -1,5 +1,5 @@
 #pragma once
 
-#include "../vec.h"
-#include "../prd.h"
 #include "../XorShift32.h"
+#include "../prd.h"
+#include "../vec.h"

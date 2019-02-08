@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "vec.h"
 #include "XorShift32.h"
+#include "vec.h"
 
 typedef enum {
   Lambertian,
@@ -45,23 +45,24 @@ struct Hit_Record {
   float v;
 };
 
-/*! "per ray data" (PRD) for our sample's rays. In the simple example, there is only
-  one ray type, and it only ever returns one thing, which is a color (everything else
-  is handled through the recursion). In addition to that return type, rays have to
-  carry recursion state, which in this case are recursion depth and random number state */
+/*! "per ray data" (PRD) for our sample's rays. In the simple example, there is
+  only one ray type, and it only ever returns one thing, which is a color
+  (everything else is handled through the recursion). In addition to that return
+  type, rays have to carry recursion state, which in this case are recursion
+  depth and random number state */
 struct PerRayData {
   struct {
-    XorShift32 *randState;
+    XorShift32* randState;
     float time;
   } in;
   struct {
-    ScatterEvent  scatterEvent;
-    float3         origin;
-    float3         direction;
-    float3         normal;
-    float3         emitted;
-    float3         attenuation;
-    bool          is_specular;
+    ScatterEvent scatterEvent;
+    float3 origin;
+    float3 direction;
+    float3 normal;
+    float3 emitted;
+    float3 attenuation;
+    bool is_specular;
     Material_Type type;
   } out;
 };

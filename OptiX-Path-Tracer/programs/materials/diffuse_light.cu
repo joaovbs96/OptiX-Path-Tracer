@@ -7,23 +7,19 @@ rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
 
-// the attributes we use to communicate between intersection programs and hit program
+// the attributes we use to communicate between intersection programs and hit
+// program
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
-rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
+inline __device__ bool scatter(const optix::Ray &ray_in) { return false; }
 
-inline __device__ bool scatter(const optix::Ray &ray_in) {
-  return false;
-}
-
-RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
-  return false;
-}
+RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) { return false; }
 
 inline __device__ float3 emitted() {
-  if(dot(hit_rec.normal, ray.direction) < 0.f)
+  if (dot(hit_rec.normal, ray.direction) < 0.f)
     return sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   else
     return make_float3(0.f);

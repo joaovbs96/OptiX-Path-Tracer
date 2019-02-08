@@ -5,11 +5,13 @@
 // OptiX includes:
 #define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
 #include <optix.h>
-#include <optix_world.h>
 #include <optix_math.h>
+#include <optix_world.h>
+
 
 using namespace optix;
 
+// Math defines
 #ifndef PI_F
 #define PI_F 3.141592654f
 #endif

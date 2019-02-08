@@ -16,42 +16,42 @@
 
 #pragma once
 
-#include "vec.h"
 #include "XorShift32.h"
+#include "vec.h"
 
 inline __device__ float3 random_in_unit_disk(XorShift32 &rnd) {
   float a = rnd() * 2.0f * 3.1415926f;
 
-	float3 xy = make_float3(sin(a), cos(a), 0);
-	xy *= sqrt(rnd());
-	
+  float3 xy = make_float3(sin(a), cos(a), 0);
+  xy *= sqrt(rnd());
+
   return xy;
 }
 
 inline __device__ float3 random_in_unit_sphere(XorShift32 &rnd) {
   float z = rnd() * 2.0f - 1.0f;
-	
-	float t = rnd() * 2.0f * 3.1415926f;
-	float r = sqrt((0.0f > (1.0f - z * z) ? 0.0f : (1.0f - z * z)));
-	
-	float x = r * cos(t);
-	float y = r * sin(t);
 
-	float3 res = make_float3(x, y, z);
-	res *= powf(rnd(), 1.0f / 3.0f);
-	
+  float t = rnd() * 2.0f * 3.1415926f;
+  float r = sqrt((0.0f > (1.0f - z * z) ? 0.0f : (1.0f - z * z)));
+
+  float x = r * cos(t);
+  float y = r * sin(t);
+
+  float3 res = make_float3(x, y, z);
+  res *= powf(rnd(), 1.0f / 3.0f);
+
   return res;
 }
 
 inline __device__ float3 random_cosine_direction(XorShift32 &rnd) {
-	float r1 = rnd();
-	float r2 = rnd();
+  float r1 = rnd();
+  float r2 = rnd();
 
-	float phi = 2 * PI_F * r1;
+  float phi = 2 * PI_F * r1;
 
-	float x = cos(phi) * 2.f * sqrt(r2);
-	float y = sin(phi) * 2.f * sqrt(r2);
-	float z = sqrt(1.f - r2);
+  float x = cos(phi) * 2.f * sqrt(r2);
+  float y = sin(phi) * 2.f * sqrt(r2);
+  float z = sqrt(1.f - r2);
 
-	return make_float3(x, y, z);
+  return make_float3(x, y, z);
 }

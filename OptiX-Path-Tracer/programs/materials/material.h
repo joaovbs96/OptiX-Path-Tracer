@@ -22,7 +22,6 @@
 #include "../sampling.h"
 
 // TODO: use built in functions and types whenever possible
-// TODO: create 'common.h' header, move common definitions and includes from vec and float3_functions to there
 
 __device__ float schlick(float cosine, float ref_idx) {
   float r0 = (1.0f - ref_idx) / (1.0f + ref_idx);

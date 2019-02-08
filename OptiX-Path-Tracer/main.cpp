@@ -14,10 +14,11 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include <iostream>
-#include <iomanip>
 #include <chrono>
 #include <cstdlib>
+#include <iomanip>
+#include <iostream>
+
 
 // Host side constructors and functions
 #include "host_includes/scenes.h"
@@ -26,9 +27,7 @@
 optix::Context g_context;
 
 // Clamp color values when saving to file
-inline float clamp(float value) {
-	return value > 1.0f ? 1.0f : value;
-}
+inline float clamp(float value) { return value > 1.0f ? 1.0f : value; }
 
 float renderFrame(int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
@@ -37,7 +36,7 @@ float renderFrame(int Nx, int Ny) {
   g_context->validate();
 
   // Launch ray generation program
-  g_context->launch(/*program ID:*/0, /*launch dimensions:*/Nx, Ny);
+  g_context->launch(/*program ID:*/ 0, /*launch dimensions:*/ Nx, Ny);
 
   auto t1 = std::chrono::system_clock::now();
   auto time = std::chrono::duration<float>(t1 - t0).count();
@@ -63,7 +62,8 @@ int main(int ac, char **av) {
   // Set RTX global attribute
   // Should be done before creating the context
   const int RTX = true;
-  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX) != RT_SUCCESS)
+  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX) !=
+      RT_SUCCESS)
     printf("Error setting RTX mode. \n");
   else
     printf("OptiX RTX execution mode is %s.\n", (RTX) ? "on" : "off");
@@ -71,59 +71,61 @@ int main(int ac, char **av) {
   // Create an OptiX context
   g_context = optix::Context::create();
   g_context->setRayTypeCount(1);
-  g_context->setStackSize( 5000 ); // it's recommended to keep it under 10k, it's per core
-  // TODO: investigate new OptiX stack size API(sets number of recursions rather than bytes)
-  
+  g_context->setStackSize(5000);
+  // it's recommended to keep it under 10k, it's per core
+  // TODO: investigate new OptiX stack size API(sets number of recursions rather
+  // than bytes)
+
   // Main parameters
   int Nx, Ny;
-  int scene = 4;
+  int scene = 2;
 
   // Set number of samples
-  const int samples = 100;
+  const int samples = 400;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
   std::string output;
-  switch(scene) {
-    case 0: // Peter Shirley's "In One Weekend" scene
+  switch (scene) {
+    case 0:  // Peter Shirley's "In One Weekend" scene
       Nx = Ny = 1080;
       output = "output/iow-";
       InOneWeekend(g_context, Nx, Ny);
       break;
-    
-    case 1: // Moving Spheres test scene
+
+    case 1:  // Moving Spheres test scene
       Nx = Ny = 1080;
       output = "output/moving-";
       MovingSpheres(g_context, Nx, Ny);
       break;
-    
-    case 2: // Cornell Box scene
+
+    case 2:  // Cornell Box scene
       Nx = Ny = 1080;
       output = "output/royl-";
       Cornell(g_context, Nx, Ny);
       break;
-    
-    case 3: // Peter Shirley's "The Next Week" final scene
+
+    case 3:  // Peter Shirley's "The Next Week" final scene
       Nx = Ny = 1080;
       output = "output/tnw-final-";
       Final_Next_Week(g_context, Nx, Ny);
       break;
-    
-    case 4: // 3D models test scene
+
+    case 4:  // 3D models test scene
       Nx = Ny = 1080;
       output = "output/3D-models-";
       Test_Scene(g_context, Nx, Ny);
       break;
-    
-    case 5: // Scene parser
+
+    case 5:  // Scene parser
       Nx = Ny = 1080;
       output = "output/parsed-";
-      //Parser(g_context, "main.json");
+      // Parser(g_context, "main.json");
       printf("Error: Scene parser not yet implemented.\n");
       system("PAUSE");
       return 1;
       break;
-    
+
     default:
       printf("Error: scene unknown.\n");
       system("PAUSE");
@@ -141,45 +143,46 @@ int main(int ac, char **av) {
   // Build scene
   g_context["frame"]->setInt(0);
   float buildTime = renderFrame(0, 0);
-  printf("Done building OptiX data structures, which took %.2f seconds.\n", buildTime);
+  printf("Done building OptiX data structures, which took %.2f seconds.\n",
+         buildTime);
 
   // Render scene
   float renderTime = 0.f;
-  for(int i = 0; i < samples; i++) {
+  for (int i = 0; i < samples; i++) {
     g_context["frame"]->setInt(i);
     renderTime += renderFrame(Nx, Ny);
-    
+
     printf("Progress: %.2f%%\r", (i * 100.f / samples));
   }
   printf("Done rendering, which took %.2f seconds.\n", renderTime);
-       
+
   // Save frame buffer to a PNG file
-	unsigned char *arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
+  unsigned char *arr =
+      (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
   const float3 *cols = (const float3 *)fb->map();
 
-	for (int j = Ny - 1; j >= 0; j--)
-		for (int i = 0; i < Nx; i++) {
+  for (int j = Ny - 1; j >= 0; j--)
+    for (int i = 0; i < Nx; i++) {
       int col_index = Nx * j + i;
-			int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
+      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
       // average matrix of samples
       float3 col = cols[col_index] / float(samples);
-  
+
       // gamma correction
       col = make_float3(sqrt(col.x), sqrt(col.y), sqrt(col.z));
 
       // from float to RGB [0, 255]
-			arr[pixel_index + 0] = int(255.99 * clamp(col.x)); // R
-			arr[pixel_index + 1] = int(255.99 * clamp(col.y)); // G
-			arr[pixel_index + 2] = int(255.99 * clamp(col.z)); // B
+      arr[pixel_index + 0] = int(255.99 * clamp(col.x));  // R
+      arr[pixel_index + 1] = int(255.99 * clamp(col.y));  // G
+      arr[pixel_index + 2] = int(255.99 * clamp(col.z));  // B
     }
 
   output += std::to_string(samples) + ".png";
-  stbi_write_png((char*)output.c_str(), Nx, Ny, 3, arr, 0);
+  stbi_write_png((char *)output.c_str(), Nx, Ny, 3, arr, 0);
   fb->unmap();
 
   system("PAUSE");
 
   return 0;
 }
-

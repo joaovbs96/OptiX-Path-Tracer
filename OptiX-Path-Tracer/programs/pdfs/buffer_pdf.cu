@@ -2,21 +2,20 @@
 
 rtDeclareVariable(int, size, , );
 
-rtBuffer< rtCallableProgramId<float(pdf_in&)> > values;
+rtBuffer<rtCallableProgramId<float(pdf_in&)>> values;
 
-RT_CALLABLE_PROGRAM float buffer_value(pdf_in &in) {
-    float sum = 0.f;
-    
-    for(int i = 0; i < size; i++)
-        sum += values[i](in);
-    sum /= size;
+RT_CALLABLE_PROGRAM float buffer_value(pdf_in& in) {
+  float sum = 0.f;
 
-    return sum;
+  for (int i = 0; i < size; i++) sum += values[i](in);
+  sum /= size;
+
+  return sum;
 }
 
-rtBuffer< rtCallableProgramId<float3(pdf_in&, XorShift32&)> > generators;
+rtBuffer<rtCallableProgramId<float3(pdf_in&, XorShift32&)>> generators;
 
-RT_CALLABLE_PROGRAM float3 buffer_generate(pdf_in &in, XorShift32 &rnd) {
-    int index = int(rnd() * size);
-    return generators[index](in, rnd);
+RT_CALLABLE_PROGRAM float3 buffer_generate(pdf_in& in, XorShift32& rnd) {
+  int index = int(rnd() * size);
+  return generators[index](in, rnd);
 }

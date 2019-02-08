@@ -14,24 +14,24 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "prd.h"
 #include "pdfs/pdf.h"
+#include "prd.h"
 
 // the 'builtin' launch index we need to render a frame
-rtDeclareVariable(uint2, pixelID,   rtLaunchIndex, );
-rtDeclareVariable(uint2, launchDim, rtLaunchDim,   );
+rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
+rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
 
 // the ray related state
 rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtBuffer<float3, 2> fb; // float3 color frame buffer
-rtBuffer<unsigned int, 2> seed; // uint seed buffer
+rtBuffer<float3, 2> fb;          // float3 color frame buffer
+rtBuffer<unsigned int, 2> seed;  // uint seed buffer
 
-rtDeclareVariable(int, samples, , ); // number of samples
-rtDeclareVariable(int, frame, , ); // current frame
+rtDeclareVariable(int, samples, , );  // number of samples
+rtDeclareVariable(int, frame, , );    // current frame
 
-rtDeclareVariable(rtObject, world, , ); // scene variable
+rtDeclareVariable(rtObject, world, , );  // scene variable
 
 rtDeclareVariable(float3, camera_lower_left_corner, , );
 rtDeclareVariable(float3, camera_horizontal, , );
@@ -45,19 +45,17 @@ rtDeclareVariable(float, time1, , );
 
 // PDF callable programs
 rtDeclareVariable(rtCallableProgramId<float(pdf_in&)>, value, , );
-rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, XorShift32&)>, generate, , );
-rtBuffer< rtCallableProgramId<float(pdf_in&)> > scattering_pdf;
+rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, XorShift32&)>, generate,
+                  , );
+rtBuffer<rtCallableProgramId<float(pdf_in&)>> scattering_pdf;
 
 struct Camera {
-  static __device__ optix::Ray generateRay(float s, float t, XorShift32 &rnd) {
+  static __device__ optix::Ray generateRay(float s, float t, XorShift32& rnd) {
     const float3 rd = camera_lens_radius * random_in_unit_disk(rnd);
     const float3 lens_offset = camera_u * rd.x + camera_v * rd.y;
     const float3 origin = camera_origin + lens_offset;
-    const float3 direction
-      = camera_lower_left_corner
-      + s * camera_horizontal
-      + t * camera_vertical
-      - origin;
+    const float3 direction = camera_lower_left_corner + s * camera_horizontal +
+                             t * camera_vertical - origin;
 
     return optix::make_Ray(/* origin   : */ origin,
                            /* direction: */ direction,
@@ -70,25 +68,26 @@ struct Camera {
 // Clamp color values
 inline __device__ float3 clamp(const float3& c) {
   float3 temp = c;
-  if(temp.x > 1.f) temp.x = 1.f;
-  if(temp.y > 1.f) temp.y = 1.f;
-  if(temp.z > 1.f) temp.z = 1.f;
+  if (temp.x > 1.f) temp.x = 1.f;
+  if (temp.y > 1.f) temp.y = 1.f;
+  if (temp.z > 1.f) temp.z = 1.f;
 
   return temp;
 }
 
-inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
+inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
 
   float3 current_color = make_float3(1.f);
-  
+
   /* iterative version of recursion, up to depth 50 */
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
     if (prd.out.scatterEvent == rayDidntHitAnything) {
-      // ray got 'lost' to the environment - return attenuation set by miss shader
+      // ray got 'lost' to the environment - return attenuation set by miss
+      // shader
       return current_color * prd.out.attenuation;
     }
 
@@ -98,7 +97,7 @@ inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
 
     // ray is still alive, and got properly bounced
     else {
-      if(prd.out.is_specular) {
+      if (prd.out.is_specular) {
         current_color = prd.out.attenuation * current_color;
 
         ray = optix::make_Ray(/* origin   : */ prd.out.origin,
@@ -106,13 +105,16 @@ inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
                               /* ray type : */ 0,
                               /* tmin     : */ 1e-3f,
                               /* tmax     : */ RT_DEFAULT_MAX);
-      }
-      else{
+      } else {
         pdf_in in(prd.out.origin, prd.out.normal);
         float3 pdf_direction = generate(in, rnd);
         float pdf_val = value(in);
-        
-        current_color = clamp(prd.out.emitted + (prd.out.attenuation * scattering_pdf[prd.out.type](in) * current_color) / pdf_val);
+
+        current_color =
+            clamp(prd.out.emitted +
+                  (prd.out.attenuation * scattering_pdf[prd.out.type](in) *
+                   current_color) /
+                      pdf_val);
 
         ray = optix::make_Ray(/* origin   : */ in.origin,
                               /* direction: */ in.scattered_direction,
@@ -124,14 +126,14 @@ inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
 
     // Russian Roulette
     float p = max_component(current_color);
-    if(depth > 10) {
-      if(rnd() >= p)
+    if (depth > 10) {
+      if (rnd() >= p)
         return current_color;
       else
-        current_color *= 1/p;
+        current_color *= 1 / p;
     }
   }
-  
+
   // recursion did not terminate - cancel it
   return make_float3(0.f);
 }
@@ -139,9 +141,9 @@ inline __device__ float3 color(optix::Ray &ray, XorShift32 &rnd) {
 // Remove NaN values
 inline __device__ float3 de_nan(const float3& c) {
   float3 temp = c;
-  if(!(temp.x == temp.x)) temp.x = 0.f;
-  if(!(temp.y == temp.y)) temp.y = 0.f;
-  if(!(temp.z == temp.z)) temp.z = 0.f;
+  if (!(temp.x == temp.x)) temp.x = 0.f;
+  if (!(temp.y == temp.y)) temp.y = 0.f;
+  if (!(temp.z == temp.z)) temp.z = 0.f;
 
   return temp;
 }
@@ -153,23 +155,21 @@ RT_PROGRAM void renderPixel() {
   XorShift32 rnd;
 
   // init frame buffer and rng
-  if(frame == 0) {
+  if (frame == 0) {
     unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;
     rnd.init(init_index);
 
     // initiate the color buffer
     fb[pixelID] = make_float3(0.f, 0.f, 0.f);
-  }
-  else
+  } else
     rnd.state = seed[pixelID];
 
   float u = float(pixelID.x + rnd()) / float(launchDim.x);
   float v = float(pixelID.y + rnd()) / float(launchDim.y);
-    
+
   // trace ray
   optix::Ray ray = Camera::generateRay(u, v, rnd);
-  
-  fb[pixelID] += de_nan(color(ray, rnd)); // accumulate color
-  seed[pixelID] = rnd.state; // save RND state
-}
 
+  fb[pixelID] += de_nan(color(ray, rnd));  // accumulate color
+  seed[pixelID] = rnd.state;               // save RND state
+}

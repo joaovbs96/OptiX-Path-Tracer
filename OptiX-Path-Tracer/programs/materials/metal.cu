@@ -17,32 +17,33 @@
 #include "material.h"
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray,   rtCurrentRay, );
+rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
 
 // the per ray data we operate on
-rtDeclareVariable(PerRayData, prd,   rtPayload, );
-rtDeclareVariable(rtObject,   world, , );
+rtDeclareVariable(PerRayData, prd, rtPayload, );
+rtDeclareVariable(rtObject, world, , );
 
-// the attributes we use to communicate between intersection programs and hit program
+// the attributes we use to communicate between intersection programs and hit
+// program
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
-rtBuffer< rtCallableProgramId<float3(float, float, float3)> > sample_texture;
-rtDeclareVariable(float,  fuzz,   , );
+rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+rtDeclareVariable(float, fuzz, , );
 
 inline __device__ bool scatter(const optix::Ray &ray_in) {
   float3 reflected = reflect(unit_vector(ray_in.direction), hit_rec.normal);
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
-  prd.out.direction = reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
-  prd.out.attenuation = sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
+  prd.out.direction =
+      reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
+  prd.out.attenuation =
+      sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   prd.out.normal = hit_rec.normal;
   return true;
 }
 
-inline __device__ float3 emitted() {
-  return make_float3(0.f, 0.f, 0.f);
-}
+inline __device__ float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
 
 RT_PROGRAM void closest_hit() {
   prd.out.type = Metal;
