@@ -4,9 +4,8 @@
 
 ## Overview
 
-Project forked from Ingo Wald's OptiX version of Pete Shirley's "Ray Tracing" series. The project is still being 
-expanded with new features being added even after being done with the three books. Accompanying blog posts describing 
-the implemention are available in the following links:
+Project forked from Ingo Wald's OptiX version of Peter Shirley's "Ray Tracing" series. The project is still being 
+expanded with new features being added even after being done with the final book, "The Rest of Your Life". Accompanying blog posts describing the implemention are available in the following links:
 
 - ["Ray Tracing: The Next Week" In OptiX](https://joaovbs96.github.io/optix/2018/12/24/next-week.html)
 - ["Ray Tracing: The Rest of Your Life" In OptiX](https://joaovbs96.github.io/optix/2019/01/12/rest-life.html)

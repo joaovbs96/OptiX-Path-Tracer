@@ -26,19 +26,19 @@ RT_PROGRAM void sky() {
   const float t = 0.5f * (unit_direction.y + 1.f);
   const float3 c =
       (1.f - t) * make_float3(1.f) + t * make_float3(0.5f, 0.7f, 1.f);
-  prd.out.attenuation = c;
+  prd.out.attenuation = prd.out.emitted = c;
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
 RT_PROGRAM void dark() {
-  prd.out.attenuation = make_float3(0.f);
+  prd.out.attenuation = prd.out.emitted = make_float3(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 RT_PROGRAM void box() {
-  prd.out.attenuation = make_float3(0.f);
+  prd.out.attenuation = prd.out.emitted = make_float3(0.f);
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
@@ -48,6 +48,7 @@ RT_PROGRAM void environmental_mapping() {
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
   float v = 0.5f * (1.f + sinf(phi));
 
-  prd.out.attenuation = sample_texture[0](u, v, make_float3(0.f));
+  prd.out.attenuation = prd.out.emitted =
+      sample_texture[0](u, v, make_float3(0.f));
   prd.out.scatterEvent = rayDidntHitAnything;
 }

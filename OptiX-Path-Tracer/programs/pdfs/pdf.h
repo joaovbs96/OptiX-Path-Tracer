@@ -3,6 +3,8 @@
 #include "../sampling.h"
 #include "../vec.h"
 
+// TODO: rename structs
+
 // communication between hit functions and the value programs
 struct pdf_rec {
   float distance;

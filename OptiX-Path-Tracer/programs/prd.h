@@ -19,6 +19,8 @@
 #include "XorShift32.h"
 #include "vec.h"
 
+// TODO: move and rename structs as needed
+
 typedef enum {
   Lambertian,
   Diffuse_Light,
@@ -33,8 +35,12 @@ typedef enum {
   /*! ray could not get scattered, and should get cancelled */
   rayGotCancelled,
   /*! ray didn't hit anything, and went into the environemnt */
-  rayDidntHitAnything
+  rayDidntHitAnything,
+  rayGotTransmitted,
+  rayDirac
 } ScatterEvent;
+
+typedef enum { isotropic, vacuum } PhaseFunction;
 
 struct Hit_Record {
   int index;
@@ -64,5 +70,9 @@ struct PerRayData {
     float3 attenuation;
     bool is_specular;
     Material_Type type;
+    struct {
+      PhaseFunction phaseFunction;
+      float3 extinction;
+    } medium;
   } out;
 };

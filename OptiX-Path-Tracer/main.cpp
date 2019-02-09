@@ -169,7 +169,7 @@ int main(int ac, char **av) {
       float3 col = cols[col_index] / float(samples);
 
       // gamma correction
-      col = make_float3(sqrt(col.x), sqrt(col.y), sqrt(col.z));
+      col = sqrt(col);
 
       // from float to RGB [0, 255]
       arr[pixel_index + 0] = int(255.99 * clamp(col.x));  // R

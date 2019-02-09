@@ -17,6 +17,8 @@
 #include "pdfs/pdf.h"
 #include "prd.h"
 
+// TODO: we have three different clamp functions, try to merge them
+
 // the 'builtin' launch index we need to render a frame
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
@@ -124,13 +126,13 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
       }
     }
 
-    // Russian Roulette
+    // Russian Roulette Path Termination
     float p = max_component(current_color);
     if (depth > 10) {
       if (rnd() >= p)
         return current_color;
       else
-        current_color *= 1 / p;
+        current_color *= 1.f / p;
     }
   }
 
@@ -164,6 +166,8 @@ RT_PROGRAM void renderPixel() {
   } else
     rnd.state = seed[pixelID];
 
+  // Subpixel jitter: send the ray through a different position inside the pixel
+  // each time, to provide antialiasing.
   float u = float(pixelID.x + rnd()) / float(launchDim.x);
   float v = float(pixelID.y + rnd()) / float(launchDim.y);
 
