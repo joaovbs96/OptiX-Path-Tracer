@@ -16,29 +16,28 @@
 
 #pragma once
 
-#include "../prd.h"
-#include "../pdfs/pdf.h"
 #include "../XorShift32.h"
+#include "../pdfs/pdf.h"
+#include "../prd.h"
 #include "../sampling.h"
 
 // TODO: use built in functions and types whenever possible
 
-__device__ float schlick(float cosine, float ref_idx) {
-  float r0 = (1.0f - ref_idx) / (1.0f + ref_idx);
+RT_FUNCTION float schlick(float cosine, float ref_idx) {
+  float r0 = (1.f - ref_idx) / (1.f + ref_idx);
   r0 = r0 * r0;
-  return r0 + (1.0f - r0) * pow((1.0f - cosine), 5.0f);
+  return r0 + (1.f - r0) * pow((1.f - cosine), 5.f);
 }
 
-__device__ bool refract(const float3& v, const float3& n, float ni_over_nt, float3& refracted) {
+RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
+                         float3& refracted) {
   float3 uv = unit_vector(v);
   float dt = dot(uv, n);
-  float discriminant = 1.0f - ni_over_nt * ni_over_nt*(1 - dt * dt);
-  
-  if (discriminant > 0) {
+  float discriminant = 1.f - ni_over_nt * ni_over_nt * (1.f - dt * dt);
+
+  if (discriminant > 0.f) {
     refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
     return true;
-  }
-  else
+  } else
     return false;
 }
-

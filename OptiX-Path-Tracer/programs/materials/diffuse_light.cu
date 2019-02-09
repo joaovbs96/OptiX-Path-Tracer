@@ -1,7 +1,7 @@
 #include "material.h"
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -14,11 +14,11 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 // and finally - that particular material's parameters
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
-inline __device__ bool scatter(const optix::Ray &ray_in) { return false; }
+RT_FUNCTION bool scatter(const Ray &ray_in) { return false; }
 
 RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) { return false; }
 
-inline __device__ float3 emitted() {
+RT_FUNCTION float3 emitted() {
   if (dot(hit_rec.normal, ray.direction) < 0.f)
     return sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
   else

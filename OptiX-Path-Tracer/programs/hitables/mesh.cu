@@ -16,7 +16,7 @@ rtBuffer<float2, 1> texcoord_buffer;    // x3 number of faces
 rtBuffer<float, 1> material_id_buffer;  // = number of faces
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // the attributes we use to communicate between intersection programs and hit
 // program
@@ -68,8 +68,7 @@ RT_PROGRAM void mesh_intersection(int index) {
       float3 c_n = normal_buffer[3 * index + 2];
       float3 normal = (a_n * (1.0 - u - v) + b_n * u + c_n * v);
 
-      hit_rec.normal =
-          optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
       hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
       hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);
@@ -86,7 +85,7 @@ RT_PROGRAM void mesh_intersection(int index) {
 
 // returns the bounding box of the pid'th primitive in this geometry.
 RT_PROGRAM void mesh_bounds(int index, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
   float3 a = vertex_buffer[3 * index];
   float3 b = vertex_buffer[3 * index + 1];
   float3 c = vertex_buffer[3 * index + 2];
@@ -95,7 +94,7 @@ RT_PROGRAM void mesh_bounds(int index, float result[6]) {
   float3 e2 = e_buffer[2 * index + 1];
   const float area = length(cross(e1, e2));
 
-  if (area > 0.0f && !isinf(area)) {
+  if (area > 0.f && !isinf(area)) {
     aabb->m_min = fminf(fminf(a, b), c);
     aabb->m_max = fmaxf(fmaxf(a, b), c);
   } else {

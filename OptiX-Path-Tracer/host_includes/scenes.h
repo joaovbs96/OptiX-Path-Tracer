@@ -12,7 +12,7 @@
 #include "textures.h"
 #include "transforms.h"
 
-void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
+void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
@@ -20,14 +20,13 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
                       new Sphere_PDF(make_float3(4.f, 1.f, 0.f), 1.f));
 
   // add material PDFs
-  optix::Buffer material_pdfs =
+  Buffer material_pdfs =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  optix::callableProgramId<int(int)>* f_data =
-      static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] =
-      optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  callableProgramId<int(int)>* f_data =
+      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[1] =
-      optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
@@ -36,7 +35,7 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
   setExceptionProgram(g_context);
 
   // Set acceleration structure
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // Texture *checker = new Checker_Texture(new
@@ -44,7 +43,7 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
   // Constant_Texture(make_float3(0.9f, 0.9f, 0.9f)));
 
   addChild(
-      Sphere(make_float3(0.f, -1000.0f, -1.f), 1000.f,
+      Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f,
              Lambertian(new Constant_Texture(make_float3(0.5f))), g_context),
       group, g_context);
 
@@ -61,8 +60,8 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
       } else if (choose_mat < 0.95f) {
         addChild(Sphere(center, 0.2f,
                         Metal(new Constant_Texture(make_float3(
-                                  0.5f * (1.0f + rnd()), 0.5f * (1.0f + rnd()),
-                                  0.5f * (1.0f + rnd()))),
+                                  0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()),
+                                  0.5f * (1.f + rnd()))),
                               0.5f * rnd()),
                         g_context),
                  group, g_context);
@@ -74,7 +73,7 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
   }
   addChild(
       Sphere(make_float3(4.f, 1.f, 0.f), 1.f,
-             Metal(new Constant_Texture(make_float3(0.7f, 0.6f, 0.5f)), 0.0f),
+             Metal(new Constant_Texture(make_float3(0.7f, 0.6f, 0.5f)), 0.f),
              g_context),
       group, g_context);
   addChild(
@@ -104,7 +103,7 @@ void InOneWeekend(optix::Context& g_context, int Nx, int Ny) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
+void MovingSpheres(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
@@ -114,14 +113,13 @@ void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
-  optix::Buffer material_pdfs =
+  Buffer material_pdfs =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  optix::callableProgramId<int(int)>* f_data =
-      static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] =
-      optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  callableProgramId<int(int)>* f_data =
+      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[1] =
-      optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
@@ -129,14 +127,14 @@ void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Texture* checker =
       new Checker_Texture(new Constant_Texture(make_float3(0.2f, 0.3f, 0.1f)),
                           new Constant_Texture(make_float3(0.9f, 0.9f, 0.9f)));
 
-  addChild(Sphere(make_float3(0.f, -1000.0f, -1.f), 1000.f, Lambertian(checker),
+  addChild(Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, Lambertian(checker),
                   g_context),
            group, g_context);
 
@@ -155,8 +153,8 @@ void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
       } else if (choose_mat < 0.95f) {
         addChild(Sphere(center, 0.2f,
                         Metal(new Constant_Texture(make_float3(
-                                  0.5f * (1.0f + rnd()), 0.5f * (1.0f + rnd()),
-                                  0.5f * (1.0f + rnd()))),
+                                  0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()),
+                                  0.5f * (1.f + rnd()))),
                               0.5f * rnd()),
                         g_context),
                  group, g_context);
@@ -169,7 +167,7 @@ void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
   addChild(Sphere(make_float3(4.f, 1.f, 1.f), 1.f, Dielectric(1.5f), g_context),
            group, g_context);
   addChild(Sphere(make_float3(0.f, 1.f, 1.5f), 1.f,
-                  Metal(new Noise_Texture(4.0), 0.0f), g_context),
+                  Metal(new Noise_Texture(4.f), 0.f), g_context),
            group, g_context);
   addChild(
       Sphere(make_float3(-4.f, 1.f, 2.f), 1.f,
@@ -199,7 +197,7 @@ void MovingSpheres(optix::Context& g_context, int Nx, int Ny) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Cornell(optix::Context& g_context, int Nx, int Ny) {
+void Cornell(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
@@ -210,14 +208,13 @@ void Cornell(optix::Context& g_context, int Nx, int Ny) {
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
-  optix::Buffer material_pdfs =
+  Buffer material_pdfs =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  optix::callableProgramId<int(int)>* f_data =
-      static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] =
-      optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  callableProgramId<int(int)>* f_data =
+      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[1] =
-      optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
@@ -225,7 +222,7 @@ void Cornell(optix::Context& g_context, int Nx, int Ny) {
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Materials* red =
@@ -304,7 +301,7 @@ void Cornell(optix::Context& g_context, int Nx, int Ny) {
   const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
   const float3 lookat = make_float3(278.f, 278.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(40.0f);
+  const float fovy(40.f);
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
@@ -316,7 +313,7 @@ void Cornell(optix::Context& g_context, int Nx, int Ny) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
+void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
@@ -327,14 +324,13 @@ void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
-  optix::Buffer material_pdfs =
+  Buffer material_pdfs =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  optix::callableProgramId<int(int)>* f_data =
-      static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] =
-      optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  callableProgramId<int(int)>* f_data =
+      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[1] =
-      optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
@@ -342,7 +338,7 @@ void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // ground
@@ -422,13 +418,13 @@ void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
   // group of small spheres
   Materials* white =
       new Lambertian(new Constant_Texture(make_float3(0.73f, 0.73f, 0.73f)));
-  std::vector<optix::GeometryInstance> d_list;
+  std::vector<GeometryInstance> d_list;
   for (int j = 0; j < 1000; j++) {
     d_list.push_back(Sphere(make_float3(165 * rnd(), 165 * rnd(), 165 * rnd()),
                             10.f, *white, g_context));
   }
 
-  optix::GeometryGroup box = g_context->createGeometryGroup();
+  GeometryGroup box = g_context->createGeometryGroup();
   box->setAcceleration(g_context->createAcceleration("Trbvh"));
   for (int i = 0; i < d_list.size(); i++) box->addChild(d_list[i]);
   addChild(translate(rotate(box, 15.f, Y_AXIS, g_context),
@@ -441,7 +437,7 @@ void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
   const float3 lookfrom = make_float3(478.f, 278.f, -600.f);
   const float3 lookat = make_float3(278.f, 278.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(40.0f);
+  const float fovy(40.f);
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);
@@ -453,21 +449,20 @@ void Final_Next_Week(optix::Context& g_context, int Nx, int Ny) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
+void Test_Scene(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
   Cosine_PDF mixture;
 
   // add material PDFs
-  optix::Buffer material_pdfs =
+  Buffer material_pdfs =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  optix::callableProgramId<int(int)>* f_data =
-      static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] =
-      optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  callableProgramId<int(int)>* f_data =
+      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
+  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[1] =
-      optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the ray generation and miss programs
@@ -477,7 +472,7 @@ void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
   // Set the exception program
   setExceptionProgram(g_context);
 
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Materials* white =
@@ -487,8 +482,8 @@ void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
 
   // Test model
   float scale_factor = 1400.f;
-  optix::GeometryInstance model =
-      Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.0f);
+  GeometryInstance model =
+      Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.f);
   if (model == NULL)
     system("PAUSE");
   else
@@ -500,14 +495,14 @@ void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
 
   // Lucy
   /*float scale_factor = 150.f;
-  optix::GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium,
+  GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium,
   true, "assets/lucy/", 1.f); if(model == NULL) system("PAUSE"); else
     addChild(translate(scale(model, make_float3(scale_factor), g_context),
   make_float3(0.f, -550.f, 0.f), g_context), group, g_context);*/
 
   // Dragon
   /*float scale_factor = 400.f;
-  optix::GeometryInstance model = Mesh("dragon_cubic.obj", g_context, *white,
+  GeometryInstance model = Mesh("dragon_cubic.obj", g_context, *white,
   true, "assets/dragon/", 1.f); if(model == NULL) system("PAUSE"); else
     addChild(translate(rotate(scale(model, make_float3(scale_factor),
   g_context), 180.f, Y_AXIS, g_context), make_float3(0.f, -350.f, 200.f),
@@ -517,16 +512,16 @@ void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
   const float3 lookfrom = make_float3(0.f, 0.f, -800.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(100.0f);
+  const float fovy(100.f);
   const float aspect(float(Nx) / float(Ny));
-  const float aperture(0.0f);
+  const float aperture(0.f);
   const float dist(0.8f);
   Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
   camera.set(g_context);
 
   // Sponza
   /*float scale = 0.5f;
-  optix::GeometryInstance model = Mesh("sponza.obj", g_context, *white, false,
+  GeometryInstance model = Mesh("sponza.obj", g_context, *white, false,
   "assets/sponza/", scale); addChild(translate(rotate(model, 90.f, Y_AXIS,
   g_context), make_float3(300.f, 5.f, -400.f), g_context), group, g_context);*/
 
@@ -534,7 +529,7 @@ void Test_Scene(optix::Context& g_context, int Nx, int Ny) {
   /*const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
   const float3 lookat = make_float3(278.f, 278.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(40.0f);
+  const float fovy(40.f);
   const float aspect(float(Nx) / float(Ny));
   const float aperture(0.f);
   const float dist(10.f);

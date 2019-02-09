@@ -24,21 +24,21 @@ float rnd() {
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char embedded_constant_texture_programs[];
-extern "C" const char embedded_checker_texture_programs[];
-extern "C" const char embedded_noise_texture_programs[];
-extern "C" const char embedded_image_texture_programs[];
+extern "C" const char constant_texture_programs[];
+extern "C" const char checker_texture_programs[];
+extern "C" const char noise_texture_programs[];
+extern "C" const char image_texture_programs[];
 
 struct Texture {
-  virtual optix::Program assignTo(optix::Context &g_context) const = 0;
+  virtual Program assignTo(Context &g_context) const = 0;
 };
 
 struct Constant_Texture : public Texture {
   Constant_Texture(const float3 &c) : color(c) {}
 
-  virtual optix::Program assignTo(optix::Context &g_context) const override {
-    optix::Program textProg = g_context->createProgramFromPTXString(
-        embedded_constant_texture_programs, "sample_texture");
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg = g_context->createProgramFromPTXString(
+        constant_texture_programs, "sample_texture");
 
     textProg["color"]->set3fv(&color.x);
 
@@ -51,9 +51,9 @@ struct Constant_Texture : public Texture {
 struct Checker_Texture : public Texture {
   Checker_Texture(const Texture *o, const Texture *e) : odd(o), even(e) {}
 
-  virtual optix::Program assignTo(optix::Context &g_context) const override {
-    optix::Program textProg = g_context->createProgramFromPTXString(
-        embedded_checker_texture_programs, "sample_texture");
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg = g_context->createProgramFromPTXString(
+        checker_texture_programs, "sample_texture");
 
     textProg["odd"]->setProgramId(odd->assignTo(g_context));
     textProg["even"]->setProgramId(even->assignTo(g_context));
@@ -83,8 +83,7 @@ struct Noise_Texture : public Texture {
     }
   }
 
-  void perlin_generate_perm(optix::Buffer &perm_buffer,
-                            optix::Context &g_context) const {
+  void perlin_generate_perm(Buffer &perm_buffer, Context &g_context) const {
     perm_buffer = g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_INT, 256);
     int *perm_map = static_cast<int *>(perm_buffer->map());
 
@@ -93,8 +92,8 @@ struct Noise_Texture : public Texture {
     perm_buffer->unmap();
   }
 
-  virtual optix::Program assignTo(optix::Context &g_context) const override {
-    optix::Buffer ranvec =
+  virtual Program assignTo(Context &g_context) const override {
+    Buffer ranvec =
         g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 256);
     float3 *ranvec_map = static_cast<float3 *>(ranvec->map());
 
@@ -103,13 +102,13 @@ struct Noise_Texture : public Texture {
           unit_float3(-1 + 2 * rnd(), -1 + 2 * rnd(), -1 + 2 * rnd());
     ranvec->unmap();
 
-    optix::Buffer perm_x, perm_y, perm_z;
+    Buffer perm_x, perm_y, perm_z;
     perlin_generate_perm(perm_x, g_context);
     perlin_generate_perm(perm_y, g_context);
     perlin_generate_perm(perm_z, g_context);
 
-    optix::Program textProg = g_context->createProgramFromPTXString(
-        embedded_noise_texture_programs, "sample_texture");
+    Program textProg = g_context->createProgramFromPTXString(
+        noise_texture_programs, "sample_texture");
 
     textProg["ranvec"]->set(ranvec);
     textProg["perm_x"]->set(perm_x);
@@ -126,24 +125,24 @@ struct Noise_Texture : public Texture {
 struct Image_Texture : public Texture {
   Image_Texture(const std::string f) : fileName(f) {}
 
-  optix::TextureSampler loadTexture(optix::Context context,
-                                    const std::string fileName) const {
+  TextureSampler loadTexture(Context context,
+                             const std::string fileName) const {
     int nx, ny, nn;
     unsigned char *tex_data =
         stbi_load((char *)fileName.c_str(), &nx, &ny, &nn, 0);
 
-    optix::TextureSampler sampler = context->createTextureSampler();
+    TextureSampler sampler = context->createTextureSampler();
     sampler->setWrapMode(0, RT_WRAP_REPEAT);
     sampler->setWrapMode(1, RT_WRAP_REPEAT);
     sampler->setWrapMode(2, RT_WRAP_REPEAT);
     sampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
     sampler->setReadMode(RT_TEXTURE_READ_NORMALIZED_FLOAT);
-    sampler->setMaxAnisotropy(1.0f);
+    sampler->setMaxAnisotropy(1.f);
     sampler->setMipLevelCount(1u);
     sampler->setArraySize(1u);
 
-    optix::Buffer buffer = context->createBuffer(
-        RT_BUFFER_INPUT, RT_FORMAT_UNSIGNED_BYTE4, nx, ny);
+    Buffer buffer = context->createBuffer(RT_BUFFER_INPUT,
+                                          RT_FORMAT_UNSIGNED_BYTE4, nx, ny);
     unsigned char *buffer_data = static_cast<unsigned char *>(buffer->map());
 
     for (int i = 0; i < nx; ++i)
@@ -169,9 +168,9 @@ struct Image_Texture : public Texture {
     return sampler;
   }
 
-  virtual optix::Program assignTo(optix::Context &g_context) const override {
-    optix::Program textProg = g_context->createProgramFromPTXString(
-        embedded_image_texture_programs, "sample_texture");
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg = g_context->createProgramFromPTXString(
+        image_texture_programs, "sample_texture");
 
     textProg["data"]->setTextureSampler(loadTexture(g_context, fileName));
 
@@ -185,14 +184,14 @@ struct Image_Texture : public Texture {
 struct HDR_Texture : public Texture {
   HDR_Texture(const std::string f) : fileName(f) {}
 
-  optix::TextureSampler loadHDRTexture(optix::Context context,
-                                       const std::string fileName) const {
-    optix::TextureSampler sampler = context->createTextureSampler();
+  TextureSampler loadHDRTexture(Context context,
+                                const std::string fileName) const {
+    TextureSampler sampler = context->createTextureSampler();
     sampler->setWrapMode(0, RT_WRAP_REPEAT);
     sampler->setWrapMode(1, RT_WRAP_CLAMP_TO_EDGE);
     sampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
     sampler->setReadMode(RT_TEXTURE_READ_NORMALIZED_FLOAT);
-    sampler->setMaxAnisotropy(1.0f);
+    sampler->setMaxAnisotropy(1.f);
     sampler->setMipLevelCount(1u);
     sampler->setArraySize(1u);
 
@@ -200,8 +199,8 @@ struct HDR_Texture : public Texture {
     unsigned char *tex_data =
         loadHdr((char *)fileName.c_str(), &info, /*convertToFloat=*/true);
 
-    optix::Buffer buffer = context->createBuffer(
-        RT_BUFFER_INPUT, RT_FORMAT_FLOAT4, info.width, info.height);
+    Buffer buffer = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT4,
+                                          info.width, info.height);
     float *buffer_data = static_cast<float *>(buffer->map());
 
     for (int i = 0; i < info.width; ++i)
@@ -226,9 +225,9 @@ struct HDR_Texture : public Texture {
     return sampler;
   }
 
-  virtual optix::Program assignTo(optix::Context &g_context) const override {
-    optix::Program textProg = g_context->createProgramFromPTXString(
-        embedded_image_texture_programs, "sample_texture");
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg = g_context->createProgramFromPTXString(
+        image_texture_programs, "sample_texture");
 
     textProg["data"]->setTextureSampler(loadHDRTexture(g_context, fileName));
 

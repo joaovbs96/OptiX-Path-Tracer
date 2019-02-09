@@ -19,15 +19,14 @@
 #include <iomanip>
 #include <iostream>
 
-
 // Host side constructors and functions
 #include "host_includes/scenes.h"
 //#include "host_includes/scene_parser.h"
 
-optix::Context g_context;
+Context g_context;
 
 // Clamp color values when saving to file
-inline float clamp(float value) { return value > 1.0f ? 1.0f : value; }
+inline float clamp(float value) { return value > 1.f ? 1.f : value; }
 
 float renderFrame(int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
@@ -44,15 +43,15 @@ float renderFrame(int Nx, int Ny) {
   return (float)time;
 }
 
-optix::Buffer createFrameBuffer(int Nx, int Ny) {
-  optix::Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
+Buffer createFrameBuffer(int Nx, int Ny) {
+  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
   pixelBuffer->setFormat(RT_FORMAT_FLOAT3);
   pixelBuffer->setSize(Nx, Ny);
   return pixelBuffer;
 }
 
-optix::Buffer createSeedBuffer(int Nx, int Ny) {
-  optix::Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
+Buffer createSeedBuffer(int Nx, int Ny) {
+  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
   pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_INT);
   pixelBuffer->setSize(Nx, Ny);
   return pixelBuffer;
@@ -69,7 +68,7 @@ int main(int ac, char **av) {
     printf("OptiX RTX execution mode is %s.\n", (RTX) ? "on" : "off");
 
   // Create an OptiX context
-  g_context = optix::Context::create();
+  g_context = Context::create();
   g_context->setRayTypeCount(1);
   g_context->setStackSize(5000);
   // it's recommended to keep it under 10k, it's per core
@@ -133,11 +132,11 @@ int main(int ac, char **av) {
   }
 
   // Create a frame buffer
-  optix::Buffer fb = createFrameBuffer(Nx, Ny);
+  Buffer fb = createFrameBuffer(Nx, Ny);
   g_context["fb"]->set(fb);
 
   // Create a rng seed buffer
-  optix::Buffer seed = createSeedBuffer(Nx, Ny);
+  Buffer seed = createSeedBuffer(Nx, Ny);
   g_context["seed"]->set(seed);
 
   // Build scene

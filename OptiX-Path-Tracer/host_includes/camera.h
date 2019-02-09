@@ -14,14 +14,14 @@ struct Camera {
          float vfov, float aspect, float aperture, float focus_dist, float t0,
          float t1) {
     // vfov is top to bottom in degrees
-    lens_radius = aperture / 2.0f;
+    lens_radius = aperture / 2.f;
 
     // shutter is open between t0 and t1
     time0 = t0;
     time1 = t1;
 
-    float theta = vfov * ((float)M_PI) / 180.0f;
-    float half_height = tan(theta / 2.0f);
+    float theta = vfov * ((float)M_PI) / 180.f;
+    float half_height = tan(theta / 2.f);
     float half_width = aspect * half_height;
 
     // where camera is looking from
@@ -33,11 +33,11 @@ struct Camera {
 
     lower_left_corner = origin - half_width * focus_dist * u -
                         half_height * focus_dist * v - focus_dist * w;
-    horizontal = 2.0f * half_width * focus_dist * u;
-    vertical = 2.0f * half_height * focus_dist * v;
+    horizontal = 2.f * half_width * focus_dist * u;
+    vertical = 2.f * half_height * focus_dist * v;
   }
 
-  void set(optix::Context &g_context) {
+  void set(Context &g_context) {
     g_context["camera_lower_left_corner"]->set3fv(&lower_left_corner.x);
     g_context["camera_horizontal"]->set3fv(&horizontal.x);
     g_context["camera_vertical"]->set3fv(&vertical.x);

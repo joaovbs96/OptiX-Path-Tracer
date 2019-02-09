@@ -5,7 +5,7 @@ rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float3, normal, , );
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
@@ -33,8 +33,7 @@ RT_PROGRAM void hit_plane(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      hit_rec.normal =
-          optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
       if (normal.x != 0) {
         hit_rec.u = hit_rec.p.y / 2500.f;
@@ -58,7 +57,7 @@ RT_PROGRAM void hit_plane(int pid) {
 
 /*! returns the bounding box of the pid'th primitive in this geometry. */
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
 
   float x_min, y_min, z_min;
   x_min = y_min = z_min = -FLT_MAX;

@@ -17,7 +17,7 @@
 #include "material.h"
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -33,7 +33,7 @@ rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 /*! the actual scatter function - in Pete's reference code, that's a
   virtual function, but since we have a different function per program
   we do not need this here */
-inline __device__ bool scatter(const optix::Ray &ray_in) {
+RT_FUNCTION bool scatter(const Ray &ray_in) {
   prd.out.is_specular = false;
   prd.out.attenuation =
       sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
@@ -52,7 +52,7 @@ RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
   return cosine / PI_F;
 }
 
-inline __device__ float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
+RT_FUNCTION float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
 
 RT_PROGRAM void closest_hit() {
   prd.out.type = Lambertian;

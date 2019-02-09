@@ -17,15 +17,15 @@
 #include "materials/material.h"
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 RT_PROGRAM void sky() {
   const float3 unit_direction = normalize(ray.direction);
-  const float t = 0.5f * (unit_direction.y + 1.0f);
-  const float3 c = (1.0f - t) * make_float3(1.0f, 1.0f, 1.0f) +
-                   t * make_float3(0.5f, 0.7f, 1.0f);
+  const float t = 0.5f * (unit_direction.y + 1.f);
+  const float3 c =
+      (1.f - t) * make_float3(1.f) + t * make_float3(0.5f, 0.7f, 1.f);
   prd.out.attenuation = c;
   prd.out.scatterEvent = rayDidntHitAnything;
 }
@@ -46,7 +46,7 @@ RT_PROGRAM void environmental_mapping() {
   float theta = atan2f(ray.direction.x, ray.direction.z);
   float phi = M_PIf * 0.5f - acosf(ray.direction.y);
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
-  float v = 0.5f * (1.0f + sinf(phi));
+  float v = 0.5f * (1.f + sinf(phi));
 
   prd.out.attenuation = sample_texture[0](u, v, make_float3(0.f));
   prd.out.scatterEvent = rayDidntHitAnything;

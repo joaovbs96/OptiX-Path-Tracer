@@ -12,7 +12,7 @@
 
 #include "../lib/RSJparser.tcc"
 
-/*PDF* treatSampling(optix::Context &g_context, RSJobject::iterator &data) {
+/*PDF* treatSampling(Context &g_context, RSJobject::iterator &data) {
   RSJobject::iterator it = data->second.as_object().begin();
 
   std::cout << it->first << std::endl;
@@ -26,6 +26,7 @@ treatSampling(g_context, it));
     return new Cosine_PDF;
   }
   
+
   else if (data->first == "rect") {
     std::string axis = (it++)->second.as<std::string>();
     float a0 = (it++)->second.as<float>();
@@ -49,6 +50,12 @@ treatSampling(g_context, it));
     }
   }
   
+
+
+
+
+
+
   else if (data->first == "sphere") {
     std::vector<float> center((it++)->second.as_vector<float>());
     float radius = it->second.as<float>();
@@ -56,6 +63,12 @@ treatSampling(g_context, it));
     return new Sphere_PDF(vec3f(center[0], center[1], center[2]), radius);
   }
   
+
+
+
+
+
+
   else if (data->first == "buffer") {
     std::vector<PDF*> buffer;
 
@@ -65,13 +78,19 @@ treatSampling(g_context, it));
     return new Buffer_PDF(buffer);
   }
   
+
+
+
+
+
+
   else {
     printf("Error: Incorrect Sampling PDF or not yet implemented.\n");
     return NULL;
   }
 }
 
-optix::Group Parser(optix::Context &g_context, std::string filename) {
+Group Parser(Context &g_context, std::string filename) {
   std::ifstream infile(filename);
   std::string contents((std::istreambuf_iterator<char>(infile)),
 std::istreambuf_iterator<char>());
@@ -95,12 +114,12 @@ std::istreambuf_iterator<char>());
   Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
 
   // add material PDFs
-  optix::Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT,
-RT_FORMAT_PROGRAM_ID, 2); optix::callableProgramId<int(int)>* f_data =
-static_cast<optix::callableProgramId<int(int)>*>(material_pdfs->map()); f_data[
-0 ] = optix::callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
+  Buffer material_pdfs = g_context->createBuffer(RT_BUFFER_INPUT,
+RT_FORMAT_PROGRAM_ID, 2); callableProgramId<int(int)>* f_data =
+static_cast<callableProgramId<int(int)>*>(material_pdfs->map()); f_data[
+0 ] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
   f_data[ 1 ] =
-optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
+callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   material_pdfs->unmap();
 
   // Set the exception, ray generation and miss shader programs
@@ -108,7 +127,7 @@ optix::callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
-  optix::Group group = g_context->createGroup();
+  Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Materials *red = new Lambertian(new Constant_Texture(vec3f(0.65f, 0.05f,
@@ -133,6 +152,12 @@ true, *white, g_context), group, g_context); // back walls
   addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context),
 group, g_context);// glass sphere
   
+
+
+
+
+
+
   // big box
   addChild(translate(rotateY(createBox(vec3f(0.f), vec3f(165.f, 330.f, 165.f),
 *aluminium, g_context), 15.f, g_context), vec3f(265.f, 0.f, 295.f), g_context),
@@ -157,7 +182,7 @@ group, g_context);// glass sphere
 /*const vec3f lookfrom(278.f, 278.f, -800.f);
   const vec3f lookat(278.f, 278.f, 0.f);
   const vec3f up(0.f, 1.f, 0.f);
-  const float fovy(40.0f);
+  const float fovy(40.f);
   const float aspect(float(width) / float(height));
   const float aperture(0.f);
   const float dist(10.f);

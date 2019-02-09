@@ -16,7 +16,7 @@ rtDeclareVariable(float3, normal, , );
 rtDeclareVariable(float, scale, , );
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
@@ -52,8 +52,7 @@ RT_PROGRAM void hit_triangle(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      hit_rec.normal =
-          optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
       hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
       hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);
@@ -69,7 +68,7 @@ RT_PROGRAM void hit_triangle(int pid) {
 
 /*! returns the bounding box of the pid'th primitive in this gometry. */
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
 
   // find min and max iterating through vertices
   // min(minX, minY, minZ)

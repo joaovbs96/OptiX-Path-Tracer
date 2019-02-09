@@ -7,33 +7,32 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char embedded_rect_pdf_programs[];
-extern "C" const char embedded_sphere_pdf_programs[];
-extern "C" const char embedded_cosine_pdf_programs[];
-extern "C" const char embedded_mixture_pdf_programs[];
-extern "C" const char embedded_buffer_pdf_programs[];
+extern "C" const char rect_pdf_programs[];
+extern "C" const char sphere_pdf_programs[];
+extern "C" const char cosine_pdf_programs[];
+extern "C" const char mixture_pdf_programs[];
+extern "C" const char buffer_pdf_programs[];
 
 struct PDF {
-  virtual optix::Program assignGenerate(optix::Context &g_context) const = 0;
-  virtual optix::Program assignValue(optix::Context &g_context) const = 0;
+  virtual Program assignGenerate(Context &g_context) const = 0;
+  virtual Program assignValue(Context &g_context) const = 0;
 };
 
 struct Cosine_PDF : public PDF {
   Cosine_PDF() {}
 
-  virtual optix::Program assignGenerate(
-      optix::Context &g_context) const override {
+  virtual Program assignGenerate(Context &g_context) const override {
     // create PDF generate callable program
-    optix::Program generate = g_context->createProgramFromPTXString(
-        embedded_cosine_pdf_programs, "cosine_generate");
+    Program generate = g_context->createProgramFromPTXString(
+        cosine_pdf_programs, "cosine_generate");
 
     return generate;
   }
 
-  virtual optix::Program assignValue(optix::Context &g_context) const override {
+  virtual Program assignValue(Context &g_context) const override {
     // create PDF value callable program
-    optix::Program value = g_context->createProgramFromPTXString(
-        embedded_cosine_pdf_programs, "cosine_value");
+    Program value = g_context->createProgramFromPTXString(cosine_pdf_programs,
+                                                          "cosine_value");
 
     return value;
   }
@@ -44,23 +43,22 @@ struct Rectangle_PDF : public PDF {
                 const float bb1, const float kk, const AXIS aax)
       : a0(aa0), a1(aa1), b0(bb0), b1(bb1), k(kk), ax(aax) {}
 
-  virtual optix::Program assignGenerate(
-      optix::Context &g_context) const override {
-    optix::Program generate;
+  virtual Program assignGenerate(Context &g_context) const override {
+    Program generate;
 
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        generate = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_x_generate");
+        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                         "rect_x_generate");
         break;
       case Y_AXIS:
-        generate = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_y_generate");
+        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                         "rect_y_generate");
         break;
       case Z_AXIS:
-        generate = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_x_generate");
+        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                         "rect_x_generate");
         break;
     }
 
@@ -74,22 +72,22 @@ struct Rectangle_PDF : public PDF {
     return generate;
   }
 
-  virtual optix::Program assignValue(optix::Context &g_context) const override {
-    optix::Program value;
+  virtual Program assignValue(Context &g_context) const override {
+    Program value;
 
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        value = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_x_value");
+        value = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                      "rect_x_value");
         break;
       case Y_AXIS:
-        value = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_y_value");
+        value = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                      "rect_y_value");
         break;
       case Z_AXIS:
-        value = g_context->createProgramFromPTXString(
-            embedded_rect_pdf_programs, "rect_z_value");
+        value = g_context->createProgramFromPTXString(rect_pdf_programs,
+                                                      "rect_z_value");
         break;
     }
 
@@ -110,11 +108,10 @@ struct Rectangle_PDF : public PDF {
 struct Mixture_PDF : public PDF {
   Mixture_PDF(const PDF *p00, const PDF *p11) : p0(p00), p1(p11) {}
 
-  virtual optix::Program assignGenerate(
-      optix::Context &g_context) const override {
+  virtual Program assignGenerate(Context &g_context) const override {
     // create PDF generate callable program
-    optix::Program generate = g_context->createProgramFromPTXString(
-        embedded_mixture_pdf_programs, "mixture_generate");
+    Program generate = g_context->createProgramFromPTXString(
+        mixture_pdf_programs, "mixture_generate");
 
     // assign children callable programs to mixture program
     generate["p0_generate"]->setProgramId(p0->assignGenerate(g_context));
@@ -123,10 +120,10 @@ struct Mixture_PDF : public PDF {
     return generate;
   }
 
-  virtual optix::Program assignValue(optix::Context &g_context) const override {
+  virtual Program assignValue(Context &g_context) const override {
     // create PDF value callable program
-    optix::Program value = g_context->createProgramFromPTXString(
-        embedded_mixture_pdf_programs, "mixture_value");
+    Program value = g_context->createProgramFromPTXString(mixture_pdf_programs,
+                                                          "mixture_value");
 
     // assign children callable programs to mixture program
     value["p0_value"]->setProgramId(p0->assignValue(g_context));
@@ -142,11 +139,10 @@ struct Mixture_PDF : public PDF {
 struct Sphere_PDF : public PDF {
   Sphere_PDF(const float3 c, const float r) : center(c), radius(r) {}
 
-  virtual optix::Program assignGenerate(
-      optix::Context &g_context) const override {
+  virtual Program assignGenerate(Context &g_context) const override {
     // create PDF generate callable program
-    optix::Program generate = g_context->createProgramFromPTXString(
-        embedded_sphere_pdf_programs, "sphere_generate");
+    Program generate = g_context->createProgramFromPTXString(
+        sphere_pdf_programs, "sphere_generate");
 
     // Basic parameters
     generate["center"]->setFloat(center.x, center.y, center.z);
@@ -155,10 +151,10 @@ struct Sphere_PDF : public PDF {
     return generate;
   }
 
-  virtual optix::Program assignValue(optix::Context &g_context) const override {
+  virtual Program assignValue(Context &g_context) const override {
     // create PDF value callable program
-    optix::Program value = g_context->createProgramFromPTXString(
-        embedded_sphere_pdf_programs, "sphere_value");
+    Program value = g_context->createProgramFromPTXString(sphere_pdf_programs,
+                                                          "sphere_value");
 
     // Basic parameters
     value["center"]->setFloat(center.x, center.y, center.z);
@@ -174,21 +170,20 @@ struct Sphere_PDF : public PDF {
 struct Buffer_PDF : public PDF {
   Buffer_PDF(const std::vector<PDF *> &b) : buffer_vector(b) {}
 
-  virtual optix::Program assignGenerate(
-      optix::Context &g_context) const override {
+  virtual Program assignGenerate(Context &g_context) const override {
     // create PDF generate callable program
-    optix::Program generate = g_context->createProgramFromPTXString(
-        embedded_buffer_pdf_programs, "buffer_generate");
+    Program generate = g_context->createProgramFromPTXString(
+        buffer_pdf_programs, "buffer_generate");
 
     // create buffer of callable programs
-    optix::Buffer pdf_buffer = g_context->createBuffer(
+    Buffer pdf_buffer = g_context->createBuffer(
         RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, buffer_vector.size());
-    optix::callableProgramId<int(int)> *buffer_data =
-        static_cast<optix::callableProgramId<int(int)> *>(pdf_buffer->map());
+    callableProgramId<int(int)> *buffer_data =
+        static_cast<callableProgramId<int(int)> *>(pdf_buffer->map());
 
     // assign buffer of PDF callable programs
     for (int i = 0; i < buffer_vector.size(); i++)
-      buffer_data[i] = optix::callableProgramId<int(int)>(
+      buffer_data[i] = callableProgramId<int(int)>(
           buffer_vector[i]->assignGenerate(g_context)->getId());
 
     pdf_buffer->unmap();
@@ -200,20 +195,20 @@ struct Buffer_PDF : public PDF {
     return generate;
   }
 
-  virtual optix::Program assignValue(optix::Context &g_context) const override {
+  virtual Program assignValue(Context &g_context) const override {
     // create PDF value callable program
-    optix::Program value = g_context->createProgramFromPTXString(
-        embedded_buffer_pdf_programs, "buffer_value");
+    Program value = g_context->createProgramFromPTXString(buffer_pdf_programs,
+                                                          "buffer_value");
 
     // create buffer of callable programs
-    optix::Buffer pdf_buffer = g_context->createBuffer(
+    Buffer pdf_buffer = g_context->createBuffer(
         RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, buffer_vector.size());
-    optix::callableProgramId<int(int)> *buffer_data =
-        static_cast<optix::callableProgramId<int(int)> *>(pdf_buffer->map());
+    callableProgramId<int(int)> *buffer_data =
+        static_cast<callableProgramId<int(int)> *>(pdf_buffer->map());
 
     // assign buffer of PDF callable programs
     for (int i = 0; i < buffer_vector.size(); i++)
-      buffer_data[i] = optix::callableProgramId<int(int)>(
+      buffer_data[i] = callableProgramId<int(int)>(
           buffer_vector[i]->assignValue(g_context)->getId());
 
     pdf_buffer->unmap();

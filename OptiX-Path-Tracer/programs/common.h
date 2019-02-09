@@ -3,13 +3,15 @@
 // Common defines and includes
 
 // OptiX includes:
-#define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
 #include <optix.h>
 #include <optix_math.h>
 #include <optix_world.h>
 
+#define RT_USE_TEMPLATED_RTCALLABLEPROGRAM 1
 
 using namespace optix;
+
+#define RT_FUNCTION __forceinline__ __device__
 
 // Math defines
 #ifndef PI_F
@@ -19,3 +21,6 @@ using namespace optix;
 #ifndef PI_D
 #define PI_D 3.14159265358979323846264338327950288
 #endif
+
+// Axis type
+typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;

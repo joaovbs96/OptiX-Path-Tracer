@@ -9,7 +9,7 @@ rtDeclareVariable(float3, boxmin, , );
 rtDeclareVariable(float3, boxmax, , );
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
@@ -18,7 +18,7 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-static __device__ float3 boxnormal(float t, float3 t0, float3 t1) {
+RT_FUNCTION float3 boxnormal(float t, float3 t0, float3 t1) {
   float3 neg =
       make_float3(t == t0.x ? 1 : 0, t == t0.y ? 1 : 0, t == t0.z ? 1 : 0);
   float3 pos =
@@ -47,7 +47,7 @@ RT_PROGRAM void hit_box(int pid) {
       hit_rec.v = 0.f;
 
       float3 normal = boxnormal(tmin, t0, t1);
-      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
       hit_rec.index = 0;
@@ -67,8 +67,7 @@ RT_PROGRAM void hit_box(int pid) {
         hit_rec.v = 0.f;
 
         float3 normal = boxnormal(tmax, t0, t1);
-        normal =
-            optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+        normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
         hit_rec.normal = normal;
 
         hit_rec.index = 0;
@@ -84,7 +83,7 @@ RT_PROGRAM void hit_box(int pid) {
   program (we handle multiple spheres by having a different
   geometry per sphere), the'pid' parameter is ignored */
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
   aabb->m_min = boxmin;
   aabb->m_max = boxmax;
 }

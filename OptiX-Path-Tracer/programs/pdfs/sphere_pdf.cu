@@ -5,8 +5,8 @@ rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
 
 // Boundary intersection function
-inline __device__ bool hit_boundary(pdf_in &in, const float tmin,
-                                    const float tmax, pdf_rec &rec) {
+RT_FUNCTION bool hit_boundary(pdf_in &in, const float tmin, const float tmax,
+                              pdf_rec &rec) {
   const float3 oc = in.origin - center;
 
   // if the ray hits the sphere, the following equation has two roots:
@@ -61,8 +61,7 @@ RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
 }
 
 // Utility function: generate random directions towards the sphere
-inline __device__ float3 random_to_sphere(float distance_squared,
-                                          XorShift32 &rnd) {
+RT_FUNCTION float3 random_to_sphere(float distance_squared, XorShift32 &rnd) {
   float r1 = rnd();
   float r2 = rnd();
 
@@ -81,7 +80,7 @@ RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
   float3 direction = center - in.origin;
   float distance_squared = squared_length(direction);
 
-  // optix::Onb doesn't normalize the input vector on its own
+  // Onb doesn't normalize the input vector on its own
   Onb uvw(unit_vector(direction));
 
   float3 temp = random_to_sphere(distance_squared, rnd);

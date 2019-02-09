@@ -22,7 +22,7 @@ rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
 
 // the ray related state
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 rtBuffer<float3, 2> fb;          // float3 color frame buffer
@@ -50,23 +50,23 @@ rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, XorShift32&)>, generate,
 rtBuffer<rtCallableProgramId<float(pdf_in&)>> scattering_pdf;
 
 struct Camera {
-  static __device__ optix::Ray generateRay(float s, float t, XorShift32& rnd) {
+  static RT_FUNCTION Ray generateRay(float s, float t, XorShift32& rnd) {
     const float3 rd = camera_lens_radius * random_in_unit_disk(rnd);
     const float3 lens_offset = camera_u * rd.x + camera_v * rd.y;
     const float3 origin = camera_origin + lens_offset;
     const float3 direction = camera_lower_left_corner + s * camera_horizontal +
                              t * camera_vertical - origin;
 
-    return optix::make_Ray(/* origin   : */ origin,
-                           /* direction: */ direction,
-                           /* ray type : */ 0,
-                           /* tmin     : */ 1e-6f,
-                           /* tmax     : */ RT_DEFAULT_MAX);
+    return make_Ray(/* origin   : */ origin,
+                    /* direction: */ direction,
+                    /* ray type : */ 0,
+                    /* tmin     : */ 1e-6f,
+                    /* tmax     : */ RT_DEFAULT_MAX);
   }
 };
 
 // Clamp color values
-inline __device__ float3 clamp(const float3& c) {
+RT_FUNCTION float3 clamp(const float3& c) {
   float3 temp = c;
   if (temp.x > 1.f) temp.x = 1.f;
   if (temp.y > 1.f) temp.y = 1.f;
@@ -75,7 +75,7 @@ inline __device__ float3 clamp(const float3& c) {
   return temp;
 }
 
-inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
+RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
   PerRayData prd;
   prd.in.randState = &rnd;
   prd.in.time = time0 + rnd() * (time1 - time0);
@@ -86,8 +86,8 @@ inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
     if (prd.out.scatterEvent == rayDidntHitAnything) {
-      // ray got 'lost' to the environment - return attenuation set by miss
-      // shader
+      // ray got 'lost' to the environment
+      // return attenuation set by miss shader
       return current_color * prd.out.attenuation;
     }
 
@@ -100,11 +100,11 @@ inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
       if (prd.out.is_specular) {
         current_color = prd.out.attenuation * current_color;
 
-        ray = optix::make_Ray(/* origin   : */ prd.out.origin,
-                              /* direction: */ prd.out.direction,
-                              /* ray type : */ 0,
-                              /* tmin     : */ 1e-3f,
-                              /* tmax     : */ RT_DEFAULT_MAX);
+        ray = make_Ray(/* origin   : */ prd.out.origin,
+                       /* direction: */ prd.out.direction,
+                       /* ray type : */ 0,
+                       /* tmin     : */ 1e-3f,
+                       /* tmax     : */ RT_DEFAULT_MAX);
       } else {
         pdf_in in(prd.out.origin, prd.out.normal);
         float3 pdf_direction = generate(in, rnd);
@@ -116,11 +116,11 @@ inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
                    current_color) /
                       pdf_val);
 
-        ray = optix::make_Ray(/* origin   : */ in.origin,
-                              /* direction: */ in.scattered_direction,
-                              /* ray type : */ 0,
-                              /* tmin     : */ 1e-3f,
-                              /* tmax     : */ RT_DEFAULT_MAX);
+        ray = make_Ray(/* origin   : */ in.origin,
+                       /* direction: */ in.scattered_direction,
+                       /* ray type : */ 0,
+                       /* tmin     : */ 1e-3f,
+                       /* tmax     : */ RT_DEFAULT_MAX);
       }
     }
 
@@ -139,7 +139,7 @@ inline __device__ float3 color(optix::Ray& ray, XorShift32& rnd) {
 }
 
 // Remove NaN values
-inline __device__ float3 de_nan(const float3& c) {
+RT_FUNCTION float3 de_nan(const float3& c) {
   float3 temp = c;
   if (!(temp.x == temp.x)) temp.x = 0.f;
   if (!(temp.y == temp.y)) temp.y = 0.f;
@@ -168,7 +168,7 @@ RT_PROGRAM void renderPixel() {
   float v = float(pixelID.y + rnd()) / float(launchDim.y);
 
   // trace ray
-  optix::Ray ray = Camera::generateRay(u, v, rnd);
+  Ray ray = Camera::generateRay(u, v, rnd);
 
   fb[pixelID] += de_nan(color(ray, rnd));  // accumulate color
   seed[pixelID] = rnd.state;               // save RND state

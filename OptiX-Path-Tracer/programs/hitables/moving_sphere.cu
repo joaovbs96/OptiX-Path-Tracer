@@ -24,7 +24,7 @@ rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
@@ -33,7 +33,7 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-inline __device__ void get_sphere_uv(const float3& p) {
+RT_FUNCTION void get_sphere_uv(const float3& p) {
   float phi = atan2(p.z, p.x);
   float theta = asin(p.y);
 
@@ -41,7 +41,7 @@ inline __device__ void get_sphere_uv(const float3& p) {
   hit_rec.v = (theta + PI_F / 2) / PI_F;
 }
 
-__device__ float3 center(float time) {
+RT_FUNCTION float3 center(float time) {
   return center0 + ((time - time0) / (time1 - time0)) * (center1 - center0);
 }
 
@@ -82,7 +82,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.p = hit_point;
 
       float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
-      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
       get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
@@ -104,7 +104,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.p = hit_point;
 
       float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
-      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
       get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
@@ -121,11 +121,11 @@ RT_PROGRAM void hit_sphere(int pid) {
   program (we handle multiple spheres by having a different
   geometry per sphere), the'pid' parameter is ignored */
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
-  optix::Aabb* box0 = (optix::Aabb*)result;
+  Aabb* box0 = (Aabb*)result;
   box0->m_min = center(time0) - radius;
   box0->m_max = center(time0) + radius;
 
-  optix::Aabb box1;
+  Aabb box1;
   box1.m_min = center(time1) - radius;
   box1.m_max = center(time1) + radius;
 

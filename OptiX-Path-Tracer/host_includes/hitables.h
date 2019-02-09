@@ -11,32 +11,31 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char embedded_sphere_programs[];
-extern "C" const char embedded_volume_sphere_programs[];
-extern "C" const char embedded_moving_sphere_programs[];
-extern "C" const char embedded_aarect_programs[];
-extern "C" const char embedded_box_programs[];
-extern "C" const char embedded_volume_box_programs[];
-extern "C" const char embedded_triangle_programs[];
-extern "C" const char embedded_mesh_programs[];
-extern "C" const char embedded_plane_programs[];
+extern "C" const char sphere_programs[];
+extern "C" const char volume_sphere_programs[];
+extern "C" const char moving_sphere_programs[];
+extern "C" const char aarect_programs[];
+extern "C" const char box_programs[];
+extern "C" const char volume_box_programs[];
+extern "C" const char triangle_programs[];
+extern "C" const char mesh_programs[];
+extern "C" const char plane_programs[];
 
 // Sphere constructor
-optix::GeometryInstance Sphere(const float3 &center, const float radius,
-                               const Materials &material,
-                               optix::Context &g_context) {
+GeometryInstance Sphere(const float3 &center, const float radius,
+                        const Materials &material, Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_sphere_programs, "get_bounds");
+  Program bound =
+      g_context->createProgramFromPTXString(sphere_programs, "get_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_sphere_programs, "hit_sphere");
+  Program intersect =
+      g_context->createProgramFromPTXString(sphere_programs, "hit_sphere");
   geometry->setIntersectionProgram(intersect);
 
   // Basic Parameters
@@ -44,18 +43,18 @@ optix::GeometryInstance Sphere(const float3 &center, const float radius,
   geometry["radius"]->setFloat(radius);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -64,22 +63,21 @@ optix::GeometryInstance Sphere(const float3 &center, const float radius,
 }
 
 // Sphere of volumetric material
-optix::GeometryInstance Volume_Sphere(const float3 &center, const float radius,
-                                      const float density,
-                                      const Materials &material,
-                                      optix::Context &g_context) {
+GeometryInstance Volume_Sphere(const float3 &center, const float radius,
+                               const float density, const Materials &material,
+                               Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_volume_sphere_programs, "get_bounds");
+  Program bound = g_context->createProgramFromPTXString(volume_sphere_programs,
+                                                        "get_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_volume_sphere_programs, "hit_sphere");
+  Program intersect = g_context->createProgramFromPTXString(
+      volume_sphere_programs, "hit_sphere");
   geometry->setIntersectionProgram(intersect);
 
   // Basic Parameters
@@ -88,18 +86,18 @@ optix::GeometryInstance Volume_Sphere(const float3 &center, const float radius,
   geometry["density"]->setFloat(density);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -108,23 +106,22 @@ optix::GeometryInstance Volume_Sphere(const float3 &center, const float radius,
 }
 
 // Moving Sphere constructor
-optix::GeometryInstance Moving_Sphere(const float3 &center0,
-                                      const float3 &center1, const float t0,
-                                      const float t1, const float radius,
-                                      const Materials &material,
-                                      optix::Context &g_context) {
+GeometryInstance Moving_Sphere(const float3 &center0, const float3 &center1,
+                               const float t0, const float t1,
+                               const float radius, const Materials &material,
+                               Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_moving_sphere_programs, "get_bounds");
+  Program bound = g_context->createProgramFromPTXString(moving_sphere_programs,
+                                                        "get_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_moving_sphere_programs, "hit_sphere");
+  Program intersect = g_context->createProgramFromPTXString(
+      moving_sphere_programs, "hit_sphere");
   geometry->setIntersectionProgram(intersect);
 
   // Basic Parameters
@@ -135,18 +132,18 @@ optix::GeometryInstance Moving_Sphere(const float3 &center0,
   geometry["time1"]->setFloat(t1);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -155,35 +152,34 @@ optix::GeometryInstance Moving_Sphere(const float3 &center0,
 }
 
 // Axis-alligned Rectangle constructor
-optix::GeometryInstance Rectangle(const float a0, const float a1,
-                                  const float b0, const float b1, const float k,
-                                  const bool flip, const AXIS ax,
-                                  const Materials &material,
-                                  optix::Context &g_context) {
+GeometryInstance Rectangle(const float a0, const float a1, const float b0,
+                           const float b1, const float k, const bool flip,
+                           const AXIS ax, const Materials &material,
+                           Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box and intersection programs depending on axis
-  optix::Program bound, intersect;
+  Program bound, intersect;
   switch (ax) {
     case X_AXIS:
-      bound = g_context->createProgramFromPTXString(embedded_aarect_programs,
+      bound = g_context->createProgramFromPTXString(aarect_programs,
                                                     "get_bounds_X");
-      intersect = g_context->createProgramFromPTXString(
-          embedded_aarect_programs, "hit_rect_X");
+      intersect =
+          g_context->createProgramFromPTXString(aarect_programs, "hit_rect_X");
       break;
     case Y_AXIS:
-      bound = g_context->createProgramFromPTXString(embedded_aarect_programs,
+      bound = g_context->createProgramFromPTXString(aarect_programs,
                                                     "get_bounds_Y");
-      intersect = g_context->createProgramFromPTXString(
-          embedded_aarect_programs, "hit_rect_Y");
+      intersect =
+          g_context->createProgramFromPTXString(aarect_programs, "hit_rect_Y");
       break;
     case Z_AXIS:
-      bound = g_context->createProgramFromPTXString(embedded_aarect_programs,
+      bound = g_context->createProgramFromPTXString(aarect_programs,
                                                     "get_bounds_Z");
-      intersect = g_context->createProgramFromPTXString(
-          embedded_aarect_programs, "hit_rect_Z");
+      intersect =
+          g_context->createProgramFromPTXString(aarect_programs, "hit_rect_Z");
       break;
   }
   geometry->setBoundingBoxProgram(bound);
@@ -198,18 +194,18 @@ optix::GeometryInstance Rectangle(const float a0, const float a1,
   geometry["flip"]->setInt(flip);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -218,10 +214,10 @@ optix::GeometryInstance Rectangle(const float a0, const float a1,
 }
 
 // Box made of rectangle primitives
-optix::GeometryGroup Box(const float3 &p0, const float3 &p1,
-                         Materials &material, optix::Context &g_context) {
+GeometryGroup Box(const float3 &p0, const float3 &p1, Materials &material,
+                  Context &g_context) {
   // Vector of primitives
-  std::vector<optix::GeometryInstance> d_list;
+  std::vector<GeometryInstance> d_list;
 
   d_list.push_back(Rectangle(p0.x, p1.x, p0.y, p1.y, p0.z, true, Z_AXIS,
                              material, g_context));
@@ -238,7 +234,7 @@ optix::GeometryGroup Box(const float3 &p0, const float3 &p1,
   d_list.push_back(Rectangle(p0.y, p1.y, p0.z, p1.z, p1.x, false, X_AXIS,
                              material, g_context));
 
-  optix::GeometryGroup d_world = g_context->createGeometryGroup();
+  GeometryGroup d_world = g_context->createGeometryGroup();
   d_world->setAcceleration(g_context->createAcceleration("Trbvh"));
   d_world->setChildCount((int)d_list.size());
   for (int i = 0; i < d_list.size(); i++) d_world->setChild(i, d_list[i]);
@@ -247,21 +243,21 @@ optix::GeometryGroup Box(const float3 &p0, const float3 &p1,
 }
 
 // Box of volumetric material
-optix::GeometryInstance Volume_Box(const float3 &p0, const float3 &p1,
-                                   const float density, Materials &material,
-                                   optix::Context &g_context) {
+GeometryInstance Volume_Box(const float3 &p0, const float3 &p1,
+                            const float density, Materials &material,
+                            Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_volume_box_programs, "get_bounds");
+  Program bound =
+      g_context->createProgramFromPTXString(volume_box_programs, "get_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_volume_box_programs, "hit_volume");
+  Program intersect =
+      g_context->createProgramFromPTXString(volume_box_programs, "hit_volume");
   geometry->setIntersectionProgram(intersect);
 
   // Basic parameters
@@ -270,18 +266,18 @@ optix::GeometryInstance Volume_Box(const float3 &p0, const float3 &p1,
   geometry["density"]->setFloat(density);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -290,23 +286,22 @@ optix::GeometryInstance Volume_Box(const float3 &p0, const float3 &p1,
 }
 
 // Triangle constructor
-optix::GeometryInstance Triangle(const float3 &a, const float2 &a_uv,
-                                 const float3 &b, const float2 &b_uv,
-                                 const float3 &c, const float2 &c_uv,
-                                 const float scale, const Materials &material,
-                                 optix::Context &g_context) {
+GeometryInstance Triangle(const float3 &a, const float2 &a_uv, const float3 &b,
+                          const float2 &b_uv, const float3 &c,
+                          const float2 &c_uv, const float scale,
+                          const Materials &material, Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_triangle_programs, "get_bounds");
+  Program bound =
+      g_context->createProgramFromPTXString(triangle_programs, "get_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_triangle_programs, "hit_triangle");
+  Program intersect =
+      g_context->createProgramFromPTXString(triangle_programs, "hit_triangle");
   geometry->setIntersectionProgram(intersect);
 
   // basic parameters
@@ -330,18 +325,18 @@ optix::GeometryInstance Triangle(const float3 &a, const float2 &a_uv,
   geometry["normal"]->setFloat(normal.x, normal.y, normal.z);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);
@@ -383,12 +378,11 @@ struct Triangle_Struct {
 };
 
 // Load and convert mesh
-optix::GeometryInstance Mesh(const std::string &fileName,
-                             optix::Context &g_context,
-                             Materials &custom_material,
-                             bool use_custom_material = false,
-                             const std::string assetsFolder = "assets/",
-                             float scale = 1.f) {
+GeometryInstance Mesh(const std::string &fileName, Context &g_context,
+                      Materials &custom_material,
+                      bool use_custom_material = false,
+                      const std::string assetsFolder = "assets/",
+                      float scale = 1.f) {
   std::vector<Triangle_Struct> triangles;
   objl::Loader Loader;
 
@@ -501,7 +495,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
 
   // create vertex_buffer
   int size = (int)triangles.size();
-  optix::Buffer vertex_buffer =
+  Buffer vertex_buffer =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 3 * size);
   float3 *vertex_map = static_cast<float3 *>(vertex_buffer->map());
 
@@ -518,7 +512,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   vertex_buffer->unmap();
 
   // create e_buffer
-  optix::Buffer e_buffer =
+  Buffer e_buffer =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 2 * size);
   float3 *e_map = static_cast<float3 *>(e_buffer->map());
 
@@ -533,7 +527,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   e_buffer->unmap();
 
   // create normal_buffer
-  optix::Buffer normal_buffer =
+  Buffer normal_buffer =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT3, 3 * size);
   float3 *n_map = static_cast<float3 *>(normal_buffer->map());
 
@@ -550,7 +544,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   normal_buffer->unmap();
 
   // create texcoord_buffer
-  optix::Buffer texcoord_buffer =
+  Buffer texcoord_buffer =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT2, 3 * size);
   float2 *tex_map = static_cast<float2 *>(texcoord_buffer->map());
 
@@ -564,7 +558,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   texcoord_buffer->unmap();
 
   // create material_id_buffer
-  optix::Buffer material_id_buffer =
+  Buffer material_id_buffer =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT, size);
   float *id_map = static_cast<float *>(material_id_buffer->map());
 
@@ -574,7 +568,7 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   material_id_buffer->unmap();
 
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(size);
 
   // Set buffers
@@ -585,33 +579,32 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   geometry["material_id_buffer"]->setBuffer(material_id_buffer);
 
   // Set bounding box program
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_mesh_programs, "mesh_bounds");
+  Program bound =
+      g_context->createProgramFromPTXString(mesh_programs, "mesh_bounds");
   geometry->setBoundingBoxProgram(bound);
 
   // Set intersection program
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_mesh_programs, "mesh_intersection");
+  Program intersect =
+      g_context->createProgramFromPTXString(mesh_programs, "mesh_intersection");
   geometry->setIntersectionProgram(intersect);
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
 
   // using materials from the model
   if (!use_custom_material) {
     gi->setMaterialCount((int)material_list.size());
 
-    optix::Buffer texture_buffers = g_context->createBuffer(
+    Buffer texture_buffers = g_context->createBuffer(
         RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, material_list.size());
-    optix::callableProgramId<int(int)> *tex_data =
-        static_cast<optix::callableProgramId<int(int)> *>(
-            texture_buffers->map());
+    callableProgramId<int(int)> *tex_data =
+        static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
     for (int i = 0; i < material_list.size(); i++) {
       printf("Materials Assigned - %2.f%%  \r", i * 100.f / size);
-      optix::Program texture = material_list[i]->assignTo(gi, g_context, i);
-      tex_data[i] = optix::callableProgramId<int(int)>(texture->getId());
+      Program texture = material_list[i]->assignTo(gi, g_context, i);
+      tex_data[i] = callableProgramId<int(int)>(texture->getId());
     }
     printf("\n");
 
@@ -625,14 +618,13 @@ optix::GeometryInstance Mesh(const std::string &fileName,
   else {
     gi->setMaterialCount(1);
 
-    optix::Buffer texture_buffers =
+    Buffer texture_buffers =
         g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-    optix::callableProgramId<int(int)> *tex_data =
-        static_cast<optix::callableProgramId<int(int)> *>(
-            texture_buffers->map());
+    callableProgramId<int(int)> *tex_data =
+        static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-    optix::Program texture = custom_material.assignTo(gi, g_context, 0);
-    tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+    Program texture = custom_material.assignTo(gi, g_context, 0);
+    tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
     texture_buffers->unmap();
 
@@ -646,19 +638,18 @@ optix::GeometryInstance Mesh(const std::string &fileName,
 }
 
 // Plane constructor
-optix::GeometryInstance Plane(const float &center, const AXIS ax,
-                              const bool invert_plane,
-                              const Materials &material,
-                              optix::Context &g_context) {
+GeometryInstance Plane(const float &center, const AXIS ax,
+                       const bool invert_plane, const Materials &material,
+                       Context &g_context) {
   // Create Geometry variable
-  optix::Geometry geometry = g_context->createGeometry();
+  Geometry geometry = g_context->createGeometry();
   geometry->setPrimitiveCount(1);
 
   // Set bounding box and intersection programs
-  optix::Program bound = g_context->createProgramFromPTXString(
-      embedded_plane_programs, "get_bounds");
-  optix::Program intersect = g_context->createProgramFromPTXString(
-      embedded_plane_programs, "hit_plane");
+  Program bound =
+      g_context->createProgramFromPTXString(plane_programs, "get_bounds");
+  Program intersect =
+      g_context->createProgramFromPTXString(plane_programs, "hit_plane");
   geometry->setBoundingBoxProgram(bound);
   geometry->setIntersectionProgram(intersect);
 
@@ -684,18 +675,18 @@ optix::GeometryInstance Plane(const float &center, const AXIS ax,
   }
 
   // Create GeometryInstance
-  optix::GeometryInstance gi = g_context->createGeometryInstance();
+  GeometryInstance gi = g_context->createGeometryInstance();
   gi->setGeometry(geometry);
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  optix::Buffer texture_buffers =
+  Buffer texture_buffers =
       g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  optix::callableProgramId<int(int)> *tex_data =
-      static_cast<optix::callableProgramId<int(int)> *>(texture_buffers->map());
+  callableProgramId<int(int)> *tex_data =
+      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
 
-  optix::Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = optix::callableProgramId<int(int)>(texture->getId());
+  Program texture = material.assignTo(gi, g_context);
+  tex_data[0] = callableProgramId<int(int)>(texture->getId());
 
   texture_buffers->unmap();
   gi["sample_texture"]->setBuffer(texture_buffers);

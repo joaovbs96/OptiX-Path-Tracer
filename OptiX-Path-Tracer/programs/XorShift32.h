@@ -40,7 +40,7 @@ struct XorShift32 {
 
     state = x;
 
-    return (x & 0xFFFFFF) / 16777216.0f;
+    return (x & 0xFFFFFF) / 16777216.f;
   }
 
   unsigned int state;

@@ -17,7 +17,7 @@
 #include "material.h"
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -32,7 +32,7 @@ rtBuffer<rtCallableProgramId<float3(float, float, float3)> >
     sample_texture;  // no need to use this here
 rtDeclareVariable(float, ref_idx, , );
 
-inline __device__ bool scatter(const optix::Ray &ray_in) {
+RT_FUNCTION bool scatter(const Ray &ray_in) {
   prd.out.is_specular = true;
   prd.out.origin = hit_rec.p;
   prd.out.attenuation = make_float3(1.f);
@@ -68,7 +68,7 @@ inline __device__ bool scatter(const optix::Ray &ray_in) {
   return true;
 }
 
-inline __device__ float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
+RT_FUNCTION float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
 
 RT_PROGRAM void closest_hit() {
   prd.out.type = Dielectric;

@@ -8,8 +8,7 @@ rtBuffer<int, 1> perm_x;
 rtBuffer<int, 1> perm_y;
 rtBuffer<int, 1> perm_z;
 
-inline __device__ float perlin_interp(float3 c[2][2][2], float u, float v,
-                                      float w) {
+RT_FUNCTION float perlin_interp(float3 c[2][2][2], float u, float v, float w) {
   float uu = u * u * (3 - 2 * u);
   float vv = v * v * (3 - 2 * v);
   float ww = w * w * (3 - 2 * w);
@@ -26,7 +25,7 @@ inline __device__ float perlin_interp(float3 c[2][2][2], float u, float v,
   return accum;
 }
 
-inline __device__ float noise(float3 p) {
+RT_FUNCTION float noise(float3 p) {
   float u = p.x - floor(p.x);
   float v = p.y - floor(p.y);
   float w = p.z - floor(p.z);
@@ -45,7 +44,7 @@ inline __device__ float noise(float3 p) {
   return perlin_interp(c, u, v, w);
 }
 
-inline __device__ float turb(float3 p) {
+RT_FUNCTION float turb(float3 p) {
   float accum = 0;
   float3 temp_p = p;
   float weight = 1.0;
@@ -60,6 +59,5 @@ inline __device__ float turb(float3 p) {
 }
 
 RT_CALLABLE_PROGRAM float3 sample_texture(float u, float v, float3 p) {
-  return make_float3(1, 1, 1) * 0.5 *
-         (1 + sin(scale * p.x + 5 * turb(scale * p)));
+  return make_float3(1.f) * 0.5 * (1 + sin(scale * p.x + 5 * turb(scale * p)));
 }

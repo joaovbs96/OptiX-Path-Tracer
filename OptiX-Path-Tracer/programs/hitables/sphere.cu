@@ -21,7 +21,7 @@ rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
 
 /*! the implicit state's ray we will intersect against */
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
@@ -30,7 +30,7 @@ rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-inline __device__ void get_sphere_uv(const float3& p) {
+RT_FUNCTION void get_sphere_uv(const float3& p) {
   float phi = atan2(p.z, p.x);
   float theta = asin(p.y);
 
@@ -75,7 +75,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.p = hit_point;
 
       float3 normal = (hit_rec.p - center) / radius;
-      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
       get_sphere_uv((hit_rec.p - center) / radius);
@@ -97,7 +97,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_rec.p = hit_point;
 
       float3 normal = (hit_rec.p - center) / radius;
-      normal = optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
       get_sphere_uv((hit_rec.p - center) / radius);
@@ -114,7 +114,7 @@ RT_PROGRAM void hit_sphere(int pid) {
   program (we handle multiple spheres by having a different
   geometry per sphere), the'pid' parameter is ignored */
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
   aabb->m_min = center - radius;
   aabb->m_max = center + radius;
 }

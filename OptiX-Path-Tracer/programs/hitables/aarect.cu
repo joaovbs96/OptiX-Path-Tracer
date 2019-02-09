@@ -9,7 +9,7 @@ rtDeclareVariable(float, k, , );
 rtDeclareVariable(int, flip, , );
 
 // the implicit state's ray we will intersect against
-rtDeclareVariable(optix::Ray, ray, rtCurrentRay, );
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // struct used to communicate between intersection programs and hit program
 rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
@@ -36,8 +36,7 @@ RT_PROGRAM void hit_rect_X(int pid) {
     // flip normal if needed
     float3 normal = make_float3(1.f, 0.f, 0.f);
     if (flip) normal = -normal;
-    hit_rec.normal =
-        optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
@@ -64,10 +63,9 @@ RT_PROGRAM void hit_rect_Y(int pid) {
     hit_rec.p = hit_point;
 
     // flip normal if needed
-    float3 normal = make_float3(0.f, 1.0f, 0.f);
+    float3 normal = make_float3(0.f, 1.f, 0.f);
     if (flip) normal = -normal;
-    hit_rec.normal =
-        optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
@@ -96,8 +94,7 @@ RT_PROGRAM void hit_rect_Z(int pid) {
     // flip normal if needed
     float3 normal = make_float3(0.f, 0.f, 1.f);
     if (flip) normal = -normal;
-    hit_rec.normal =
-        optix::normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
@@ -109,21 +106,21 @@ RT_PROGRAM void hit_rect_Z(int pid) {
 }
 
 RT_PROGRAM void get_bounds_X(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
 
   aabb->m_min = make_float3(k - 0.0001, a0, b0);
   aabb->m_max = make_float3(k + 0.0001, a1, b1);
 }
 
 RT_PROGRAM void get_bounds_Y(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
 
   aabb->m_min = make_float3(a0, k - 0.0001, b0);
   aabb->m_max = make_float3(a1, k + 0.0001, b1);
 }
 
 RT_PROGRAM void get_bounds_Z(int pid, float result[6]) {
-  optix::Aabb* aabb = (optix::Aabb*)result;
+  Aabb* aabb = (Aabb*)result;
 
   aabb->m_min = make_float3(a0, b0, k - 0.0001);
   aabb->m_max = make_float3(a1, b1, k + 0.0001);

@@ -8,8 +8,8 @@ rtDeclareVariable(float, b1, , );
 rtDeclareVariable(float, k, , );
 
 // Boundary functions
-inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax,
-                             pdf_rec &rec) {
+RT_FUNCTION bool hit_x(pdf_in &in, const float tmin, const float tmax,
+                       pdf_rec &rec) {
   float t = (k - in.origin.x) / in.scattered_direction.x;
 
   float a = in.origin.y + t * in.scattered_direction.y;
@@ -25,8 +25,8 @@ inline __device__ bool hit_x(pdf_in &in, const float tmin, const float tmax,
   return false;
 }
 
-inline __device__ bool hit_y(pdf_in &in, const float tmin, const float tmax,
-                             pdf_rec &rec) {
+RT_FUNCTION bool hit_y(pdf_in &in, const float tmin, const float tmax,
+                       pdf_rec &rec) {
   float t = (k - in.origin.y) / in.scattered_direction.y;
 
   float a = in.origin.x + t * in.scattered_direction.x;
@@ -42,8 +42,8 @@ inline __device__ bool hit_y(pdf_in &in, const float tmin, const float tmax,
   return false;
 }
 
-inline __device__ bool hit_z(pdf_in &in, const float tmin, const float tmax,
-                             pdf_rec &rec) {
+RT_FUNCTION bool hit_z(pdf_in &in, const float tmin, const float tmax,
+                       pdf_rec &rec) {
   float t = (k - in.origin.z) / in.scattered_direction.z;
 
   float a = in.origin.x + t * in.scattered_direction.x;
