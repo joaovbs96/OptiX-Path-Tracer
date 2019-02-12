@@ -23,6 +23,8 @@
 #include "host_includes/scenes.h"
 //#include "host_includes/scene_parser.h"
 
+#define HDR_OUTPUT TRUE
+
 Context g_context;
 
 // Clamp color values when saving to file
@@ -77,10 +79,10 @@ int main(int ac, char **av) {
 
   // Main parameters
   int Nx, Ny;
-  int scene = 2;
+  int scene = 4;
 
   // Set number of samples
-  const int samples = 400;
+  const int samples = 10000;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -155,9 +157,18 @@ int main(int ac, char **av) {
   }
   printf("Done rendering, which took %.2f seconds.\n", renderTime);
 
+#if HDR_OUTPUT == TRUE
+
+  // Save frame buffer to a HDR file
+  float *arr = (float *)malloc(Nx * Ny * 3 * sizeof(float));
+
+#else
+
   // Save frame buffer to a PNG file
   unsigned char *arr =
       (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
+
+#endif
   const float3 *cols = (const float3 *)fb->map();
 
   for (int j = Ny - 1; j >= 0; j--)
@@ -168,17 +179,39 @@ int main(int ac, char **av) {
       // average matrix of samples
       float3 col = cols[col_index] / float(samples);
 
-      // gamma correction
+#if HDR_OUTPUT == TRUE
+      // Apply tone mapping
+      // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
+      // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
+      col = col / (make_float3(1.f) + col);
+
+      // HDR output
+      arr[pixel_index + 0] = col.x;  // R
+      arr[pixel_index + 1] = col.y;  // G
+      arr[pixel_index + 2] = col.z;  // B
+#else
+      // Apply hamma correction
       col = sqrt(col);
 
       // from float to RGB [0, 255]
       arr[pixel_index + 0] = int(255.99 * clamp(col.x));  // R
       arr[pixel_index + 1] = int(255.99 * clamp(col.y));  // G
       arr[pixel_index + 2] = int(255.99 * clamp(col.z));  // B
+#endif
     }
 
+#if HDR_OUTPUT == TRUE
+  // output hdr file
+  output += std::to_string(samples) + ".hdr";
+  stbi_write_hdr((char *)output.c_str(), Nx, Ny, 3, arr);
+
+#else
+  // output png file
   output += std::to_string(samples) + ".png";
   stbi_write_png((char *)output.c_str(), Nx, Ny, 3, arr, 0);
+
+#endif
+
   fb->unmap();
 
   system("PAUSE");

@@ -47,9 +47,9 @@ void setMissProgram(Context &g_context, Miss_Programs id,
     missProgram = g_context->createProgramFromPTXString(miss_program, "dark");
   else if (id == BOX)  // TODO: implement a proper skybox
     missProgram = g_context->createProgramFromPTXString(miss_program, "box");
-  else if (id == IMG) {  // Spherical Environmental Mapping
-    missProgram = g_context->createProgramFromPTXString(
-        miss_program, "environmental_mapping");
+  else if (id == IMG) {  // rgbe image background
+    missProgram =
+        g_context->createProgramFromPTXString(miss_program, "img_background");
 
     Image_Texture img(fileName);
     GeometryInstance foo;
@@ -66,6 +66,7 @@ void setMissProgram(Context &g_context, Miss_Programs id,
     texture_buffers->unmap();
 
     missProgram["sample_texture"]->setBuffer(texture_buffers);
+
   } else if (id == HDR) {
     missProgram = g_context->createProgramFromPTXString(
         miss_program, "environmental_mapping");
@@ -85,6 +86,7 @@ void setMissProgram(Context &g_context, Miss_Programs id,
     texture_buffers->unmap();
 
     missProgram["sample_texture"]->setBuffer(texture_buffers);
+    missProgram["spherical"]->setInt(true);  // is it spherical(or cylindrical)?
   } else {
     printf("Error: Miss Program unknown or not yet implemented.\n");
   }

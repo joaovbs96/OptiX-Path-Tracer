@@ -11,7 +11,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../lib/stb_image_write.h"
 
-#include "../lib/hdr_reader.h"
+#include "../lib/HDRloader.h"
 
 // TODO: code cleanup and documentation
 
@@ -188,33 +188,39 @@ struct HDR_Texture : public Texture {
                                 const std::string fileName) const {
     TextureSampler sampler = context->createTextureSampler();
     sampler->setWrapMode(0, RT_WRAP_REPEAT);
-    sampler->setWrapMode(1, RT_WRAP_CLAMP_TO_EDGE);
+    sampler->setWrapMode(1, RT_WRAP_REPEAT);
     sampler->setIndexingMode(RT_TEXTURE_INDEX_NORMALIZED_COORDINATES);
     sampler->setReadMode(RT_TEXTURE_READ_NORMALIZED_FLOAT);
     sampler->setMaxAnisotropy(1.f);
     sampler->setMipLevelCount(1u);
     sampler->setArraySize(1u);
 
-    HdrInfo info;
-    unsigned char *tex_data =
-        loadHdr((char *)fileName.c_str(), &info, /*convertToFloat=*/true);
+    HDRImage HDRresult;
+    if (HDRLoader::load((char *)fileName.c_str(), HDRresult))
+      printf("HDR environment map loaded. Width: %d Height: %d\n",
+             HDRresult.width, HDRresult.height);
+    else {
+      printf(
+          "HDR environment map not found\nAn HDR map is required as light "
+          "source. Exiting now...\n");
+      system("PAUSE");
+      exit(0);
+    }
 
     Buffer buffer = context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_FLOAT4,
-                                          info.width, info.height);
+                                          HDRresult.width, HDRresult.height);
     float *buffer_data = static_cast<float *>(buffer->map());
 
-    for (int i = 0; i < info.width; ++i)
-      for (int j = 0; j < info.height; ++j) {
-        int bindex = (j * info.width + i) * 4;
-        int iindex = ((info.height - j - 1) * info.width + i) * 4;
+    for (int i = 0; i < HDRresult.width; i++)
+      for (int j = 0; j < HDRresult.height; j++) {
+        int bindex = (j * HDRresult.width + i) * 4;
+        // int iindex = 3 * ((HDRresult.height - j - 1) * HDRresult.width + i);
+        int iindex = 3 * (HDRresult.width * j + i);
 
-        buffer_data[bindex + 0] = ((float)tex_data[iindex + 0]);
-        buffer_data[bindex + 1] = ((float)tex_data[iindex + 1]);
-        buffer_data[bindex + 2] = ((float)tex_data[iindex + 2]);
-        buffer_data[bindex + 3] = ((float)tex_data[iindex + 3]);
-        std::cout << buffer_data[bindex + 0] << ";" << buffer_data[bindex + 1]
-                  << ";" << buffer_data[bindex + 2] << ";"
-                  << buffer_data[bindex + 3] << std::endl;
+        buffer_data[bindex + 0] = HDRresult.colors[iindex + 0];
+        buffer_data[bindex + 1] = HDRresult.colors[iindex + 1];
+        buffer_data[bindex + 2] = HDRresult.colors[iindex + 2];
+        buffer_data[bindex + 3] = 0.f;
       }
 
     buffer->unmap();

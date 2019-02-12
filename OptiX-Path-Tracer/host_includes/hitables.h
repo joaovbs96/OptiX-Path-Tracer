@@ -381,8 +381,7 @@ struct Triangle_Struct {
 GeometryInstance Mesh(const std::string &fileName, Context &g_context,
                       Materials &custom_material,
                       bool use_custom_material = false,
-                      const std::string assetsFolder = "assets/",
-                      float scale = 1.f) {
+                      const std::string assetsFolder = "assets/") {
   std::vector<Triangle_Struct> triangles;
   objl::Loader Loader;
 
@@ -449,19 +448,19 @@ GeometryInstance Mesh(const std::string &fileName, Context &g_context,
 
       // Face vertex
       int ia = curMesh.Indices[j];
-      float3 a = make_float3(scale * curMesh.Vertices[ia].Position.X,
-                             scale * curMesh.Vertices[ia].Position.Y,
-                             scale * curMesh.Vertices[ia].Position.Z);
+      float3 a = make_float3(curMesh.Vertices[ia].Position.X,
+                             curMesh.Vertices[ia].Position.Y,
+                             curMesh.Vertices[ia].Position.Z);
 
       int ib = curMesh.Indices[j + 1];
-      float3 b = make_float3(scale * curMesh.Vertices[ib].Position.X,
-                             scale * curMesh.Vertices[ib].Position.Y,
-                             scale * curMesh.Vertices[ib].Position.Z);
+      float3 b = make_float3(curMesh.Vertices[ib].Position.X,
+                             curMesh.Vertices[ib].Position.Y,
+                             curMesh.Vertices[ib].Position.Z);
 
       int ic = curMesh.Indices[j + 2];
-      float3 c = make_float3(scale * curMesh.Vertices[ic].Position.X,
-                             scale * curMesh.Vertices[ic].Position.Y,
-                             scale * curMesh.Vertices[ic].Position.Z);
+      float3 c = make_float3(curMesh.Vertices[ic].Position.X,
+                             curMesh.Vertices[ic].Position.Y,
+                             curMesh.Vertices[ic].Position.Z);
 
       // Face UV coordinates
       a_uv = make_float2(curMesh.Vertices[ia].TextureCoordinate.X,

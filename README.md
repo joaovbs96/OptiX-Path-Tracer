@@ -17,7 +17,7 @@ expanded with new features being added even after being done with the final book
 - Multiple Importance Sampling
 - Russian Roulette Path Termination
 - Triangle Meshes
-- Environmental Mapping
+- HDRi Environmental Mapping
 
 ### TODO:
 - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
@@ -49,7 +49,7 @@ expanded with new features being added even after being done with the final book
 
 ## Included Third-Party Libraries
 
-- [Pixar's hdr_reader](https://github.com/PixarAnimationStudios/OpenSubdiv/blob/6b22e10875de77786d25c32ae23089f6558e994b/examples/common/hdr_reader.cpp)
+- [straaljager's HDRloader](https://github.com/straaljager/GPU-path-tracing-tutorial-4/blob/9b0906f2850ae15833f16fa0e992208ac60cc1bd/HDRloader.cpp)
 - nothings' [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) and [stb_image_write](https://github.com/nothings/stb/blob/master/stb_image_write.h)
 - [Bly7's OBJ-Loader](https://github.com/Bly7/OBJ-Loader)
 - [subh83's RSJp-cpp](https://github.com/subh83/RSJp-cpp)

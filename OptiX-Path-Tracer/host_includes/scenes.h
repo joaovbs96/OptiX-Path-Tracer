@@ -453,7 +453,8 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // configure sampling
-  Cosine_PDF mixture;
+  Mixture_PDF mixture(new Cosine_PDF(),
+                      new Sphere_PDF(make_float3(300.f, -300.f, 300.f), 300.f));
 
   // add material PDFs
   Buffer material_pdfs =
@@ -467,7 +468,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
 
   // Set the ray generation and miss programs
   setRayGenerationProgram(g_context, mixture, material_pdfs);
-  setMissProgram(g_context, IMG, "assets/other_textures/stone.jpg");
+  setMissProgram(g_context, HDR, "assets/hdr/fireplace.hdr");
 
   // Set the exception program
   setExceptionProgram(g_context);
@@ -475,15 +476,16 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
   Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  Materials* white =
-      new Lambertian(new Constant_Texture(make_float3(0.f, 0.73f, 0.73f)));
+  Materials* white = new Lambertian(new Constant_Texture(make_float3(0.73f)));
   Materials* aluminium =
       new Metal(new Constant_Texture(make_float3(0.8f, 0.85f, 0.88f)), 0.0);
+  Materials* black = new Lambertian(new Constant_Texture(make_float3(0.f)));
+  Materials* glass = new Dielectric(1.5f);
 
   // Test model
-  float scale_factor = 1400.f;
+  /*float scale_factor = 1400.f;
   GeometryInstance model =
-      Mesh("nam.obj", g_context, *aluminium, false, "assets/nam/", 1.f);
+      Mesh("nam.obj", g_context, *black, true, "assets/nam/");
   if (model == NULL)
     system("PAUSE");
   else
@@ -491,22 +493,41 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
         translate(rotate(scale(model, make_float3(scale_factor), g_context),
                          180.f, Y_AXIS, g_context),
                   make_float3(0.f, -300.f, 0.f), g_context),
-        group, g_context);
+        group, g_context);*/
 
   // Lucy
   /*float scale_factor = 150.f;
-  GeometryInstance model = Mesh("Lucy1M.obj", g_context, *aluminium,
-  true, "assets/lucy/", 1.f); if(model == NULL) system("PAUSE"); else
+  GeometryInstance model =
+      Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/");
+  if (model == NULL)
+    system("PAUSE");
+  else
     addChild(translate(scale(model, make_float3(scale_factor), g_context),
-  make_float3(0.f, -550.f, 0.f), g_context), group, g_context);*/
+                       make_float3(0.f, -550.f, 0.f), g_context),
+             group, g_context);*/
 
   // Dragon
-  /*float scale_factor = 400.f;
-  GeometryInstance model = Mesh("dragon_cubic.obj", g_context, *white,
-  true, "assets/dragon/", 1.f); if(model == NULL) system("PAUSE"); else
-    addChild(translate(rotate(scale(model, make_float3(scale_factor),
-  g_context), 180.f, Y_AXIS, g_context), make_float3(0.f, -350.f, 200.f),
-  g_context), group, g_context);*/
+  /*float scale_factor = 350.f;
+  GeometryInstance model =
+      Mesh("dragon_cubic.obj", g_context, *white, true, "assets/dragon/");
+  if (model == NULL)
+    system("PAUSE");
+  else
+    addChild(
+        translate(rotate(scale(model, make_float3(scale_factor), g_context),
+                         180.f, Y_AXIS, g_context),
+                  make_float3(0.f, -500.f, 200.f), g_context),
+        group, g_context);*/
+
+  addChild(Sphere(make_float3(300.f, -300.f, 300.f), 300.f, *glass, g_context),
+           group, g_context);
+  addChild(
+      Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, *aluminium, g_context),
+      group, g_context);
+  addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -500.f, false, Y_AXIS,
+                     *white, g_context),
+           group,
+           g_context);  // ground
 
   // configure camera
   const float3 lookfrom = make_float3(0.f, 0.f, -800.f);

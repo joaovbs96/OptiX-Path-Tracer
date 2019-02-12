@@ -42,7 +42,8 @@ RT_PROGRAM void box() {
   prd.out.scatterEvent = rayDidntHitAnything;
 }
 
-RT_PROGRAM void environmental_mapping() {
+// rgbe image background
+RT_PROGRAM void img_background() {
   float theta = atan2f(ray.direction.x, ray.direction.z);
   float phi = M_PIf * 0.5f - acosf(ray.direction.y);
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
@@ -51,4 +52,36 @@ RT_PROGRAM void environmental_mapping() {
   prd.out.attenuation = prd.out.emitted =
       sample_texture[0](u, v, make_float3(0.f));
   prd.out.scatterEvent = rayDidntHitAnything;
+}
+
+rtDeclareVariable(int, spherical, , );
+
+// HDRi environmental mapping
+RT_PROGRAM void environmental_mapping() {
+  if (spherical) {
+    // https://www.gamedev.net/forums/topic/637220-equirectangular-environment-map/
+    float r = length(ray.direction);
+    float lon = atan2(ray.direction.z, ray.direction.x);
+    float lat = acos(ray.direction.y / r);
+
+    float2 rads = make_float2(1.f / (PI_F * 2.f), 1.f / PI_F);
+
+    prd.out.attenuation = prd.out.emitted =
+        2.f * sample_texture[0](lon * rads.x, lat * rads.y, make_float3(0.f));
+    prd.out.scatterEvent = rayDidntHitAnything;
+  } else {  // cylindrical HDRI mapping
+    // Y is up, swap x for y and z for x
+    float theta = atan2f(ray.direction.x, ray.direction.z);
+    // wrap around full circle if negative
+    theta = theta < 0.f ? theta + (2.f * PI_F) : theta;
+    float phi = acosf(ray.direction.y);
+
+    // map theta and phi to u and v texturecoordinates in [0,1] x [0,1] range
+    float u = theta / (2.f * PI_F);  // +offsetY;
+    float v = phi / PI_F;
+
+    prd.out.attenuation = prd.out.emitted =
+        2.f * sample_texture[0](1.f - u, v, make_float3(0.f));
+    prd.out.scatterEvent = rayDidntHitAnything;
+  }
 }
