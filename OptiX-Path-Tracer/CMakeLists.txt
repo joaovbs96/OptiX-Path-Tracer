@@ -42,6 +42,7 @@ cuda_compile_and_embed( buffer_pdf_programs programs/pdfs/buffer_pdf.cu )
 cuda_compile_and_embed( triangle_programs programs/hitables/triangle.cu )
 cuda_compile_and_embed( mesh_programs programs/hitables/mesh.cu )
 cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
+cuda_compile_and_embed( hit_program programs/hit.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -84,6 +85,7 @@ add_executable(OptiX-Path-Tracer
   ${triangle_programs}
   ${mesh_programs}
   ${plane_programs}
+  ${hit_program}
   )
 
 target_link_libraries(OptiX-Path-Tracer

@@ -1,12 +1,5 @@
 #include "vec.h"
 
-RT_FUNCTION float Clamp(const float& value, const float& bottom,
-                        const float& top) {
-  if (value < bottom) return bottom;
-  if (value > top) return top;
-  return value;
-}
-
 RT_FUNCTION float Saturate(float x) {
   if (x < 0.f)
     return 0.f;

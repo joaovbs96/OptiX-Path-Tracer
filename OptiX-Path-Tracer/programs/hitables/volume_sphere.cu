@@ -4,13 +4,14 @@
 rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
 rtDeclareVariable(float, density, , );
+rtDeclareVariable(int, index, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -74,7 +75,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       float distance_inside_boundary = rec2 - rec1;
       distance_inside_boundary *= length(ray.direction);
 
-      float hit_distance = -(1.f / density) * log((*prd.in.randState)());
+      float hit_distance = -(1.f / density) * log((*prd.randState)());
       float temp = rec1 + hit_distance / length(ray.direction);
 
       if (rtPotentialIntersection(temp)) {
@@ -91,7 +92,7 @@ RT_PROGRAM void hit_sphere(int pid) {
         hit_rec.u = 0.f;
         hit_rec.v = 0.f;
 
-        hit_rec.index = 0;
+        hit_rec.index = index;
 
         rtReportIntersection(0);
       }

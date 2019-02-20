@@ -25,28 +25,32 @@ rtDeclareVariable(rtObject, world, , );
 
 // the attributes we use to communicate between intersection programs and hit
 // program
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
-rtDeclareVariable(float, fuzz, , );
-
-RT_FUNCTION bool scatter(const Ray &ray_in) {
-  float3 reflected = reflect(unit_vector(ray_in.direction), hit_rec.normal);
-  prd.out.is_specular = true;
-  prd.out.origin = hit_rec.p;
-  prd.out.direction =
-      reflected + fuzz * random_in_unit_sphere((*prd.in.randState));
-  prd.out.attenuation =
-      sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
-  prd.out.normal = hit_rec.normal;
-  return true;
-}
-
-RT_FUNCTION float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
+rtDeclareVariable(float, fuzz, , );  // how 'rough'/fuzzy the metal is
 
 RT_PROGRAM void closest_hit() {
-  prd.out.type = Metal;
-  prd.out.emitted = emitted();
-  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
+  prd.matType = Metal_Material;
+  prd.isSpecular = true;
+  prd.scatterEvent = rayGotBounced;
+
+  prd.origin = hit_rec.p;
+  prd.normal = hit_rec.normal;
+
+  float3 reflected = reflect(unit_vector(ray.direction), prd.normal);
+  prd.direction = reflected + fuzz * random_in_unit_sphere((*prd.randState));
+
+  int index = hit_rec.index;
+  prd.emitted = make_float3(0.f);
+  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
+
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+  return make_float3(1.f);
+}
+
+RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
+
+RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }

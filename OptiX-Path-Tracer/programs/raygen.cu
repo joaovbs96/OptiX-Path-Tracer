@@ -17,8 +17,6 @@
 #include "pdfs/pdf.h"
 #include "prd.h"
 
-// TODO: we have three different clamp functions, try to merge them
-
 // the 'builtin' launch index we need to render a frame
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
@@ -45,11 +43,70 @@ rtDeclareVariable(float, camera_lens_radius, , );
 rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
 
-// PDF callable programs
-rtDeclareVariable(rtCallableProgramId<float(pdf_in&)>, value, , );
-rtDeclareVariable(rtCallableProgramId<float3(pdf_in&, XorShift32&)>, generate,
-                  , );
-rtBuffer<rtCallableProgramId<float(pdf_in&)>> scattering_pdf;
+// Light sampling callable programs
+rtDeclareVariable(int, numLights, , );
+rtBuffer<float3> Light_Emissions;
+rtBuffer<rtCallableProgramId<float3(PDFParams&, XorShift32&)>> Light_Sample;
+rtBuffer<rtCallableProgramId<float(PDFParams&)>> Light_PDF;
+
+// BRDF sampling callable programs
+rtBuffer<rtCallableProgramId<float3(PDFParams&, XorShift32&)>> BRDF_Sample;
+rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_PDF;
+rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_Evaluate;
+
+RT_FUNCTION float PowerHeuristic(unsigned int numf, float fPdf,
+                                 unsigned int numg, float gPdf) {
+  float f = numf * fPdf;
+  float g = numg * gPdf;
+
+  return (f * f) / (f * f + g * g);
+}
+
+RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
+  // return black if there's no light
+  if (numLights == 0) return make_float3(0.f);
+
+  // cancel if it's a specular bounce
+  if (prd.isSpecular) return make_float3(0.f);
+
+  // ramdomly pick one light and multiply the result by the number of lights
+  // it's the same as dividing by the PDF if they have the same probability
+  int index = ((int)((*prd.randState)() * numLights)) % numLights;
+
+  // return black if there's just one light and we just hit it
+  if (prd.matType == Diffuse_Light_Material) {
+    if (numLights == 1) return make_float3(0.f);
+  }
+
+  PDFParams pdfParams(prd.origin, prd.normal);
+  Light_Sample[index](pdfParams, *prd.randState);
+  float lightPDF = Light_PDF[index](pdfParams);
+
+  if (dot(pdfParams.direction, pdfParams.normal) <= 0.f)
+    return make_float3(0.f);
+
+  PerRayData_Shadow prdShadow;
+  Ray shadowRay = make_Ray(/* origin   : */ pdfParams.origin,
+                           /* direction: */ pdfParams.direction,
+                           /* ray type : */ 1,
+                           /* tmin     : */ 1e-3f,
+                           /* tmax     : */ RT_DEFAULT_MAX);
+  rtTrace(world, shadowRay, prdShadow);
+
+  // if light is occluded, return black
+  if (prdShadow.inShadow) return make_float3(0.f);
+
+  float matPDF = BRDF_PDF[prd.matType](pdfParams);
+  float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
+
+  // MIS
+  float3 emission = Light_Emissions[index];
+  float3 lightThroughput = matValue * prd.throughput * numLights * emission;
+  lightThroughput *= PowerHeuristic(1, lightPDF, 1, matPDF);
+  lightThroughput /= max(0.001f, lightPDF);
+
+  return lightThroughput;
+}
 
 struct Camera {
   static RT_FUNCTION Ray generateRay(float s, float t, XorShift32& rnd) {
@@ -67,77 +124,71 @@ struct Camera {
   }
 };
 
-// Clamp color values
-RT_FUNCTION float3 clamp(const float3& c) {
-  float3 temp = c;
-  if (temp.x > 1.f) temp.x = 1.f;
-  if (temp.y > 1.f) temp.y = 1.f;
-  if (temp.z > 1.f) temp.z = 1.f;
-
-  return temp;
-}
-
 RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
   PerRayData prd;
-  prd.in.randState = &rnd;
-  prd.in.time = time0 + rnd() * (time1 - time0);
+  prd.randState = &rnd;
+  prd.time = time0 + rnd() * (time1 - time0);
 
-  float3 current_color = make_float3(1.f);
+  prd.throughput = make_float3(1.f);
+  float3 radiance = make_float3(0.f);
 
-  /* iterative version of recursion, up to depth 50 */
+  // iterative version of recursion, up to depth 50
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
-    if (prd.out.scatterEvent == rayDidntHitAnything) {
-      // ray got 'lost' to the environment
-      // return attenuation set by miss shader
-      return current_color * prd.out.attenuation;
+
+    radiance += Direct_Light(prd) * prd.throughput;
+
+    // ray got 'lost' to the environment
+    // return attenuation set by miss shader
+    if (prd.scatterEvent == rayMissed) {
+      radiance += prd.throughput * prd.attenuation;
+      break;
     }
 
-    // ray was absorbed
-    else if (prd.out.scatterEvent == rayGotCancelled)
-      return current_color * prd.out.emitted;
+    // ray hit a light, return emission
+    else if (prd.scatterEvent == rayGotCancelled) {
+      radiance += prd.throughput * prd.emitted;
+      break;
+    }
 
     // ray is still alive, and got properly bounced
     else {
-      if (prd.out.is_specular) {
-        current_color = prd.out.attenuation * current_color;
+      // ideal specular hit
+      if (prd.isSpecular) prd.throughput *= prd.attenuation;
 
-        ray = make_Ray(/* origin   : */ prd.out.origin,
-                       /* direction: */ prd.out.direction,
-                       /* ray type : */ 0,
-                       /* tmin     : */ 1e-3f,
-                       /* tmax     : */ RT_DEFAULT_MAX);
-      } else {
-        pdf_in in(prd.out.origin, prd.out.normal);
-        float3 pdf_direction = generate(in, rnd);
-        float pdf_val = value(in);
+      // do importance sample
+      else {
+        PDFParams pdfParams(prd.origin, prd.normal);
+        BRDF_Sample[prd.matType](pdfParams, rnd);
+        float pdfValue = BRDF_PDF[prd.matType](pdfParams);
 
-        current_color =
-            clamp(prd.out.emitted +
-                  (prd.out.attenuation * scattering_pdf[prd.out.type](in) *
-                   current_color) /
-                      pdf_val);
+        prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
 
-        ray = make_Ray(/* origin   : */ in.origin,
-                       /* direction: */ in.scattered_direction,
-                       /* ray type : */ 0,
-                       /* tmin     : */ 1e-3f,
-                       /* tmax     : */ RT_DEFAULT_MAX);
+        prd.throughput *= prd.attenuation / pdfValue;
+
+        prd.origin = pdfParams.origin;
+        prd.direction = pdfParams.direction;
       }
+
+      ray = make_Ray(/* origin   : */ prd.origin,
+                     /* direction: */ prd.direction,
+                     /* ray type : */ 0,
+                     /* tmin     : */ 1e-3f,
+                     /* tmax     : */ RT_DEFAULT_MAX);
     }
 
     // Russian Roulette Path Termination
-    float p = max_component(current_color);
+    float p = max_component(prd.throughput);
     if (depth > 10) {
       if (rnd() >= p)
-        return current_color;
+        return prd.throughput;
       else
-        current_color *= 1.f / p;
+        prd.throughput *= 1.f / p;
     }
   }
 
   // recursion did not terminate - cancel it
-  return make_float3(0.f);
+  return radiance;
 }
 
 // Remove NaN values

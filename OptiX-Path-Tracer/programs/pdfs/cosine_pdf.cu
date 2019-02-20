@@ -1,18 +1,19 @@
 #include "pdf.h"
 
-RT_CALLABLE_PROGRAM float3 cosine_generate(pdf_in &in, XorShift32 &rnd) {
-  Onb uvw(in.normal);
+RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, XorShift32 &rnd) {
+  Onb uvw(pdf.normal);
 
   float3 temp = random_cosine_direction(rnd);
   uvw.inverse_transform(temp);
-  in.scattered_direction = temp;
 
-  return in.scattered_direction;
+  // float3 temp = unit_vector(in.normal) + random_on_unit_sphere(rnd);
+  pdf.direction = temp;
+
+  return pdf.direction;
 }
 
-RT_CALLABLE_PROGRAM float cosine_value(pdf_in &in) {
-  float cosine =
-      dot(unit_vector(in.scattered_direction), unit_vector(in.normal));
+RT_CALLABLE_PROGRAM float cosine_value(PDFParams &pdf) {
+  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
   if (cosine > 0.f)
     return cosine / PI_F;

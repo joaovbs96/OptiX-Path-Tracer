@@ -23,12 +23,9 @@
 #include "host_includes/scenes.h"
 //#include "host_includes/scene_parser.h"
 
-#define HDR_OUTPUT TRUE
+#define HDR_OUTPUT FALSE
 
 Context g_context;
-
-// Clamp color values when saving to file
-inline float clamp(float value) { return value > 1.f ? 1.f : value; }
 
 float renderFrame(int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
@@ -71,7 +68,7 @@ int main(int ac, char **av) {
 
   // Create an OptiX context
   g_context = Context::create();
-  g_context->setRayTypeCount(1);
+  g_context->setRayTypeCount(2);
   g_context->setStackSize(5000);
   // it's recommended to keep it under 10k, it's per core
   // TODO: investigate new OptiX stack size API(sets number of recursions rather
@@ -79,10 +76,10 @@ int main(int ac, char **av) {
 
   // Main parameters
   int Nx, Ny;
-  int scene = 4;
+  int scene = 2;
 
   // Set number of samples
-  const int samples = 10000;
+  const int samples = 1000;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -194,9 +191,9 @@ int main(int ac, char **av) {
       col = sqrt(col);
 
       // from float to RGB [0, 255]
-      arr[pixel_index + 0] = int(255.99 * clamp(col.x));  // R
-      arr[pixel_index + 1] = int(255.99 * clamp(col.y));  // G
-      arr[pixel_index + 2] = int(255.99 * clamp(col.z));  // B
+      arr[pixel_index + 0] = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
+      arr[pixel_index + 1] = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
+      arr[pixel_index + 2] = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
 #endif
     }
 

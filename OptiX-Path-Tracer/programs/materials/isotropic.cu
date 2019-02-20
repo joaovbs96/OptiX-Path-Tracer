@@ -9,27 +9,30 @@ rtDeclareVariable(rtObject, world, , );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
-RT_FUNCTION bool scatter(const Ray &ray_in) {
-  prd.out.is_specular = true;  // TODO: It's not specular, but shouldn't it be
-                               // treated in the same way?
-  prd.out.origin = hit_rec.p;
-  prd.out.direction = random_in_unit_sphere(*prd.in.randState);
-  prd.out.normal = hit_rec.normal;
-  prd.out.attenuation =
-      sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
-  prd.out.type = Isotropic;
-
-  return true;
-}
-
-RT_FUNCTION float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
-
 RT_PROGRAM void closest_hit() {
-  prd.out.emitted = emitted();
-  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
+  prd.matType = Isotropic_Material;
+  prd.isSpecular = true;  // TODO: fix sampling
+  prd.scatterEvent = rayGotBounced;
+
+  prd.origin = hit_rec.p;
+  prd.normal = hit_rec.normal;
+  prd.direction = random_in_unit_sphere(*prd.randState);
+
+  int index = hit_rec.index;
+  prd.emitted = make_float3(0.f);
+  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
+
+// TODO: complete programs
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+  return make_float3(1.f);
+}
+
+RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
+
+RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }

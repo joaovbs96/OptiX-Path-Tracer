@@ -13,6 +13,7 @@ extern "C" const char cosine_pdf_programs[];
 extern "C" const char mixture_pdf_programs[];
 extern "C" const char buffer_pdf_programs[];
 
+// TODO: rename these to createSample and createPDF
 struct PDF {
   virtual Program assignGenerate(Context &g_context) const = 0;
   virtual Program assignValue(Context &g_context) const = 0;

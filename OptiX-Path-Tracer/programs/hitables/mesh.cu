@@ -20,7 +20,7 @@ rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // the attributes we use to communicate between intersection programs and hit
 // program
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );

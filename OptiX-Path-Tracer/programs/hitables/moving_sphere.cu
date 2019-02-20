@@ -22,13 +22,14 @@ rtDeclareVariable(float3, center1, , );
 rtDeclareVariable(float, radius, , );
 rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
+rtDeclareVariable(int, index, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -52,7 +53,7 @@ RT_FUNCTION float3 center(float time) {
 // stable variants out there, but for now let's stick with the one that
 // the reference code used.
 RT_PROGRAM void hit_sphere(int pid) {
-  const float3 oc = ray.origin - center(prd.in.time);
+  const float3 oc = ray.origin - center(prd.time);
 
   // if the ray hits the sphere, the following equation has two roots:
   // tdot(B, B) + 2tdot(B,A-C) + dot(A-C,A-C) - R = 0
@@ -81,13 +82,13 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
-      get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
+      get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       rtReportIntersection(0);
     }
@@ -103,13 +104,13 @@ RT_PROGRAM void hit_sphere(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      float3 normal = (hit_rec.p - center(prd.in.time)) / radius;
+      float3 normal = (hit_rec.p - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
-      get_sphere_uv((hit_rec.p - center(prd.in.time)) / radius);
+      get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       rtReportIntersection(0);
     }

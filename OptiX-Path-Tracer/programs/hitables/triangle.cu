@@ -15,12 +15,14 @@ rtDeclareVariable(float3, normal, , );
 
 rtDeclareVariable(float, scale, , );
 
+rtDeclareVariable(int, index, , );
+
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -57,7 +59,7 @@ RT_PROGRAM void hit_triangle(int pid) {
       hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
       hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       rtReportIntersection(0);
     }

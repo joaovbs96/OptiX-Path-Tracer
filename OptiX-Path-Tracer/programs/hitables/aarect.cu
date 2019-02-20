@@ -7,12 +7,13 @@ rtDeclareVariable(float, b0, , );
 rtDeclareVariable(float, b1, , );
 rtDeclareVariable(float, k, , );
 rtDeclareVariable(int, flip, , );
+rtDeclareVariable(int, index, , );
 
 // the implicit state's ray we will intersect against
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 // struct used to communicate between intersection programs and hit program
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -41,7 +42,7 @@ RT_PROGRAM void hit_rect_X(int pid) {
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
 
-    hit_rec.index = 0;
+    hit_rec.index = index;
 
     rtReportIntersection(0);
   }
@@ -70,7 +71,7 @@ RT_PROGRAM void hit_rect_Y(int pid) {
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
 
-    hit_rec.index = 0;
+    hit_rec.index = index;
 
     rtReportIntersection(0);
   }
@@ -99,7 +100,7 @@ RT_PROGRAM void hit_rect_Z(int pid) {
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
 
-    hit_rec.index = 0;
+    hit_rec.index = index;
 
     rtReportIntersection(0);
   }

@@ -26,20 +26,20 @@ RT_PROGRAM void sky() {
   const float t = 0.5f * (unit_direction.y + 1.f);
   const float3 c =
       (1.f - t) * make_float3(1.f) + t * make_float3(0.5f, 0.7f, 1.f);
-  prd.out.attenuation = prd.out.emitted = c;
-  prd.out.scatterEvent = rayDidntHitAnything;
+  prd.attenuation = c;
+  prd.scatterEvent = rayMissed;
 }
 
 RT_PROGRAM void dark() {
-  prd.out.attenuation = prd.out.emitted = make_float3(0.f);
-  prd.out.scatterEvent = rayDidntHitAnything;
+  prd.attenuation = make_float3(0.f);
+  prd.scatterEvent = rayMissed;
 }
 
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 RT_PROGRAM void box() {
-  prd.out.attenuation = prd.out.emitted = make_float3(0.f);
-  prd.out.scatterEvent = rayDidntHitAnything;
+  prd.attenuation = make_float3(0.f);
+  prd.scatterEvent = rayMissed;
 }
 
 // rgbe image background
@@ -49,15 +49,16 @@ RT_PROGRAM void img_background() {
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
   float v = 0.5f * (1.f + sinf(phi));
 
-  prd.out.attenuation = prd.out.emitted =
-      sample_texture[0](u, v, make_float3(0.f));
-  prd.out.scatterEvent = rayDidntHitAnything;
+  prd.attenuation = sample_texture[0](u, v, make_float3(0.f));
+  prd.scatterEvent = rayMissed;
 }
 
 rtDeclareVariable(int, spherical, , );
 
 // HDRi environmental mapping
 RT_PROGRAM void environmental_mapping() {
+  float u, v;
+
   if (spherical) {
     // https://www.gamedev.net/forums/topic/637220-equirectangular-environment-map/
     float r = length(ray.direction);
@@ -65,10 +66,9 @@ RT_PROGRAM void environmental_mapping() {
     float lat = acos(ray.direction.y / r);
 
     float2 rads = make_float2(1.f / (PI_F * 2.f), 1.f / PI_F);
+    u = lon * rads.x;
+    v = lat * rads.y;
 
-    prd.out.attenuation = prd.out.emitted =
-        2.f * sample_texture[0](lon * rads.x, lat * rads.y, make_float3(0.f));
-    prd.out.scatterEvent = rayDidntHitAnything;
   } else {  // cylindrical HDRI mapping
     // Y is up, swap x for y and z for x
     float theta = atan2f(ray.direction.x, ray.direction.z);
@@ -77,11 +77,10 @@ RT_PROGRAM void environmental_mapping() {
     float phi = acosf(ray.direction.y);
 
     // map theta and phi to u and v texturecoordinates in [0,1] x [0,1] range
-    float u = theta / (2.f * PI_F);  // +offsetY;
-    float v = phi / PI_F;
-
-    prd.out.attenuation = prd.out.emitted =
-        2.f * sample_texture[0](1.f - u, v, make_float3(0.f));
-    prd.out.scatterEvent = rayDidntHitAnything;
+    u = 1.f - (theta / (2.f * PI_F));  // +offsetY;
+    v = phi / PI_F;
   }
+
+  prd.attenuation = 2.f * sample_texture[0](u, v, make_float3(0.f));
+  prd.scatterEvent = rayMissed;
 }

@@ -25,37 +25,49 @@ rtDeclareVariable(rtObject, world, , );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
-/*! the actual scatter function - in Pete's reference code, that's a
-  virtual function, but since we have a different function per program
-  we do not need this here */
-RT_FUNCTION bool scatter(const Ray &ray_in) {
-  prd.out.is_specular = false;
-  prd.out.attenuation =
-      sample_texture[hit_rec.index](hit_rec.u, hit_rec.v, hit_rec.p);
-  prd.out.origin = hit_rec.p;
-  prd.out.normal = hit_rec.normal;
+RT_PROGRAM void closest_hit() {
+  prd.matType = Lambertian_Material;
+  prd.isSpecular = false;
+  prd.scatterEvent = rayGotBounced;
 
-  return true;
+  prd.origin = hit_rec.p;
+  prd.normal = hit_rec.normal;
+
+  int index = hit_rec.index;
+  prd.emitted = make_float3(0.f);
+  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
 
-RT_CALLABLE_PROGRAM float scattering_pdf(pdf_in &in) {
-  float cosine =
-      dot(unit_vector(in.normal), unit_vector(in.scattered_direction));
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+  Onb uvw(pdf.normal);
+
+  float3 temp = random_cosine_direction(rnd);
+  uvw.inverse_transform(temp);
+
+  // float3 temp = unit_vector(in.normal) + random_on_unit_sphere(rnd);
+  pdf.direction = temp;
+
+  return pdf.direction;
+}
+
+RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
+  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
+
+  if (cosine > 0.f)
+    return cosine / PI_F;
+  else
+    return 0.f;
+}
+
+RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
+  float cosine = dot(unit_vector(pdf.normal), unit_vector(pdf.direction));
 
   if (cosine < 0.f) cosine = 0.f;
 
   return cosine / PI_F;
-}
-
-RT_FUNCTION float3 emitted() { return make_float3(0.f, 0.f, 0.f); }
-
-RT_PROGRAM void closest_hit() {
-  prd.out.type = Lambertian;
-  prd.out.emitted = emitted();
-  prd.out.scatterEvent = scatter(ray) ? rayGotBounced : rayGotCancelled;
 }

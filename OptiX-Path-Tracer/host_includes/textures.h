@@ -13,8 +13,6 @@
 
 #include "../lib/HDRloader.h"
 
-// TODO: code cleanup and documentation
-
 float rnd() {
   static std::mt19937 gen(
       0);  // Standard mersenne_twister_engine seeded with rd()
@@ -180,7 +178,6 @@ struct Image_Texture : public Texture {
   const std::string fileName;
 };
 
-// FIXME: still needs proper tone mapping to be useable?
 struct HDR_Texture : public Texture {
   HDR_Texture(const std::string f) : fileName(f) {}
 

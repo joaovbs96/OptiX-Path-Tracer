@@ -5,16 +5,16 @@ rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
 
 // Boundary intersection function
-RT_FUNCTION bool hit_boundary(pdf_in &in, const float tmin, const float tmax,
-                              pdf_rec &rec) {
+RT_FUNCTION bool hit_boundary(PDFParams &in, const float tmin, const float tmax,
+                              PDFRecord &rec) {
   const float3 oc = in.origin - center;
 
   // if the ray hits the sphere, the following equation has two roots:
   // tdot(B, B) + 2tdot(B,A-C) + dot(A-C,A-C) - R = 0
 
   // Using Bhaskara's Formula, we have:
-  const float a = dot(in.scattered_direction, in.scattered_direction);
-  const float b = dot(oc, in.scattered_direction);
+  const float a = dot(in.direction, in.direction);
+  const float b = dot(oc, in.direction);
   const float c = dot(oc, oc) - radius * radius;
   const float discriminant = b * b - a * c;
 
@@ -30,8 +30,7 @@ RT_FUNCTION bool hit_boundary(pdf_in &in, const float tmin, const float tmax,
   // if the first root was a hit,
   if (temp < tmax && temp > tmin) {
     rec.distance = temp;
-    rec.normal =
-        ((in.origin + temp * in.scattered_direction) - center) / radius;
+    rec.normal = ((in.origin + temp * in.direction) - center) / radius;
     return true;
   }
 
@@ -39,8 +38,7 @@ RT_FUNCTION bool hit_boundary(pdf_in &in, const float tmin, const float tmax,
   temp = (-b + sqrtf(discriminant)) / a;
   if (temp < tmax && temp > tmin) {
     rec.distance = temp;
-    rec.normal =
-        ((in.origin + temp * in.scattered_direction) - center) / radius;
+    rec.normal = ((in.origin + temp * in.direction) - center) / radius;
     return true;
   }
 
@@ -48,8 +46,8 @@ RT_FUNCTION bool hit_boundary(pdf_in &in, const float tmin, const float tmax,
 }
 
 // Value program
-RT_CALLABLE_PROGRAM float sphere_value(pdf_in &in) {
-  pdf_rec rec;
+RT_CALLABLE_PROGRAM float sphere_value(PDFParams &in) {
+  PDFRecord rec;
 
   if (hit_boundary(in, 0.001f, FLT_MAX, rec)) {
     float cos_theta_max =
@@ -76,7 +74,7 @@ RT_FUNCTION float3 random_to_sphere(float distance_squared, XorShift32 &rnd) {
 }
 
 // Generate program: generate directions relative to the sphere
-RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 sphere_generate(PDFParams &in, XorShift32 &rnd) {
   float3 direction = center - in.origin;
   float distance_squared = squared_length(direction);
 
@@ -85,7 +83,7 @@ RT_CALLABLE_PROGRAM float3 sphere_generate(pdf_in &in, XorShift32 &rnd) {
 
   float3 temp = random_to_sphere(distance_squared, rnd);
   uvw.inverse_transform(temp);
-  in.scattered_direction = temp;
+  in.direction = temp;
 
-  return in.scattered_direction;
+  return in.direction;
 }

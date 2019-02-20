@@ -19,13 +19,14 @@
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
+rtDeclareVariable(int, index, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -80,7 +81,7 @@ RT_PROGRAM void hit_sphere(int pid) {
 
       get_sphere_uv((hit_rec.p - center) / radius);
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       rtReportIntersection(0);
     }
@@ -102,7 +103,7 @@ RT_PROGRAM void hit_sphere(int pid) {
 
       get_sphere_uv((hit_rec.p - center) / radius);
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       rtReportIntersection(0);
     }

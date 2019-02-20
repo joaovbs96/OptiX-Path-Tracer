@@ -15,22 +15,23 @@
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure sampling
-  Mixture_PDF mixture(new Cosine_PDF(),
-                      new Sphere_PDF(make_float3(4.f, 1.f, 0.f), 1.f));
+  // add BRDF programs
+  BRDF_Sampler brdf;
+  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
+    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+  }
 
-  // add material PDFs
-  Buffer material_pdfs =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  callableProgramId<int(int)>* f_data =
-      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
-  f_data[1] =
-      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
-  material_pdfs->unmap();
+  // add light parameters and programs
+  Light_Sampler lights;
+  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.assignValue(g_context));
+  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  setRayGenerationProgram(g_context, brdf, lights);
   setMissProgram(g_context, SKY);
   setExceptionProgram(g_context);
 
@@ -106,24 +107,23 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
 void MovingSpheres(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure sampling
-  std::vector<PDF*> buffer;
-  buffer.push_back(new Rectangle_PDF(3.f, 5.f, 1.f, 3.f, -2.f, Z_AXIS));
-  buffer.push_back(new Sphere_PDF(make_float3(4.f, 1.f, 0.f), 1.f));
-  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
+  // add BRDF programs
+  BRDF_Sampler brdf;
+  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
+    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+  }
 
-  // add material PDFs
-  Buffer material_pdfs =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  callableProgramId<int(int)>* f_data =
-      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
-  f_data[1] =
-      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
-  material_pdfs->unmap();
+  // add light parameters and programs
+  Light_Sampler lights;
+  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.assignValue(g_context));
+  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  setRayGenerationProgram(g_context, brdf, lights);
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
@@ -200,25 +200,23 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 void Cornell(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure sampling
-  std::vector<PDF*> buffer;
-  buffer.push_back(
-      new Rectangle_PDF(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS));
-  buffer.push_back(new Sphere_PDF(make_float3(190.f, 90.f, 190.f), 90.f));
-  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
+  // add BRDF programs
+  BRDF_Sampler brdf;
+  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
+    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+  }
 
-  // add material PDFs
-  Buffer material_pdfs =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  callableProgramId<int(int)>* f_data =
-      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
-  f_data[1] =
-      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
-  material_pdfs->unmap();
+  // add light parameters and programs
+  Light_Sampler lights;
+  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.assignValue(g_context));
+  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  setRayGenerationProgram(g_context, brdf, lights);
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
@@ -231,8 +229,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new Lambertian(new Constant_Texture(make_float3(0.73f, 0.73f, 0.73f)));
   Materials* green =
       new Lambertian(new Constant_Texture(make_float3(0.12f, 0.45f, 0.15f)));
-  Materials* light =
-      new Diffuse_Light(new Constant_Texture(make_float3(7.f, 7.f, 7.f)));
+  Materials* light = new Diffuse_Light(new Constant_Texture(make_float3(7.f)));
   Materials* aluminium =
       new Metal(new Constant_Texture(make_float3(0.8f, 0.85f, 0.88f)), 0.0);
   Materials* glass = new Dielectric(1.5f);
@@ -316,25 +313,23 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure sampling
-  std::vector<PDF*> buffer;
-  buffer.push_back(
-      new Rectangle_PDF(113.f, 443.f, 127.f, 432.f, 554.f, Y_AXIS));
-  buffer.push_back(new Sphere_PDF(make_float3(260.f, 150.f, 45.f), 50.f));
-  Mixture_PDF mixture(new Cosine_PDF(), new Buffer_PDF(buffer));
+  // add BRDF programs
+  BRDF_Sampler brdf;
+  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
+    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+  }
 
-  // add material PDFs
-  Buffer material_pdfs =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  callableProgramId<int(int)>* f_data =
-      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
-  f_data[1] =
-      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
-  material_pdfs->unmap();
+  // add light parameters and programs
+  Light_Sampler lights;
+  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.assignValue(g_context));
+  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  setRayGenerationProgram(g_context, brdf, lights);
   setMissProgram(g_context, DARK);
   setExceptionProgram(g_context);
 
@@ -452,25 +447,24 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 void Test_Scene(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure sampling
-  Mixture_PDF mixture(new Cosine_PDF(),
-                      new Sphere_PDF(make_float3(300.f, -300.f, 300.f), 300.f));
+  // add BRDF programs
+  BRDF_Sampler brdf;
+  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
+    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+  }
 
-  // add material PDFs
-  Buffer material_pdfs =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 2);
-  callableProgramId<int(int)>* f_data =
-      static_cast<callableProgramId<int(int)>*>(material_pdfs->map());
-  f_data[0] = callableProgramId<int(int)>(Lambertian_PDF(g_context)->getId());
-  f_data[1] =
-      callableProgramId<int(int)>(Diffuse_Light_PDF(g_context)->getId());
-  material_pdfs->unmap();
+  // add light parameters and programs
+  Light_Sampler lights;
+  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.assignValue(g_context));
+  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.emissions.push_back(make_float3(7.f));
 
-  // Set the ray generation and miss programs
-  setRayGenerationProgram(g_context, mixture, material_pdfs);
+  // Set the exception, ray generation and miss shader programs
+  setRayGenerationProgram(g_context, brdf, lights);
   setMissProgram(g_context, HDR, "assets/hdr/fireplace.hdr");
-
-  // Set the exception program
   setExceptionProgram(g_context);
 
   Group group = g_context->createGroup();

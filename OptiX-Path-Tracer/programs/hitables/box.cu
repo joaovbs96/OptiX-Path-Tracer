@@ -7,13 +7,14 @@
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, boxmin, , );
 rtDeclareVariable(float3, boxmax, , );
+rtDeclareVariable(int, index, , );
 
 /*! the implicit state's ray we will intersect against */
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
 /*! the attributes we use to communicate between intersection programs and hit
  * program */
-rtDeclareVariable(Hit_Record, hit_rec, attribute hit_rec, );
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! the per ray data we operate on */
 rtDeclareVariable(PerRayData, prd, rtPayload, );
@@ -50,7 +51,7 @@ RT_PROGRAM void hit_box(int pid) {
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.normal = normal;
 
-      hit_rec.index = 0;
+      hit_rec.index = index;
 
       if (rtReportIntersection(0)) check_second = false;
     }
@@ -70,7 +71,7 @@ RT_PROGRAM void hit_box(int pid) {
         normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
         hit_rec.normal = normal;
 
-        hit_rec.index = 0;
+        hit_rec.index = index;
 
         rtReportIntersection(0);
       }

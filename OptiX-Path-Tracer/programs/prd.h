@@ -19,36 +19,22 @@
 #include "XorShift32.h"
 #include "vec.h"
 
-// TODO: move and rename structs as needed
-
-typedef enum {
-  Lambertian,
-  Diffuse_Light,
-  Metal,
-  Dielectric,
-  Isotropic
-} Material_Type;
-
 typedef enum {
   /*! ray could get properly bounced, and is still alive */
   rayGotBounced,
   /*! ray could not get scattered, and should get cancelled */
   rayGotCancelled,
   /*! ray didn't hit anything, and went into the environemnt */
-  rayDidntHitAnything,
-  rayGotTransmitted,
-  rayDirac
+  rayMissed,
 } ScatterEvent;
 
-typedef enum { isotropic, vacuum } PhaseFunction;
-
-struct Hit_Record {
+struct HitRecord {
   int index;
-  float3 normal;
-  float3 p;
   float distance;
   float u;
   float v;
+  float3 normal;
+  float3 p;
 };
 
 /*! "per ray data" (PRD) for our sample's rays. In the simple example, there is
@@ -57,22 +43,19 @@ struct Hit_Record {
   type, rays have to carry recursion state, which in this case are recursion
   depth and random number state */
 struct PerRayData {
-  struct {
-    XorShift32* randState;
-    float time;
-  } in;
-  struct {
-    ScatterEvent scatterEvent;
-    float3 origin;
-    float3 direction;
-    float3 normal;
-    float3 emitted;
-    float3 attenuation;
-    bool is_specular;
-    Material_Type type;
-    struct {
-      PhaseFunction phaseFunction;
-      float3 extinction;
-    } medium;
-  } out;
+  XorShift32* randState;
+  float time;
+  ScatterEvent scatterEvent;
+  float3 origin;
+  float3 direction;
+  float3 normal;
+  float3 emitted;
+  float3 attenuation;
+  float3 throughput;
+  bool isSpecular;
+  MaterialType matType;
+};
+
+struct PerRayData_Shadow {
+  bool inShadow;
 };
