@@ -3,6 +3,7 @@
 
 #include "../programs/vec.h"
 #include "materials.h"
+#include "programs.h"
 #include "transforms.h"
 
 #include "../lib/OBJ_Loader.h"
@@ -48,16 +49,8 @@ GeometryInstance Sphere(const float3 &center, const float radius,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -91,16 +84,8 @@ GeometryInstance Volume_Sphere(const float3 &center, const float radius,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -137,16 +122,8 @@ GeometryInstance Moving_Sphere(const float3 &center0, const float3 &center1,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -199,16 +176,8 @@ GeometryInstance Rectangle(const float a0, const float a1, const float b0,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -271,16 +240,8 @@ GeometryInstance Volume_Box(const float3 &p0, const float3 &p1,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -330,16 +291,8 @@ GeometryInstance Triangle(const float3 &a, const float2 &a_uv, const float3 &b,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }
@@ -679,16 +632,8 @@ GeometryInstance Plane(const float &center, const AXIS ax,
   gi->setMaterialCount(1);
 
   // Assign material and texture programs
-  Buffer texture_buffers =
-      g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID, 1);
-  callableProgramId<int(int)> *tex_data =
-      static_cast<callableProgramId<int(int)> *>(texture_buffers->map());
-
   Program texture = material.assignTo(gi, g_context);
-  tex_data[0] = callableProgramId<int(int)>(texture->getId());
-
-  texture_buffers->unmap();
-  gi["sample_texture"]->setBuffer(texture_buffers);
+  gi["sample_texture"]->setBuffer(createBuffer(texture, g_context));
 
   return gi;
 }

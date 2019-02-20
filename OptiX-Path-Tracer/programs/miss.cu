@@ -53,13 +53,13 @@ RT_PROGRAM void img_background() {
   prd.scatterEvent = rayMissed;
 }
 
-rtDeclareVariable(int, spherical, , );
+rtDeclareVariable(int, isSpherical, , );
 
 // HDRi environmental mapping
 RT_PROGRAM void environmental_mapping() {
   float u, v;
 
-  if (spherical) {
+  if (isSpherical) {
     // https://www.gamedev.net/forums/topic/637220-equirectangular-environment-map/
     float r = length(ray.direction);
     float lon = atan2(ray.direction.z, ray.direction.x);

@@ -25,10 +25,6 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
 
   // add light parameters and programs
   Light_Sampler lights;
-  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.assignValue(g_context));
-  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
-  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
@@ -117,10 +113,10 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 
   // add light parameters and programs
   Light_Sampler lights;
-  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.assignValue(g_context));
-  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
-  lights.emissions.push_back(make_float3(7.f));
+  Rectangle_PDF rect_pdf(3.f, 5.f, 1.f, 3.f, -2.f, Z_AXIS);
+  lights.pdf.push_back(rect_pdf.createPDF(g_context));
+  lights.sample.push_back(rect_pdf.createSample(g_context));
+  lights.emissions.push_back(make_float3(4.f));
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
@@ -211,8 +207,8 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.assignValue(g_context));
-  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  lights.pdf.push_back(rect_pdf.createPDF(g_context));
+  lights.sample.push_back(rect_pdf.createSample(g_context));
   lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
@@ -323,9 +319,9 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 
   // add light parameters and programs
   Light_Sampler lights;
-  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.assignValue(g_context));
-  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
+  Rectangle_PDF rect_pdf(113.f, 443.f, 127.f, 432.f, 554.f, Y_AXIS);
+  lights.pdf.push_back(rect_pdf.createPDF(g_context));
+  lights.sample.push_back(rect_pdf.createSample(g_context));
   lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
@@ -457,10 +453,6 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
 
   // add light parameters and programs
   Light_Sampler lights;
-  Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.assignValue(g_context));
-  lights.sample.push_back(rect_pdf.assignGenerate(g_context));
-  lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);

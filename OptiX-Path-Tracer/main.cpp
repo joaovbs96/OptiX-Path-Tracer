@@ -23,7 +23,7 @@
 #include "host_includes/scenes.h"
 //#include "host_includes/scene_parser.h"
 
-#define HDR_OUTPUT FALSE
+#define HDR_OUTPUT TRUE
 
 Context g_context;
 
@@ -76,10 +76,10 @@ int main(int ac, char **av) {
 
   // Main parameters
   int Nx, Ny;
-  int scene = 2;
+  int scene = 4;
 
   // Set number of samples
-  const int samples = 1000;
+  const int samples = 100;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -177,7 +177,7 @@ int main(int ac, char **av) {
       float3 col = cols[col_index] / float(samples);
 
 #if HDR_OUTPUT == TRUE
-      // Apply tone mapping
+      // Apply Reinhard style tone mapping
       // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
       // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
       col = col / (make_float3(1.f) + col);
@@ -187,7 +187,7 @@ int main(int ac, char **av) {
       arr[pixel_index + 1] = col.y;  // G
       arr[pixel_index + 2] = col.z;  // B
 #else
-      // Apply hamma correction
+      // Apply gamma correction
       col = sqrt(col);
 
       // from float to RGB [0, 255]

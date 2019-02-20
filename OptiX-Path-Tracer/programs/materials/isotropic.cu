@@ -16,7 +16,7 @@ rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 RT_PROGRAM void closest_hit() {
   prd.matType = Isotropic_Material;
-  prd.isSpecular = true;  // TODO: fix sampling
+  prd.isSpecular = false;  // TODO: fix sampling
   prd.scatterEvent = rayGotBounced;
 
   prd.origin = hit_rec.p;
