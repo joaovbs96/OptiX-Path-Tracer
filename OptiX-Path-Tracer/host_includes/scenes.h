@@ -63,8 +63,11 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
                         g_context),
                  group, g_context);
       } else {
-        addChild(Sphere(center, 0.2f, Dielectric(1.5f), g_context), group,
-                 g_context);
+        addChild(
+            Sphere(center, 0.2f,
+                   Dielectric(new Constant_Texture(make_float3(1.f)), 1.5f),
+                   g_context),
+            group, g_context);
       }
     }
   }
@@ -73,9 +76,10 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
              Metal(new Constant_Texture(make_float3(0.7f, 0.6f, 0.5f)), 0.f),
              g_context),
       group, g_context);
-  addChild(
-      Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, Dielectric(1.5f), g_context),
-      group, g_context);
+  addChild(Sphere(make_float3(0.f, 1.f, 0.5f), 1.f,
+                  Dielectric(new Constant_Texture(make_float3(1.f)), 1.5f),
+                  g_context),
+           group, g_context);
   addChild(
       Sphere(make_float3(-4.f, 1.f, 1.f), 1.f,
              Lambertian(new Constant_Texture(make_float3(0.4f, 0.2f, 0.1f))),
@@ -155,12 +159,17 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
                         g_context),
                  group, g_context);
       } else {
-        addChild(Sphere(center, 0.2f, Dielectric(1.5f), g_context), group,
-                 g_context);
+        addChild(
+            Sphere(center, 0.2f,
+                   Dielectric(new Constant_Texture(make_float3(1.f)), 1.5f),
+                   g_context),
+            group, g_context);
       }
     }
   }
-  addChild(Sphere(make_float3(4.f, 1.f, 1.f), 1.f, Dielectric(1.5f), g_context),
+  addChild(Sphere(make_float3(4.f, 1.f, 1.f), 1.f,
+                  Dielectric(new Constant_Texture(make_float3(1.f)), 1.5f),
+                  g_context),
            group, g_context);
   addChild(Sphere(make_float3(0.f, 1.f, 1.5f), 1.f,
                   Metal(new Noise_Texture(4.f), 0.f), g_context),
@@ -210,6 +219,10 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   lights.pdf.push_back(rect_pdf.createPDF(g_context));
   lights.sample.push_back(rect_pdf.createSample(g_context));
   lights.emissions.push_back(make_float3(7.f));
+  /*Sphere_PDF sphere_light(make_float3(555.f / 2.f, 500.f, 555.f / 2.f), 10.f);
+  lights.pdf.push_back(sphere_light.createPDF(g_context));
+  lights.sample.push_back(sphere_light.createSample(g_context));
+  lights.emissions.push_back(make_float3(7.f));*/
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
@@ -228,9 +241,15 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   Materials* light = new Diffuse_Light(new Constant_Texture(make_float3(7.f)));
   Materials* aluminium =
       new Metal(new Constant_Texture(make_float3(0.8f, 0.85f, 0.88f)), 0.0);
-  Materials* glass = new Dielectric(1.5f);
+  Materials* glass =
+      new Dielectric(new Constant_Texture(make_float3(1.f)), 1.5f);
   Materials* black_fog = new Isotropic(new Constant_Texture(make_float3(0.f)));
   Materials* white_fog = new Isotropic(new Constant_Texture(make_float3(1.f)));
+
+  /*addChild(Sphere(make_float3(555.f / 2.f, 500.f, 555.f / 2.f), 10.f, *light,
+                  g_context),
+           group,
+           g_context);  // glass sphere*/
 
   addChild(
       Rectangle(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, *green, g_context),
@@ -366,9 +385,10 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
            group, g_context);
 
   // glass sphere
-  addChild(
-      Sphere(make_float3(260.f, 150.f, 45.f), 50.f, Dielectric(1.5), g_context),
-      group, g_context);
+  addChild(Sphere(make_float3(260.f, 150.f, 45.f), 50.f,
+                  Dielectric(new Constant_Texture(make_float3(1.f)), 1.5),
+                  g_context),
+           group, g_context);
 
   // metal sphere
   addChild(
@@ -379,9 +399,10 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 
   // blue sphere
   // glass sphere
-  addChild(
-      Sphere(make_float3(360.f, 150.f, 45.f), 70.f, Dielectric(1.5), g_context),
-      group, g_context);
+  addChild(Sphere(make_float3(360.f, 150.f, 45.f), 70.f,
+                  Dielectric(new Constant_Texture(make_float3(1.f)), 1.5),
+                  g_context),
+           group, g_context);
   // blue fog
   Materials* blue_fog =
       new Isotropic(new Constant_Texture(make_float3(0.2f, 0.4f, 0.9f)));
@@ -391,8 +412,9 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 
   // fog
   Materials* fog = new Isotropic(new Constant_Texture(make_float3(1.f)));
-  addChild(Volume_Sphere(make_float3(0.f), 5000.f, 0.0001f, *fog, g_context),
-           group, g_context);
+  // FIXME: Using this fog is crashing the program. But why this one?
+  /*addChild(Volume_Sphere(make_float3(0.f), 5000.f, 0.0001f, *fog, g_context),
+           group, g_context);*/
 
   // earth
   addChild(
@@ -456,7 +478,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, HDR, "assets/hdr/fireplace.hdr");
+  setMissProgram(g_context, HDR, "assets/hdr/red.hdr");
   setExceptionProgram(g_context);
 
   Group group = g_context->createGroup();
@@ -466,12 +488,14 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
   Materials* aluminium =
       new Metal(new Constant_Texture(make_float3(0.8f, 0.85f, 0.88f)), 0.0);
   Materials* black = new Lambertian(new Constant_Texture(make_float3(0.f)));
-  Materials* glass = new Dielectric(1.5f);
+  Materials* glass = new Dielectric(new Noise_Texture(0.01f), 1.5f);
+  Materials* glass2 =
+      new Dielectric(new Constant_Texture(make_float3(0.2f, 0.4f, 0.9f)), 1.5f);
 
   // Test model
   /*float scale_factor = 1400.f;
   GeometryInstance model =
-      Mesh("nam.obj", g_context, *black, true, "assets/nam/");
+      Mesh("nam.obj", g_context, *black, false, "assets/nam/");
   if (model == NULL)
     system("PAUSE");
   else
@@ -484,7 +508,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
   // Lucy
   /*float scale_factor = 150.f;
   GeometryInstance model =
-      Mesh("Lucy1M.obj", g_context, *aluminium, true, "assets/lucy/");
+      Mesh("Lucy1M.obj", g_context, *white, true, "assets/lucy/");
   if (model == NULL)
     system("PAUSE");
   else
@@ -508,9 +532,9 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
   addChild(Sphere(make_float3(300.f, -300.f, 300.f), 300.f, *glass, g_context),
            group, g_context);
   addChild(
-      Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, *aluminium, g_context),
+      Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, *glass2, g_context),
       group, g_context);
-  addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -500.f, false, Y_AXIS,
+  addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                      *white, g_context),
            group,
            g_context);  // ground

@@ -99,8 +99,6 @@ RT_CALLABLE_PROGRAM float rect_z_value(PDFParams &in) {
     return 0.f;
 }
 
-// TODO: make a single program with an Axis param
-
 // Generate Programs
 RT_CALLABLE_PROGRAM float3 rect_x_generate(PDFParams &in, XorShift32 &rnd) {
   float3 random_point =

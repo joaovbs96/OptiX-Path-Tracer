@@ -21,16 +21,15 @@ RT_PROGRAM void closest_hit() {
 
   prd.origin = hit_rec.p;
   prd.normal = hit_rec.normal;
-  prd.direction = random_in_unit_sphere(*prd.randState);
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
   prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
 
-// TODO: complete programs
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
-  return make_float3(1.f);
+  pdf.direction = random_in_unit_sphere(rnd);
+  return pdf.direction;
 }
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }

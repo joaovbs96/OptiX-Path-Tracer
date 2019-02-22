@@ -27,9 +27,15 @@ rtDeclareVariable(rtObject, world, , );
 // program
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
-// TODO: update dielectric to make use of beer lambert's law
+// Source of use of Beer-Lambert Law:
+// https://github.com/aromanro/RayTracer/blob/c8ad5de7fa91faa7e0a9de652c21284633659e2c/RayTracer/Material.cpp
+
+// Beer-Lambert Law Theory:
+// http://www.pci.tu-bs.de/aggericke/PC4/Kap_I/beerslaw.htm
+
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 rtDeclareVariable(float, ref_idx, , );
+rtDeclareVariable(float, density, , );
 
 RT_PROGRAM void closest_hit() {
   prd.matType = Dielectric_Material;
@@ -39,24 +45,42 @@ RT_PROGRAM void closest_hit() {
   prd.origin = hit_rec.p;
   prd.normal = hit_rec.normal;
 
+  int index = hit_rec.index;
+  prd.emitted = make_float3(0.f);
+  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
+
   float3 outward_normal;
   float ni_over_nt;
-  float cosine;
-  if (dot(ray.direction, prd.normal) > 0.f) {
+  float cosine = dot(ray.direction, prd.normal);
+
+  if (cosine > 0.f) {
+    // from inside the object
     outward_normal = -1 * prd.normal;
     ni_over_nt = ref_idx;
-    cosine = ref_idx * dot(ray.direction, prd.normal) / length(ray.direction);
-  } else {
+    cosine = ref_idx * cosine / length(ray.direction);
+
+    // since it was from inside the object, compute the attenuation according to
+    // the Beer-Lambert Law
+    float3 volumeColor = make_float3(0.65f, 0.05f, 0.05f);
+    // TODO: change return of material.assignTo to std::vector<Program>
+    // TODO: check glass.cu from optix advanced samples
+    if (density > 0.f) {
+      float3 absordb = hit_rec.distance * density * volumeColor;
+      prd.attenuation = prd.attenuation * absordb;
+    }
+  }
+
+  else {
     outward_normal = prd.normal;
     ni_over_nt = 1.f / ref_idx;
-    cosine = -dot(ray.direction, prd.normal) / length(ray.direction);
+    cosine = -cosine / length(ray.direction);
   }
 
   float3 refracted;
   float reflect_prob;
-  if (refract(ray.direction, outward_normal, ni_over_nt, refracted))
+  if (refract(ray.direction, outward_normal, ni_over_nt, refracted)) {
     reflect_prob = schlick(cosine, ref_idx);
-  else
+  } else
     reflect_prob = 1.f;
 
   float3 reflected = reflect(ray.direction, prd.normal);
@@ -64,9 +88,6 @@ RT_PROGRAM void closest_hit() {
     prd.direction = reflected;
   else
     prd.direction = refracted;
-
-  prd.emitted = make_float3(0.f);
-  prd.attenuation = make_float3(1.f);
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {

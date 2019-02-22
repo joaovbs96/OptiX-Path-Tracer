@@ -4,6 +4,7 @@
 #include <random>
 
 #include "../programs/vec.h"
+#include "buffers.h"
 
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_IMPLEMENTATION
@@ -26,6 +27,7 @@ extern "C" const char constant_texture_programs[];
 extern "C" const char checker_texture_programs[];
 extern "C" const char noise_texture_programs[];
 extern "C" const char image_texture_programs[];
+extern "C" const char vector_texture_programs[];
 
 struct Texture {
   virtual Program assignTo(Context &g_context) const = 0;
@@ -238,6 +240,28 @@ struct HDR_Texture : public Texture {
   }
 
   const std::string fileName;
+};
+
+// TODO: this won't work if one of the textures are another buffer
+struct Vector_Texture : public Texture {
+  Vector_Texture(const std::vector<Texture *> &tv) : texture_vector(tv) {}
+
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg = g_context->createProgramFromPTXString(
+        vector_texture_programs, "sample_texture");
+
+    std::vector<Program> programs;
+    for (int i = 0; i < texture_vector.size(); i++) {
+      programs.push_back(texture_vector[i]->assignTo(g_context));
+    }
+
+    textProg["size"]->setInt(programs.size());
+    textProg["texture_vector"]->setBuffer(createBuffer(programs, g_context));
+
+    return textProg;
+  }
+
+  const std::vector<Texture *> texture_vector;
 };
 
 #endif

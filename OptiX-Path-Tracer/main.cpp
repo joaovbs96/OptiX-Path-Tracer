@@ -76,10 +76,10 @@ int main(int ac, char **av) {
 
   // Main parameters
   int Nx, Ny;
-  int scene = 4;
+  int scene = 2;
 
   // Set number of samples
-  const int samples = 100;
+  const int samples = 1;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world

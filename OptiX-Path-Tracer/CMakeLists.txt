@@ -43,6 +43,7 @@ cuda_compile_and_embed( triangle_programs programs/hitables/triangle.cu )
 cuda_compile_and_embed( mesh_programs programs/hitables/mesh.cu )
 cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
 cuda_compile_and_embed( hit_program programs/hit.cu )
+cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
 
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
@@ -86,6 +87,7 @@ add_executable(OptiX-Path-Tracer
   ${mesh_programs}
   ${plane_programs}
   ${hit_program}
+  ${vector_texture_programs}
   )
 
 target_link_libraries(OptiX-Path-Tracer

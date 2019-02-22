@@ -22,6 +22,9 @@ extern "C" const char triangle_programs[];
 extern "C" const char mesh_programs[];
 extern "C" const char plane_programs[];
 
+// TODO: change return of material.assignTo to std::vector<Program>
+// the size of the vector is the number of textures the material has
+
 // Sphere constructor
 GeometryInstance Sphere(const float3 &center, const float radius,
                         const Materials &material, Context &g_context) {
@@ -329,6 +332,8 @@ struct Triangle_Struct {
   float3 a_n, b_n, c_n;
   float3 e1, e2;
 };
+
+// TODO: refactor mesh loading function
 
 // Load and convert mesh
 GeometryInstance Mesh(const std::string &fileName, Context &g_context,

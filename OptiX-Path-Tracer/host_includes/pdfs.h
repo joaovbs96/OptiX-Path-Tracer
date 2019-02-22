@@ -14,10 +14,6 @@ extern "C" const char cosine_pdf_programs[];
 extern "C" const char mixture_pdf_programs[];
 extern "C" const char buffer_pdf_programs[];
 
-// TODO: move createBuffer functions to specific .h file
-Buffer createBuffer(std::vector<Program> &list, Context &g_context);
-Buffer createBuffer(Program &program, Context &g_context);
-
 struct PDF {
   virtual Program createSample(Context &g_context) const = 0;
   virtual Program createPDF(Context &g_context) const = 0;

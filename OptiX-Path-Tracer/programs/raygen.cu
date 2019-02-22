@@ -66,9 +66,6 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // return black if there's no light
   if (numLights == 0) return make_float3(0.f);
 
-  // cancel if it's a specular bounce
-  if (prd.isSpecular) return make_float3(0.f);
-
   // ramdomly pick one light and multiply the result by the number of lights
   // it's the same as dividing by the PDF if they have the same probability
   int index = ((int)((*prd.randState)() * numLights)) % numLights;
@@ -78,6 +75,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
     if (numLights == 1) return make_float3(0.f);
   }
 
+  // Sample Light
   PDFParams pdfParams(prd.origin, prd.normal);
   Light_Sample[index](pdfParams, *prd.randState);
   float lightPDF = Light_PDF[index](pdfParams);
@@ -85,6 +83,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   if (dot(pdfParams.direction, pdfParams.normal) <= 0.f)
     return make_float3(0.f);
 
+  // Check if light is occluded
   PerRayData_Shadow prdShadow;
   Ray shadowRay = make_Ray(/* origin   : */ pdfParams.origin,
                            /* direction: */ pdfParams.direction,
@@ -96,6 +95,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // if light is occluded, return black
   if (prdShadow.inShadow) return make_float3(0.f);
 
+  // Sample BRDF
   float matPDF = BRDF_PDF[prd.matType](pdfParams);
   float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
 
@@ -136,7 +136,8 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);
 
-    radiance += Direct_Light(prd) * prd.throughput;
+    // Only sample direct light if last bounce wasn't specular
+    if (!prd.isSpecular) radiance += prd.throughput * Direct_Light(prd);
 
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
@@ -165,6 +166,7 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
         prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
 
         prd.throughput *= prd.attenuation / pdfValue;
+        prd.throughput = Clamp(prd.throughput);
 
         prd.origin = pdfParams.origin;
         prd.direction = pdfParams.direction;
@@ -213,7 +215,7 @@ RT_PROGRAM void renderPixel() {
     rnd.init(init_index);
 
     // initiate the color buffer
-    fb[pixelID] = make_float3(0.f, 0.f, 0.f);
+    fb[pixelID] = make_float3(0.f);
   } else
     rnd.state = seed[pixelID];
 

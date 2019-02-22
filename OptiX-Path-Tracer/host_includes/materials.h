@@ -108,7 +108,8 @@ struct Metal : public Materials {
 /*! host side code for the "Dielectric" material; the actual
   sampling code is in the programs/dielectric.cu closest hit program */
 struct Dielectric : public Materials {
-  Dielectric(const float ref_idx) : ref_idx(ref_idx) {}
+  Dielectric(const Texture *t, const float ref_idx, const float d = 0.f)
+      : texture(t), ref_idx(ref_idx), density(d) {}
 
   /* create optix material, and assign mat and mat values to geom instance */
   virtual Program assignTo(GeometryInstance gi, Context &g_context,
@@ -121,9 +122,9 @@ struct Dielectric : public Materials {
 
     gi->setMaterial(index, mat);
     gi["ref_idx"]->setFloat(ref_idx);
+    gi["density"]->setFloat(density);
 
-    Constant_Texture foo(make_float3(0.f));
-    return foo.assignTo(g_context);
+    return texture->assignTo(g_context);
   }
 
   static Program Sample(Context &g_context) {
@@ -141,7 +142,9 @@ struct Dielectric : public Materials {
                                                  "BRDF_Evaluate");
   }
 
+  const Texture *texture;
   const float ref_idx;
+  const float density;
 };
 
 /*! host side code for the "Diffuse Light" material; the actual

@@ -44,12 +44,13 @@ RT_PROGRAM void closest_hit() {
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
-  Onb uvw(pdf.normal);
+  float3 temp;
 
-  float3 temp = random_cosine_direction(rnd);
+  cosine_sample_hemisphere(rnd(), rnd(), temp);
+
+  Onb uvw(pdf.normal);
   uvw.inverse_transform(temp);
 
-  // float3 temp = unit_vector(in.normal) + random_on_unit_sphere(rnd);
   pdf.direction = temp;
 
   return pdf.direction;
@@ -58,10 +59,9 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
   float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
-  if (cosine > 0.f)
-    return cosine / PI_F;
-  else
-    return 0.f;
+  if (cosine < 0.f) cosine = 0.f;
+
+  return cosine / PI_F;
 }
 
 RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {

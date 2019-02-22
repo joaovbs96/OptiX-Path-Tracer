@@ -16,6 +16,7 @@ rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
 
 RT_PROGRAM void closest_hit() {
   prd.matType = Diffuse_Light_Material;
+  prd.isSpecular = false;
   prd.scatterEvent = rayGotCancelled;
 
   prd.normal = hit_rec.normal;
