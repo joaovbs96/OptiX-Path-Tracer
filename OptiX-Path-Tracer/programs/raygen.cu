@@ -26,7 +26,7 @@ rtDeclareVariable(unsigned int, index, rtSubframeIndex, );
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtBuffer<float4, 2> fb;  // float3 color frame buffer
+rtBuffer<float4, 2> fb;  // float4 color frame buffer
 
 rtDeclareVariable(int, samples, , );  // number of samples
 
@@ -205,11 +205,11 @@ RT_FUNCTION float3 de_nan(const float3& c) {
 RT_PROGRAM void renderPixel() {
   XorShift32 rnd;
 
-  // initiate RNG
-  unsigned int a = (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
-  unsigned int b = index + 1;
+  // initiate RNG: (z + 1) * W * H + (y + 1) * W + (x + 1)
+  unsigned int a = (index + 1) * launchDim.x * launchDim.y;
+  a += (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
 
-  rnd.init(a, b);
+  rnd.init(a);
 
   // Subpixel jitter: send the ray through a different position inside the
   // pixel each time, to provide antialiasing.
@@ -221,6 +221,6 @@ RT_PROGRAM void renderPixel() {
 
   // accumulate color
   float3 col = de_nan(color(ray, rnd));
-  fb[pixelID] = make_float4(col.x, col.y, col.z, 1.f);
-  // TODO: check if fb should be initiated
+  uint2 invertedId = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
+  fb[invertedId] = make_float4(col.x, col.y, col.z, 1.f);
 }
