@@ -3,6 +3,6 @@
 build/
 CMakeFiles/
 .vscode/
-cmake/
 *.code-workspace
 CMakeCache.txt
+*.ini
