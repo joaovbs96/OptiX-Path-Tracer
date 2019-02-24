@@ -255,7 +255,7 @@ struct Vector_Texture : public Texture {
       programs.push_back(texture_vector[i]->assignTo(g_context));
     }
 
-    textProg["size"]->setInt(programs.size());
+    textProg["size"]->setInt((int)programs.size());
     textProg["texture_vector"]->setBuffer(createBuffer(programs, g_context));
 
     return textProg;

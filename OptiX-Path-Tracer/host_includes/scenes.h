@@ -462,7 +462,7 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Test_Scene(Context& g_context, int Nx, int Ny) {
+void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   auto t0 = std::chrono::system_clock::now();
 
   // add BRDF programs
@@ -493,79 +493,105 @@ void Test_Scene(Context& g_context, int Nx, int Ny) {
       new Dielectric(new Constant_Texture(make_float3(0.2f, 0.4f, 0.9f)), 1.5f);
 
   // Test model
-  /*float scale_factor = 1400.f;
-  GeometryInstance model =
-      Mesh("nam.obj", g_context, *black, false, "assets/nam/");
-  if (model == NULL)
-    system("PAUSE");
-  else
-    addChild(
-        translate(rotate(scale(model, make_float3(scale_factor), g_context),
-                         180.f, Y_AXIS, g_context),
-                  make_float3(0.f, -300.f, 0.f), g_context),
-        group, g_context);*/
+  if (modelID == 0) {
+    float scale_factor = 1400.f;
+    GeometryInstance model =
+        Mesh("nam.obj", g_context, *black, false, "assets/nam/");
+    if (model == NULL)
+      system("PAUSE");
+    else
+      addChild(
+          translate(rotate(scale(model, make_float3(scale_factor), g_context),
+                           180.f, Y_AXIS, g_context),
+                    make_float3(0.f, -300.f, 0.f), g_context),
+          group, g_context);
+    addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                       *white, g_context),
+             group, g_context);  // ground
+  }
 
-  // Lucy
-  /*float scale_factor = 150.f;
-  GeometryInstance model =
-      Mesh("Lucy1M.obj", g_context, *white, true, "assets/lucy/");
-  if (model == NULL)
-    system("PAUSE");
-  else
-    addChild(translate(scale(model, make_float3(scale_factor), g_context),
-                       make_float3(0.f, -550.f, 0.f), g_context),
-             group, g_context);*/
+  // lucy
+  else if (modelID == 1) {
+    float scale_factor = 150.f;
+    GeometryInstance model =
+        Mesh("Lucy1M.obj", g_context, *white, true, "assets/lucy/");
+    if (model == NULL)
+      system("PAUSE");
+    else
+      addChild(translate(scale(model, make_float3(scale_factor), g_context),
+                         make_float3(0.f, -550.f, 0.f), g_context),
+               group, g_context);
+    addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                       *white, g_context),
+             group, g_context);  // ground
+  }
 
   // Dragon
-  /*float scale_factor = 350.f;
-  GeometryInstance model =
-      Mesh("dragon_cubic.obj", g_context, *white, true, "assets/dragon/");
-  if (model == NULL)
-    system("PAUSE");
-  else
+  else if (modelID == 2) {
+    float scale_factor = 350.f;
+    GeometryInstance model =
+        Mesh("dragon_cubic.obj", g_context, *white, true, "assets/dragon/");
+    if (model == NULL)
+      system("PAUSE");
+    else
+      addChild(
+          translate(rotate(scale(model, make_float3(scale_factor), g_context),
+                           180.f, Y_AXIS, g_context),
+                    make_float3(0.f, -500.f, 200.f), g_context),
+          group, g_context);
+    addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                       *white, g_context),
+             group, g_context);  // ground
+  }
+
+  // spheres
+  else if (modelID == 3) {
     addChild(
-        translate(rotate(scale(model, make_float3(scale_factor), g_context),
-                         180.f, Y_AXIS, g_context),
-                  make_float3(0.f, -500.f, 200.f), g_context),
-        group, g_context);*/
+        Sphere(make_float3(300.f, -300.f, 300.f), 300.f, *glass, g_context),
+        group, g_context);
+    addChild(
+        Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, *glass2, g_context),
+        group, g_context);
+    addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                       *white, g_context),
+             group, g_context);  // ground
+  }
 
-  addChild(Sphere(make_float3(300.f, -300.f, 300.f), 300.f, *glass, g_context),
-           group, g_context);
-  addChild(
-      Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, *glass2, g_context),
-      group, g_context);
-  addChild(Rectangle(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                     *white, g_context),
-           group,
-           g_context);  // ground
-
-  // configure camera
-  const float3 lookfrom = make_float3(0.f, 0.f, -800.f);
-  const float3 lookat = make_float3(0.f, 0.f, 0.f);
-  const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(100.f);
-  const float aspect(float(Nx) / float(Ny));
-  const float aperture(0.f);
-  const float dist(0.8f);
-  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
-
-  // Sponza
-  /*float scale = 0.5f;
-  GeometryInstance model = Mesh("sponza.obj", g_context, *white, false,
-  "assets/sponza/", scale); addChild(translate(rotate(model, 90.f, Y_AXIS,
-  g_context), make_float3(300.f, 5.f, -400.f), g_context), group, g_context);*/
+  // sponza
+  else {
+    float scale = 0.5f;
+    GeometryInstance model =
+        Mesh("sponza.obj", g_context, *white, false, "assets/sponza/");
+    addChild(translate(rotate(model, 90.f, Y_AXIS, g_context),
+                       make_float3(300.f, 5.f, -400.f), g_context),
+             group, g_context);
+  }
 
   // configure camera
-  /*const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
-  const float3 lookat = make_float3(278.f, 278.f, 0.f);
-  const float3 up = make_float3(0.f, 1.f, 0.f);
-  const float fovy(40.f);
-  const float aspect(float(Nx) / float(Ny));
-  const float aperture(0.f);
-  const float dist(10.f);
-  Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);*/
+  if ((modelID >= 0) && (modelID < 4)) {
+    const float3 lookfrom = make_float3(0.f, 0.f, -800.f);
+    const float3 lookat = make_float3(0.f, 0.f, 0.f);
+    const float3 up = make_float3(0.f, 1.f, 0.f);
+    const float fovy(100.f);
+    const float aspect(float(Nx) / float(Ny));
+    const float aperture(0.f);
+    const float dist(0.8f);
+    Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+    camera.set(g_context);
+  }
+
+  // for sponza
+  else if (modelID == 4) {
+    const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
+    const float3 lookat = make_float3(278.f, 278.f, 0.f);
+    const float3 up = make_float3(0.f, 1.f, 0.f);
+    const float fovy(40.f);
+    const float aspect(float(Nx) / float(Ny));
+    const float aperture(0.f);
+    const float dist(10.f);
+    Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
+    camera.set(g_context);
+  }
 
   g_context["world"]->set(group);
 

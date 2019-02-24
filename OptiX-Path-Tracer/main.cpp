@@ -20,8 +20,7 @@
 #include <iostream>
 
 // Host side constructors and functions
-#include "host_includes/scenes.h"
-//#include "host_includes/scene_parser.h"
+#include "host_includes/gui.h"
 
 #define HDR_OUTPUT TRUE
 
@@ -49,13 +48,6 @@ Buffer createFrameBuffer(int Nx, int Ny) {
   return pixelBuffer;
 }
 
-Buffer createSeedBuffer(int Nx, int Ny) {
-  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
-  pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_INT);
-  pixelBuffer->setSize(Nx, Ny);
-  return pixelBuffer;
-}
-
 int main(int ac, char **av) {
   // Set RTX global attribute
   // Should be done before creating the context
@@ -76,10 +68,11 @@ int main(int ac, char **av) {
 
   // Main parameters
   int Nx, Ny;
-  int scene = 2;
+  int scene = 1;
+  bool HDR = false;
 
   // Set number of samples
-  const int samples = 1;
+  const int samples = 10000;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -99,7 +92,7 @@ int main(int ac, char **av) {
 
     case 2:  // Cornell Box scene
       Nx = Ny = 1080;
-      output = "output/royl-";
+      output = "output/cornell-";
       Cornell(g_context, Nx, Ny);
       break;
 
@@ -112,7 +105,7 @@ int main(int ac, char **av) {
     case 4:  // 3D models test scene
       Nx = Ny = 1080;
       output = "output/3D-models-";
-      Test_Scene(g_context, Nx, Ny);
+      Test_Scene(g_context, Nx, Ny, 0);
       break;
 
     case 5:  // Scene parser
@@ -134,10 +127,6 @@ int main(int ac, char **av) {
   Buffer fb = createFrameBuffer(Nx, Ny);
   g_context["fb"]->set(fb);
 
-  // Create a rng seed buffer
-  Buffer seed = createSeedBuffer(Nx, Ny);
-  g_context["seed"]->set(seed);
-
   // Build scene
   g_context["frame"]->setInt(0);
   float buildTime = renderFrame(0, 0);
@@ -154,62 +143,10 @@ int main(int ac, char **av) {
   }
   printf("Done rendering, which took %.2f seconds.\n", renderTime);
 
-#if HDR_OUTPUT == TRUE
-
-  // Save frame buffer to a HDR file
-  float *arr = (float *)malloc(Nx * Ny * 3 * sizeof(float));
-
-#else
-
-  // Save frame buffer to a PNG file
-  unsigned char *arr =
-      (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
-
-#endif
-  const float3 *cols = (const float3 *)fb->map();
-
-  for (int j = Ny - 1; j >= 0; j--)
-    for (int i = 0; i < Nx; i++) {
-      int col_index = Nx * j + i;
-      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
-
-      // average matrix of samples
-      float3 col = cols[col_index] / float(samples);
-
-#if HDR_OUTPUT == TRUE
-      // Apply Reinhard style tone mapping
-      // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
-      // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
-      col = col / (make_float3(1.f) + col);
-
-      // HDR output
-      arr[pixel_index + 0] = col.x;  // R
-      arr[pixel_index + 1] = col.y;  // G
-      arr[pixel_index + 2] = col.z;  // B
-#else
-      // Apply gamma correction
-      col = sqrt(col);
-
-      // from float to RGB [0, 255]
-      arr[pixel_index + 0] = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
-      arr[pixel_index + 1] = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
-      arr[pixel_index + 2] = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
-#endif
-    }
-
-#if HDR_OUTPUT == TRUE
-  // output hdr file
-  output += std::to_string(samples) + ".hdr";
-  stbi_write_hdr((char *)output.c_str(), Nx, Ny, 3, arr);
-
-#else
-  // output png file
-  output += std::to_string(samples) + ".png";
-  stbi_write_png((char *)output.c_str(), Nx, Ny, 3, arr, 0);
-
-#endif
-
-  fb->unmap();
+  if (HDR)
+    Save_HDR(fb, output, Nx, Ny, samples);
+  else
+    Save_PNG(fb, output, Nx, Ny, samples);
 
   system("PAUSE");
 

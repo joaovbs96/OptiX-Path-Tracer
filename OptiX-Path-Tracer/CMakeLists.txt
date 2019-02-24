@@ -45,6 +45,25 @@ cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
 cuda_compile_and_embed( hit_program programs/hit.cu )
 cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
 
+find_package(OpenGL REQUIRED) 
+
+include_directories("lib/imgui/gl3w/")
+include_directories("lib/imgui/glfw/include")
+
+# OpenGL & imgui files
+add_library(ImGuiLibs 
+ lib/imgui/gl3w/GL/gl3w.c
+ lib/imgui/imgui.cpp
+ lib/imgui/imgui_impl_glfw.cpp 
+ lib/imgui/imgui_impl_opengl3.cpp
+ lib/imgui/imgui_widgets.cpp
+ lib/imgui/imgui_demo.cpp 
+ lib/imgui/imgui_draw.cpp 
+)
+
+target_link_libraries(ImGuiLibs opengl32)
+target_link_libraries(ImGuiLibs "${PROJECT_SOURCE_DIR}/OptiX-Path-Tracer/lib/imgui/glfw/lib-vc2010-64/glfw3.lib")
+
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
   # C++ host code
@@ -90,7 +109,6 @@ add_executable(OptiX-Path-Tracer
   ${vector_texture_programs}
   )
 
-target_link_libraries(OptiX-Path-Tracer
-  ${optix_LIBRARY}
-  )
+target_link_libraries(OptiX-Path-Tracer ImGuiLibs)
 
+target_link_libraries(OptiX-Path-Tracer ${optix_LIBRARY})

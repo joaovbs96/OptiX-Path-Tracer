@@ -25,8 +25,7 @@ rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtBuffer<float3, 2> fb;          // float3 color frame buffer
-rtBuffer<unsigned int, 2> seed;  // uint seed buffer
+rtBuffer<float3, 2> fb;  // float3 color frame buffer
 
 rtDeclareVariable(int, samples, , );  // number of samples
 rtDeclareVariable(int, frame, , );    // current frame
@@ -203,30 +202,26 @@ RT_FUNCTION float3 de_nan(const float3& c) {
   return temp;
 }
 
-/*! the actual ray generation program - note this has no formal
-  function parameters, but gets its paramters throught the 'pixelID'
-  and 'pixelBuffer' variables/buffers declared above */
 RT_PROGRAM void renderPixel() {
   XorShift32 rnd;
 
-  // init frame buffer and rng
-  if (frame == 0) {
-    unsigned int init_index = pixelID.y * launchDim.x + pixelID.x;
-    rnd.init(init_index);
+  // initiate RNG
+  unsigned int a = (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
+  unsigned int b = frame + 1;
 
-    // initiate the color buffer
-    fb[pixelID] = make_float3(0.f);
-  } else
-    rnd.state = seed[pixelID];
+  rnd.init(a, b);
 
-  // Subpixel jitter: send the ray through a different position inside the pixel
-  // each time, to provide antialiasing.
+  // init frame buffer
+  if (frame == 0) fb[pixelID] = make_float3(0.f);
+
+  // Subpixel jitter: send the ray through a different position inside the
+  // pixel each time, to provide antialiasing.
   float u = float(pixelID.x + rnd()) / float(launchDim.x);
   float v = float(pixelID.y + rnd()) / float(launchDim.y);
 
   // trace ray
   Ray ray = Camera::generateRay(u, v, rnd);
 
-  fb[pixelID] += de_nan(color(ray, rnd));  // accumulate color
-  seed[pixelID] = rnd.state;               // save RND state
+  // accumulate color
+  fb[pixelID] += de_nan(color(ray, rnd));
 }

@@ -25,14 +25,14 @@
 // https://github.com/aras-p/ToyPathTracer/blob/master/Cpp/Source/Maths.cpp#L5-L18
 struct XorShift32 {
   // initialize the random number generator with a new seed (usually per pixel)
-  inline __device__ void init(unsigned int seed = 1) {
-    state = seed;
+  inline __device__ void init(unsigned int s0, unsigned int s1) {
+    state = s0 + WangHash(s1);
     for (int warmUp = 0; warmUp < 10; warmUp++) (*this)();
   }
 
   // get the next 'random' number in the sequence
   inline __device__ float operator()() {
-    unsigned int x = state;
+    uint32_t x = state;
 
     x ^= x << 13;
     x ^= x >> 17;
@@ -43,5 +43,16 @@ struct XorShift32 {
     return (x & 0xFFFFFF) / 16777216.f;
   }
 
-  unsigned int state;
+  // Wang Hash source:
+  // http://richiesams.blogspot.com/2015/03/creating-randomness-and-acummulating.html
+  uint32_t __device__ WangHash(uint32_t a) {
+    a = (a ^ 61) ^ (a >> 16);
+    a = a + (a << 3);
+    a = a ^ (a >> 4);
+    a = a * 0x27d4eb2d;
+    a = a ^ (a >> 15);
+    return a;
+  }
+
+  uint32_t state;
 };

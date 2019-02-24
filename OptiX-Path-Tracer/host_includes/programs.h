@@ -39,7 +39,7 @@ void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
   raygen["Light_PDF"]->setBuffer(createBuffer(lights.pdf, g_context));
   raygen["Light_Emissions"]->setBuffer(
       createBuffer(lights.emissions, g_context));
-  raygen["numLights"]->setInt(lights.emissions.size());
+  raygen["numLights"]->setInt((int)lights.emissions.size());
 
   g_context->setEntryPointCount(1);
   g_context->setRayGenerationProgram(/*program ID:*/ 0, raygen);
