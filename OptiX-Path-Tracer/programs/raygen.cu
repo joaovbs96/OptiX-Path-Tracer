@@ -20,15 +20,15 @@
 // the 'builtin' launch index we need to render a frame
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
+rtDeclareVariable(unsigned int, index, rtSubframeIndex, );
 
 // the ray related state
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtBuffer<float3, 2> fb;  // float3 color frame buffer
+rtBuffer<float4, 2> fb;  // float3 color frame buffer
 
 rtDeclareVariable(int, samples, , );  // number of samples
-rtDeclareVariable(int, frame, , );    // current frame
 
 rtDeclareVariable(rtObject, world, , );  // scene variable
 
@@ -207,12 +207,9 @@ RT_PROGRAM void renderPixel() {
 
   // initiate RNG
   unsigned int a = (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
-  unsigned int b = frame + 1;
+  unsigned int b = index + 1;
 
   rnd.init(a, b);
-
-  // init frame buffer
-  if (frame == 0) fb[pixelID] = make_float3(0.f);
 
   // Subpixel jitter: send the ray through a different position inside the
   // pixel each time, to provide antialiasing.
@@ -223,5 +220,7 @@ RT_PROGRAM void renderPixel() {
   Ray ray = Camera::generateRay(u, v, rnd);
 
   // accumulate color
-  fb[pixelID] += de_nan(color(ray, rnd));
+  float3 col = de_nan(color(ray, rnd));
+  fb[pixelID] = make_float4(col.x, col.y, col.z, 1.f);
+  // TODO: check if fb should be initiated
 }

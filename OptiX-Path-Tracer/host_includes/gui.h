@@ -75,7 +75,7 @@ int Save_HDR(Buffer &buffer, std::string fileName, int Nx, int Ny,
   float *arr;
   arr = (float *)malloc(Nx * Ny * 3 * sizeof(float));
 
-  const float3 *cols = (const float3 *)buffer->map();
+  const float4 *cols = (const float4 *)buffer->map();
 
   for (int j = Ny - 1; j >= 0; j--)
     for (int i = 0; i < Nx; i++) {
@@ -83,12 +83,12 @@ int Save_HDR(Buffer &buffer, std::string fileName, int Nx, int Ny,
       int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
       // average matrix of samples
-      float3 col = cols[col_index] / float(samples);
+      float4 col = cols[col_index] / float(samples);
 
       // Apply Reinhard style tone mapping
       // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
       // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
-      col = col / (make_float3(1.f) + col);
+      col = col / (make_float4(1.f) + col);
 
       // HDR output
       arr[pixel_index + 0] = col.x;  // R
@@ -107,23 +107,48 @@ int Save_PNG(Buffer &buffer, std::string fileName, int Nx, int Ny,
   unsigned char *arr;
   arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
 
-  const float3 *cols = (const float3 *)buffer->map();
+  const float4 *cols = (const float4 *)buffer->map();
 
   for (int j = Ny - 1; j >= 0; j--)
     for (int i = 0; i < Nx; i++) {
-      int col_index = Nx * j + i;
+      int index = Nx * j + i;
       int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
 
       // average matrix of samples
-      float3 col = cols[col_index] / float(samples);
+      float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
 
-      // Apply gamma correction
-      col = sqrt(col);
+      // Average and apply gamma correction
+      col = sqrt(col / float(samples));
 
       // from float to RGB [0, 255]
       arr[pixel_index + 0] = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
       arr[pixel_index + 1] = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
       arr[pixel_index + 2] = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
+    }
+
+  buffer->unmap();
+
+  // output png file
+  fileName += std::to_string(samples) + ".png";
+  return stbi_write_png((char *)fileName.c_str(), Nx, Ny, 3, arr, 0);
+}
+
+int Save_SB_PNG(Buffer &buffer, std::string fileName, int Nx, int Ny,
+                int samples) {
+  unsigned char *arr;
+  arr = (unsigned char *)malloc(Nx * Ny * 4 * sizeof(unsigned char));
+
+  const uchar4 *cols = (const uchar4 *)buffer->map();
+
+  for (int j = Ny - 1; j >= 0; j--)
+    for (int i = 0; i < Nx; i++) {
+      int index = Nx * j + i;
+      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
+
+      // from float to RGB [0, 255]
+      arr[pixel_index + 0] = cols[index].x;  // R
+      arr[pixel_index + 1] = cols[index].y;  // G
+      arr[pixel_index + 2] = cols[index].z;  // B
     }
 
   buffer->unmap();

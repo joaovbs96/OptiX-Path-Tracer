@@ -26,24 +26,20 @@
 
 Context g_context;
 
-float renderFrame(int Nx, int Ny) {
-  auto t0 = std::chrono::system_clock::now();
-
-  // Validate settings
-  g_context->validate();
-
-  // Launch ray generation program
-  g_context->launch(/*program ID:*/ 0, /*launch dimensions:*/ Nx, Ny);
-
-  auto t1 = std::chrono::system_clock::now();
-  auto time = std::chrono::duration<float>(t1 - t0).count();
-
-  return (float)time;
-}
-
 Buffer createFrameBuffer(int Nx, int Ny) {
   Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
-  pixelBuffer->setFormat(RT_FORMAT_FLOAT3);
+  pixelBuffer->setFormat(RT_FORMAT_FLOAT4);
+  pixelBuffer->setSize(Nx, Ny);
+  return pixelBuffer;
+}
+
+Buffer createStreamBuffer(int Nx, int Ny, float gamma = 1.f) {
+  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_PROGRESSIVE_STREAM);
+  pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
+
+  pixelBuffer->setAttribute(RT_BUFFER_ATTRIBUTE_STREAM_GAMMA, sizeof(float),
+                            (void *)&gamma);
+
   pixelBuffer->setSize(Nx, Ny);
   return pixelBuffer;
 }
@@ -72,7 +68,7 @@ int main(int ac, char **av) {
   bool HDR = false;
 
   // Set number of samples
-  const int samples = 10000;
+  const int samples = 1000;
   g_context["samples"]->setInt(samples);
 
   // Create and set the world
@@ -86,7 +82,7 @@ int main(int ac, char **av) {
 
     case 1:  // Moving Spheres test scene
       Nx = Ny = 1080;
-      output = "output/moving-";
+      output = "output/moving/moving-";
       MovingSpheres(g_context, Nx, Ny);
       break;
 
@@ -127,20 +123,32 @@ int main(int ac, char **av) {
   Buffer fb = createFrameBuffer(Nx, Ny);
   g_context["fb"]->set(fb);
 
-  // Build scene
-  g_context["frame"]->setInt(0);
-  float buildTime = renderFrame(0, 0);
-  printf("Done building OptiX data structures, which took %.2f seconds.\n",
-         buildTime);
+  // Create a stream buffer
+  Buffer sb = createStreamBuffer(Nx, Ny);
+  sb->bindProgressiveStream(fb);
+
+  float renderTime = 0.f;
+  auto t0 = std::chrono::system_clock::now();
+
+  // Validate settings
+  g_context->validate();
+
+  // Launch progressive ray generation program
+  g_context->launchProgressive(0, Nx, Ny, samples);
 
   // Render scene
-  float renderTime = 0.f;
-  for (int i = 0; i < samples; i++) {
-    g_context["frame"]->setInt(i);
-    renderTime += renderFrame(Nx, Ny);
+  uint s = 0;
+  bool ready = false;
+  do {
+    ready = sb->getProgressiveUpdateReady(s);
+    printf("Progress: %.2f%%\r", (s * 100.f / samples));
 
-    printf("Progress: %.2f%%\r", (i * 100.f / samples));
-  }
+    // save intermediate buffer state
+    // if (s % 100 == 0) Save_SB_PNG(sb, output, Nx, Ny, s);
+  } while (s < samples);
+
+  auto t1 = std::chrono::system_clock::now();
+  renderTime = std::chrono::duration<float>(t1 - t0).count();
   printf("Done rendering, which took %.2f seconds.\n", renderTime);
 
   if (HDR)
