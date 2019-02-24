@@ -8,13 +8,13 @@
 // creation, etc.)
 
 #include <stdio.h>
-#include <mutex>
 #include <string>
 #include "scenes.h"
 
-/*#include "../lib/imgui/imgui.h"
+#include "../lib/imgui/imgui.h"
 #include "../lib/imgui/imgui_impl_glfw.h"
 #include "../lib/imgui/imgui_impl_opengl3.h"
+#include "../lib/imgui/imgui_stdlib.h"
 
 // About OpenGL function loaders: modern OpenGL doesn't have a standard header
 // file and requires individual function pointers to be loaded manually. Helper
@@ -51,99 +51,38 @@ static void glfw_error_callback(int error, const char *description) {
 
 struct ImGuiParams {
   ImGuiParams()
-      : width(0),
-        height(0),
+      : w(0),
+        h(0),
         samples(0),
         scene(0),
         model(0),
+        frequency(0),
         currentSample(0),
         renderedFrame(false),
         open(true),
         done(false),
         start(false),
-        fileName("out") {}
-  int width, height, samples, scene, currentSample, model;
-  bool renderedFrame, open, done, start, close;
+        hasStarted(false),
+        HDR(false),
+        fileName("out.png") {}
+  int w, h, samples, scene, currentSample, model, frequency;
+  bool renderedFrame, open, done, start, close, hasStarted, HDR, progressive;
+  Buffer frame, output, stream;
   std::string fileName;
-  std::mutex mtx;
 
-  int dimensions() { return width * height; }
-};*/
+  int dimensions() { return w * h; }
+};
 
-int Save_HDR(Buffer &buffer, std::string fileName, int Nx, int Ny,
-             int samples) {
-  float *arr;
-  arr = (float *)malloc(Nx * Ny * 3 * sizeof(float));
-
-  const float4 *cols = (const float4 *)buffer->map();
-
-  for (int j = Ny - 1; j >= 0; j--)
-    for (int i = 0; i < Nx; i++) {
-      int col_index = Nx * j + i;
-      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
-
-      // average matrix of samples
-      float4 col = cols[col_index] / float(samples);
-
-      // Apply Reinhard style tone mapping
-      // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
-      // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
-      col = col / (make_float4(1.f) + col);
-
-      // HDR output
-      arr[pixel_index + 0] = col.x;  // R
-      arr[pixel_index + 1] = col.y;  // G
-      arr[pixel_index + 2] = col.z;  // B
-    }
-
-  buffer->unmap();
-
-  fileName += std::to_string(samples) + ".hdr";
-  return stbi_write_hdr((char *)fileName.c_str(), Nx, Ny, 3, arr);
-}
-
-int Save_PNG(Buffer &buffer, std::string fileName, int Nx, int Ny,
-             int samples) {
+int Save_SB_PNG(ImGuiParams &state, Buffer &buffer) {
   unsigned char *arr;
-  arr = (unsigned char *)malloc(Nx * Ny * 3 * sizeof(unsigned char));
-
-  const float4 *cols = (const float4 *)buffer->map();
-
-  for (int j = Ny - 1; j >= 0; j--)
-    for (int i = 0; i < Nx; i++) {
-      int index = Nx * j + i;
-      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
-
-      // average matrix of samples
-      float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
-
-      // Average and apply gamma correction
-      col = sqrt(col / float(samples));
-
-      // from float to RGB [0, 255]
-      arr[pixel_index + 0] = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
-      arr[pixel_index + 1] = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
-      arr[pixel_index + 2] = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
-    }
-
-  buffer->unmap();
-
-  // output png file
-  fileName += std::to_string(samples) + ".png";
-  return stbi_write_png((char *)fileName.c_str(), Nx, Ny, 3, arr, 0);
-}
-
-int Save_SB_PNG(Buffer &buffer, std::string fileName, int Nx, int Ny,
-                int samples) {
-  unsigned char *arr;
-  arr = (unsigned char *)malloc(Nx * Ny * 4 * sizeof(unsigned char));
+  arr = (unsigned char *)malloc(state.dimensions() * 3 * sizeof(unsigned char));
 
   const uchar4 *cols = (const uchar4 *)buffer->map();
 
-  for (int j = Ny - 1; j >= 0; j--)
-    for (int i = 0; i < Nx; i++) {
-      int index = Nx * j + i;
-      int pixel_index = (Ny - j - 1) * 3 * Nx + 3 * i;
+  for (int j = state.h - 1; j >= 0; j--)
+    for (int i = 0; i < state.w; i++) {
+      int index = state.w * j + i;
+      int pixel_index = 3 * (state.w * j + i);
 
       // from float to RGB [0, 255]
       arr[pixel_index + 0] = cols[index].x;  // R
@@ -154,8 +93,42 @@ int Save_SB_PNG(Buffer &buffer, std::string fileName, int Nx, int Ny,
   buffer->unmap();
 
   // output png file
-  fileName += std::to_string(samples) + ".png";
-  return stbi_write_png((char *)fileName.c_str(), Nx, Ny, 3, arr, 0);
+  const char *name = (char *)state.fileName.c_str();
+  return stbi_write_png(name, state.w, state.h, 3, arr, 0);
+}
+
+// FIXME: update function
+int Save_SB_HDR(ImGuiParams &state, Buffer &buffer) {
+  float *arr;
+  arr = (float *)malloc(state.dimensions() * 3 * sizeof(float));
+
+  const uchar4 *cols = (const uchar4 *)buffer->map();
+
+  for (int j = state.h - 1; j >= 0; j--)
+    for (int i = 0; i < state.w; i++) {
+      int index = state.w * j + i;
+      int pixel_index = 3 * (state.w * j + i);
+
+      // Apply Reinhard style tone mapping
+      // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
+      // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
+      uint4 col = make_uint4(cols[index].x, cols[index].y, cols[index].z,
+                             cols[index].w);
+      col = col / (make_uint4(255) + col);
+
+      // HDR output
+      arr[pixel_index + 0] = float(col.x);  // R
+      arr[pixel_index + 1] = float(col.y);  // G
+      arr[pixel_index + 2] = float(col.z);  // B
+    }
+
+  buffer->unmap();
+
+  // output hdr file
+  const char *name = (char *)state.fileName.c_str();
+  return stbi_write_hdr(name, state.w, state.h, 3, arr);
+
+  return 0;
 }
 
 #endif

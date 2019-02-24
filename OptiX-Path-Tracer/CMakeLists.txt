@@ -59,6 +59,7 @@ add_library(ImGuiLibs
  lib/imgui/imgui_widgets.cpp
  lib/imgui/imgui_demo.cpp 
  lib/imgui/imgui_draw.cpp 
+ lib/imgui/imgui_stdlib.cpp
 )
 
 target_link_libraries(ImGuiLibs opengl32)
