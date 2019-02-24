@@ -22,8 +22,6 @@
 #include "../sampling.h"
 #include "../trigonometric.h"
 
-// TODO: use built in functions and types whenever possible
-
 RT_FUNCTION float schlick(float cosine, float ref_idx) {
   float r0 = (1.f - ref_idx) / (1.f + ref_idx);
   r0 = r0 * r0;

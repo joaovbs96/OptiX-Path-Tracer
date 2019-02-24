@@ -46,8 +46,9 @@ int Optix_Config(ImGuiParams &state) {
   // Set RTX global attribute
   // Should be done before creating the context
   const int RTX = true;
-  if (rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX) !=
-      RT_SUCCESS)
+  RTresult res;
+  res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX);
+  if (res != RT_SUCCESS)
     printf("Error setting RTX mode. \n");
   else
     printf("OptiX RTX execution mode is %s.\n", (RTX) ? "on" : "off");
@@ -66,40 +67,27 @@ int Optix_Config(ImGuiParams &state) {
   // Create and set the world
   switch (state.scene) {
     case 0:  // Peter Shirley's "In One Weekend" scene
-      // state.fileName = "output/iow-";
       InOneWeekend(g_context, state.w, state.h);
       break;
 
     case 1:  // Moving Spheres test scene
-      // state.fileName = "output/moving/moving-";
       MovingSpheres(g_context, state.w, state.h);
       break;
 
     case 2:  // Cornell Box scene
-      // state.fileName = "output/cornell-";
       Cornell(g_context, state.w, state.h);
       break;
 
     case 3:  // Peter Shirley's "The Next Week" final scene
-      // state.fileName = "output/tnw-final-";
       Final_Next_Week(g_context, state.w, state.h);
       break;
 
     case 4:  // 3D models test scene
-      // state.fileName = "output/3D-models-";
       Test_Scene(g_context, state.w, state.h, state.model);
       break;
 
-    case 5:  // Scene parser
-      // state.fileName = "output/parsed-";
-      // Parser(g_context, "main.json");
-      printf("Error: Scene parser not yet implemented.\n");
-      system("PAUSE");
-      break;
-
     default:
-      printf("Error: scene unknown.\n");
-      system("PAUSE");
+      throw "Selected scene is unknown";
   }
 
   // Create frame buffers
@@ -155,7 +143,9 @@ int main(int ac, char **av) {
   // Create window with graphics context
   GLFWwindow *window = glfwCreateWindow(window_width, window_height,
                                         "OptiX Path Tracer", NULL, NULL);
-  if (window == NULL) return 1;
+
+  if (window == NULL) throw "Failed to create OpenGL window";
+
   glfwMakeContextCurrent(window);
   glfwSwapInterval(1);  // Enable vsync
 
@@ -170,10 +160,7 @@ int main(int ac, char **av) {
   bool err = false;  // If you use IMGUI_IMPL_OPENGL_LOADER_CUSTOM, your loader
                      // is likely to requires some form of initialization.
 #endif
-  if (err) {
-    fprintf(stderr, "Failed to initialize OpenGL loader!\n");
-    return 1;
-  }
+  if (err) throw "Failed to initialize OpenGL loader";
 
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -190,7 +177,7 @@ int main(int ac, char **av) {
 
   bool ready;
   float Hf, Wf;
-  unsigned char *imageData;
+  uchar1 *imageData;
   ImGuiParams state;
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -201,7 +188,7 @@ int main(int ac, char **av) {
     ImGui::NewFrame();
 
     {
-            // Create and append program params window
+      // Create and append program params window
       ImGui::Begin("Program Parameters");
 
       if (!state.start) {
@@ -227,8 +214,7 @@ int main(int ac, char **av) {
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
-          if (state.dimensions() > 0 && state.samples > 0) {
-            // TODO: log or display warning if configs are invalid
+          if (state.w > 0 && state.h > 0 && state.samples > 0) {
             Optix_Config(state);
 
             // start flag
@@ -247,8 +233,22 @@ int main(int ac, char **av) {
             }
 
             // allocate preview array
-            imageData = (unsigned char *)malloc(state.dimensions() * 4 *
-                                                sizeof(unsigned char));
+            imageData = (uchar1 *)malloc(state.dimensions() * sizeof(uchar4));
+          }
+
+          else {
+            printf("Selected settings are invalid:\n");
+
+            if (state.samples <= 0)
+              printf("- 'samples' should be a positive integer.\n");
+
+            if (state.w <= 0)
+              printf("- 'width' should be a positive integer.\n");
+
+            if (state.h <= 0)
+              printf("- 'height' should be a positive integer.\n");
+
+            printf("\n");
           }
         }
       }
@@ -265,9 +265,8 @@ int main(int ac, char **av) {
           // only update the texture array every [frequency] rendered frames
           if (state.progressive && s % state.frequency == 0) {
             // copy stream buffer content
-            unsigned char *tempImgArray = (unsigned char *)state.stream->map();
-            memcpy(imageData, tempImgArray,
-                   state.dimensions() * 4 * sizeof(unsigned char));
+            uchar1 *copyArr = (uchar1 *)state.stream->map();
+            memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
             state.stream->unmap();
           }
         }
@@ -301,26 +300,27 @@ int main(int ac, char **av) {
       ImGui::End();
     }
 
-    if (state.progressive) {
-      if (state.start) {
-        ImGui::Begin("Render Preview");
+    // Only show the image if 'progressive' is true.
+    // progressively showing the progress needs more memory and might be slower
+    // overall. Turn progressive rendering off if it's too slow.
+    if (state.progressive && state.start) {
+      ImGui::Begin("Render Preview");
 
-        GLuint textureId;
-        glGenTextures(1, &textureId);
-        glBindTexture(GL_TEXTURE_2D, textureId);
+      GLuint textureId;
+      glGenTextures(1, &textureId);
+      glBindTexture(GL_TEXTURE_2D, textureId);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, state.w, state.h, 0, GL_RGBA,
-                     GL_UNSIGNED_BYTE, imageData);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, state.w, state.h, 0, GL_RGBA,
+                   GL_UNSIGNED_BYTE, imageData);
 
-        // display progress
-        ImGui::Image((void *)(intptr_t)textureId, ImVec2(Wf, Hf));
-        ImGui::End();
+      // display progress
+      ImGui::Image((void *)(intptr_t)textureId, ImVec2(Wf, Hf));
+      ImGui::End();
 
-        glBindTexture(GL_TEXTURE_2D, 0);
-      }
+      glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     // Rendering
@@ -350,6 +350,7 @@ int main(int ac, char **av) {
           state.done = true;
         }
 
+    // if we are finished, leave the render loop
     if (state.done) break;
   }
 

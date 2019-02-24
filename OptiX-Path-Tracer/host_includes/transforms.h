@@ -6,24 +6,15 @@
 
 // debug functions to check if children are NULL
 void check_child(GeometryInstance gi) {
-  if (!gi) {  // if NULL
-    printf("Error: Assigned GeometryInstance is NULL.\n");
-    system("PAUSE");
-  }
+  if (!gi) throw "Assigned GeometryInstance is NULL";
 }
 
 void check_child(GeometryGroup gg) {
-  if (!gg) {  // if NULL
-    printf("Error: Assigned GeometryGroup is NULL.\n");
-    system("PAUSE");
-  }
+  if (!gg) throw "Assigned GeometryGroup is NULL";
 }
 
 void check_child(Transform gi) {
-  if (!gi) {  // if NULL
-    printf("Error: Assigned Transform is NULL.\n");
-    system("PAUSE");
-  }
+  if (!gi) throw "Assigned Transform is NULL";
 }
 
 // functions to add transforms, groups and primitives to the scene graph

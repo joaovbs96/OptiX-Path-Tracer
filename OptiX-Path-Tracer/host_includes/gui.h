@@ -97,7 +97,6 @@ int Save_SB_PNG(ImGuiParams &state, Buffer &buffer) {
   return stbi_write_png(name, state.w, state.h, 3, arr, 0);
 }
 
-// FIXME: update function
 int Save_SB_HDR(ImGuiParams &state, Buffer &buffer) {
   float *arr;
   arr = (float *)malloc(state.dimensions() * 3 * sizeof(float));
