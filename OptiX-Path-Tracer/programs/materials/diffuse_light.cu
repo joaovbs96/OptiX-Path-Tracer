@@ -28,7 +28,7 @@ RT_PROGRAM void closest_hit() {
     prd.emitted = make_float3(0.f);
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   return make_float3(1.f);
 }
 

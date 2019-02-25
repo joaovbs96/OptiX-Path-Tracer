@@ -1,4 +1,6 @@
 #include "../prd.h"
+#include "../random.h"
+
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center, , );
@@ -75,7 +77,7 @@ RT_PROGRAM void hit_sphere(int pid) {
       float distance_inside_boundary = rec2 - rec1;
       distance_inside_boundary *= length(ray.direction);
 
-      float hit_distance = -(1.f / density) * log((*prd.randState)());
+      float hit_distance = -(1.f / density) * log(rnd(prd.seed));
       float temp = rec1 + hit_distance / length(ray.direction);
 
       if (rtPotentialIntersection(temp)) {

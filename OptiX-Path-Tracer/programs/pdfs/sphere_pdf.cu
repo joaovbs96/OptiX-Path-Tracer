@@ -59,9 +59,9 @@ RT_CALLABLE_PROGRAM float sphere_value(PDFParams &in) {
 }
 
 // Utility function: generate random directions towards the sphere
-RT_FUNCTION float3 random_to_sphere(float distance_squared, XorShift32 &rnd) {
-  float r1 = rnd();
-  float r2 = rnd();
+RT_FUNCTION float3 random_to_sphere(float distance_squared, uint &seed) {
+  float r1 = rnd(seed);
+  float r2 = rnd(seed);
 
   float z = 1.f + r2 * (sqrtf(1.f - radius * radius / distance_squared) - 1.f);
 
@@ -74,14 +74,14 @@ RT_FUNCTION float3 random_to_sphere(float distance_squared, XorShift32 &rnd) {
 }
 
 // Generate program: generate directions relative to the sphere
-RT_CALLABLE_PROGRAM float3 sphere_generate(PDFParams &in, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 sphere_generate(PDFParams &in, uint &seed) {
   float3 direction = center - in.origin;
   float distance_squared = squared_length(direction);
 
   // Onb doesn't normalize the input vector on its own
   Onb uvw(unit_vector(direction));
 
-  float3 temp = random_to_sphere(distance_squared, rnd);
+  float3 temp = random_to_sphere(distance_squared, seed);
   uvw.inverse_transform(temp);
   in.direction = temp;
 

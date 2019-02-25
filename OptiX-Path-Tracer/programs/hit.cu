@@ -1,6 +1,6 @@
-#include "XorShift32.h"
 #include "pdfs/pdf.h"
 #include "prd.h"
+#include "random.h"
 
 // https://github.com/knightcrawler25/Optix-PathTracer
 // https://computergraphics.stackexchange.com/questions/4979/what-is-importance-sampling

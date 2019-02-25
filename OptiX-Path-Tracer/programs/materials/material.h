@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include "../XorShift32.h"
 #include "../pdfs/pdf.h"
 #include "../prd.h"
+#include "../random.h"
 #include "../sampling.h"
 #include "../trigonometric.h"
 

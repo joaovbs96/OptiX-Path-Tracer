@@ -84,13 +84,13 @@ RT_PROGRAM void closest_hit() {
     reflect_prob = 1.f;
 
   float3 reflected = reflect(ray.direction, prd.normal);
-  if ((*prd.randState)() < reflect_prob)
+  if (rnd(prd.seed) < reflect_prob)
     prd.direction = reflected;
   else
     prd.direction = refracted;
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   return make_float3(1.f);
 }
 

@@ -16,51 +16,51 @@
 
 #pragma once
 
-#include "XorShift32.h"
+#include "random.h"
 #include "vec.h"
 
-RT_FUNCTION float3 random_in_unit_disk(XorShift32 &rnd) {
-  float a = rnd() * 2.f * PI_F;
+RT_FUNCTION float3 random_in_unit_disk(uint &seed) {
+  float a = rnd(seed) * 2.f * PI_F;
 
   float3 xy = make_float3(sin(a), cos(a), 0);
-  xy *= sqrt(rnd());
+  xy *= sqrt(rnd(seed));
 
   return xy;
 }
 
-RT_FUNCTION float3 random_in_unit_sphere(XorShift32 &rnd) {
-  float z = rnd() * 2.f - 1.f;
+RT_FUNCTION float3 random_in_unit_sphere(uint &seed) {
+  float z = rnd(seed) * 2.f - 1.f;
 
-  float t = rnd() * 2.f * PI_F;
+  float t = rnd(seed) * 2.f * PI_F;
   float r = sqrt((0.f > (1.f - z * z) ? 0.f : (1.f - z * z)));
 
   float x = r * cos(t);
   float y = r * sin(t);
 
   float3 res = make_float3(x, y, z);
-  res *= powf(rnd(), 1.f / 3.f);
+  res *= powf(rnd(seed), 1.f / 3.f);
 
   return res;
 }
 
-RT_FUNCTION float3 random_on_unit_sphere(XorShift32 &rnd) {
-  float z = rnd() * 2.f - 1.f;
+RT_FUNCTION float3 random_on_unit_sphere(uint &seed) {
+  float z = rnd(seed) * 2.f - 1.f;
 
-  float t = rnd() * 2.f * PI_F;
+  float t = rnd(seed) * 2.f * PI_F;
   float r = sqrt((0.f > (1.f - z * z) ? 0.f : (1.f - z * z)));
 
   float x = r * cos(t);
   float y = r * sin(t);
 
   float3 res = make_float3(x, y, z);
-  res *= powf(rnd(), 1.f / 3.f);
+  res *= powf(rnd(seed), 1.f / 3.f);
 
   return unit_vector(res);
 }
 
-RT_FUNCTION float3 random_cosine_direction(XorShift32 &rnd) {
-  float r1 = rnd();
-  float r2 = rnd();
+RT_FUNCTION float3 random_cosine_direction(uint &seed) {
+  float r1 = rnd(seed);
+  float r2 = rnd(seed);
 
   float phi = 2 * PI_F * r1;
 

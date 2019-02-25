@@ -1,9 +1,9 @@
 #include "pdf.h"
 
-RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, uint &seed) {
   float3 temp;
 
-  cosine_sample_hemisphere(rnd(), rnd(), temp);
+  cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
 
   Onb uvw(pdf.normal);
   uvw.inverse_transform(temp);

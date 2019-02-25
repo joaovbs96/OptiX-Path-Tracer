@@ -313,7 +313,7 @@ int main(int ac, char **av) {
     // progressively showing the progress needs more memory and might be slower
     // overall. Turn progressive rendering off if it's too slow.
     if (state.progressive && state.start) {
-      // ImGui::Begin("Render Preview");
+      ImGui::Begin("Render Preview");
 
       GLuint textureId;
       glGenTextures(1, &textureId);
@@ -327,7 +327,7 @@ int main(int ac, char **av) {
 
       // display progress
       ImGui::Image((void *)(intptr_t)textureId, ImVec2(Wf, Hf));
-      // ImGui::End();
+      ImGui::End();
 
       glBindTexture(GL_TEXTURE_2D, 0);
     }

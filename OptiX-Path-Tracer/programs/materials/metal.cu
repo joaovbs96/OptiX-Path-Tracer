@@ -40,14 +40,14 @@ RT_PROGRAM void closest_hit() {
   prd.normal = hit_rec.normal;
 
   float3 reflected = reflect(unit_vector(ray.direction), prd.normal);
-  prd.direction = reflected + fuzz * random_in_unit_sphere((*prd.randState));
+  prd.direction = reflected + fuzz * random_in_unit_sphere(prd.seed);
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
   prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   return make_float3(1.f);
 }
 

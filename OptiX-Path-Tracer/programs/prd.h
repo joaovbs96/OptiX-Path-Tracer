@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "XorShift32.h"
+#include "random.h"
 #include "vec.h"
 
 typedef enum {
@@ -43,7 +43,7 @@ struct HitRecord {
   type, rays have to carry recursion state, which in this case are recursion
   depth and random number state */
 struct PerRayData {
-  XorShift32* randState;
+  uint seed;
   float time;
   ScatterEvent scatterEvent;
   float3 origin;

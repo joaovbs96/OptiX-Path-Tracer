@@ -47,11 +47,11 @@ rtDeclareVariable(float, time1, , );
 // Light sampling callable programs
 rtDeclareVariable(int, numLights, , );
 rtBuffer<float3> Light_Emissions;
-rtBuffer<rtCallableProgramId<float3(PDFParams&, XorShift32&)>> Light_Sample;
+rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> Light_Sample;
 rtBuffer<rtCallableProgramId<float(PDFParams&)>> Light_PDF;
 
 // BRDF sampling callable programs
-rtBuffer<rtCallableProgramId<float3(PDFParams&, XorShift32&)>> BRDF_Sample;
+rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> BRDF_Sample;
 rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_PDF;
 rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_Evaluate;
 
@@ -69,7 +69,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // ramdomly pick one light and multiply the result by the number of lights
   // it's the same as dividing by the PDF if they have the same probability
-  int index = ((int)((*prd.randState)() * numLights)) % numLights;
+  int index = ((int)(rnd(prd.seed) * numLights)) % numLights;
 
   // return black if there's just one light and we just hit it
   if (prd.matType == Diffuse_Light_Material) {
@@ -78,7 +78,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample Light
   PDFParams pdfParams(prd.origin, prd.normal);
-  Light_Sample[index](pdfParams, *prd.randState);
+  Light_Sample[index](pdfParams, prd.seed);
   float lightPDF = Light_PDF[index](pdfParams);
   // TODO: check if pdf value is 0
 
@@ -112,8 +112,8 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 }
 
 struct Camera {
-  static RT_FUNCTION Ray generateRay(float s, float t, XorShift32& rnd) {
-    const float3 rd = camera_lens_radius * random_in_unit_disk(rnd);
+  static RT_FUNCTION Ray generateRay(float s, float t, uint& seed) {
+    const float3 rd = camera_lens_radius * random_in_unit_disk(seed);
     const float3 lens_offset = camera_u * rd.x + camera_v * rd.y;
     const float3 origin = camera_origin + lens_offset;
     const float3 direction = camera_lower_left_corner + s * camera_horizontal +
@@ -127,10 +127,10 @@ struct Camera {
   }
 };
 
-RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
+RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   PerRayData prd;
-  prd.randState = &rnd;
-  prd.time = time0 + rnd() * (time1 - time0);
+  prd.seed = seed;
+  prd.time = time0 + rnd(prd.seed) * (time1 - time0);
 
   prd.throughput = make_float3(1.f);
   float3 radiance = make_float3(0.f);
@@ -163,7 +163,7 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
       // do importance sample
       else {
         PDFParams pdfParams(prd.origin, prd.normal);
-        BRDF_Sample[prd.matType](pdfParams, rnd);
+        BRDF_Sample[prd.matType](pdfParams, seed);
         float pdfValue = BRDF_PDF[prd.matType](pdfParams);
         // TODO: check if pdf value is 0
 
@@ -186,7 +186,7 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
     // Russian Roulette Path Termination
     float p = max_component(prd.throughput);
     if (depth > 10) {
-      if (rnd() >= p)
+      if (rnd(prd.seed) >= p)
         return prd.throughput;
       else
         prd.throughput *= 1.f / p;
@@ -219,27 +219,23 @@ RT_FUNCTION uchar4 make_Color(float4 col) {
 }
 
 RT_PROGRAM void renderPixel() {
-  XorShift32 rnd;
+  // get RNG seed
+  uint seed = tea<16>(launchDim.x * pixelID.y + pixelID.x, frame);
 
   // initialize acc buffer if needed
   uint2 index = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
   if (frame == 0) acc_buffer[index] = make_float4(0.f);
 
-  // initiate RNG: (z + 1) * W * H + (y + 1) * W + (x + 1)
-  uint a = (frame + 1) * launchDim.x * launchDim.y;
-  a += (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
-  rnd.init(a);
-
   // Subpixel jitter: send the ray through a different position inside the
   // pixel each time, to provide antialiasing.
-  float u = float(pixelID.x + rnd()) / float(launchDim.x);
-  float v = float(pixelID.y + rnd()) / float(launchDim.y);
+  float u = float(pixelID.x + rnd(seed)) / float(launchDim.x);
+  float v = float(pixelID.y + rnd(seed)) / float(launchDim.y);
 
   // trace ray
-  Ray ray = Camera::generateRay(u, v, rnd);
+  Ray ray = Camera::generateRay(u, v, seed);
 
   // accumulate color
-  float3 col = de_nan(color(ray, rnd));
+  float3 col = de_nan(color(ray, seed));
   acc_buffer[index] += make_float4(col.x, col.y, col.z, 1.f);
   display_buffer[index] = make_Color(acc_buffer[index]);
 }

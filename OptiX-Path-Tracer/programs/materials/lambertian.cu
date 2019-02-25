@@ -43,10 +43,10 @@ RT_PROGRAM void closest_hit() {
   prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, XorShift32 &rnd) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float3 temp;
 
-  cosine_sample_hemisphere(rnd(), rnd(), temp);
+  cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
 
   Onb uvw(pdf.normal);
   uvw.inverse_transform(temp);
