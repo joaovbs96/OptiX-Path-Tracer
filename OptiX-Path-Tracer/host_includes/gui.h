@@ -59,6 +59,7 @@ struct ImGuiParams {
         frequency(0),
         currentSample(0),
         renderedFrame(false),
+        progressive(false),
         open(true),
         done(false),
         start(false),
@@ -67,7 +68,7 @@ struct ImGuiParams {
         fileName("out.png") {}
   int w, h, samples, scene, currentSample, model, frequency;
   bool renderedFrame, open, done, start, close, hasStarted, HDR, progressive;
-  Buffer frame, output, stream;
+  Buffer accBuffer, displayBuffer;
   std::string fileName;
 
   int dimensions() { return w * h; }
@@ -77,17 +78,24 @@ int Save_SB_PNG(ImGuiParams &state, Buffer &buffer) {
   unsigned char *arr;
   arr = (unsigned char *)malloc(state.dimensions() * 3 * sizeof(unsigned char));
 
-  const uchar4 *cols = (const uchar4 *)buffer->map();
+  const float4 *cols = (const float4 *)buffer->map();
 
   for (int j = state.h - 1; j >= 0; j--)
     for (int i = 0; i < state.w; i++) {
       int index = state.w * j + i;
       int pixel_index = 3 * (state.w * j + i);
 
-      // from float to RGB [0, 255]
-      arr[pixel_index + 0] = cols[index].x;  // R
-      arr[pixel_index + 1] = cols[index].y;  // G
-      arr[pixel_index + 2] = cols[index].z;  // B
+      // average & gamma correct output color
+      float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
+      col = sqrt(col / float(state.samples));
+
+      int r = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
+      int g = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
+      int b = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
+
+      arr[pixel_index + 0] = r;  // R
+      arr[pixel_index + 1] = g;  // G
+      arr[pixel_index + 2] = b;  // B
     }
 
   buffer->unmap();
@@ -101,24 +109,25 @@ int Save_SB_HDR(ImGuiParams &state, Buffer &buffer) {
   float *arr;
   arr = (float *)malloc(state.dimensions() * 3 * sizeof(float));
 
-  const uchar4 *cols = (const uchar4 *)buffer->map();
+  const float4 *cols = (const float4 *)buffer->map();
 
   for (int j = state.h - 1; j >= 0; j--)
     for (int i = 0; i < state.w; i++) {
       int index = state.w * j + i;
       int pixel_index = 3 * (state.w * j + i);
 
+      // average output color
+      float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
+      col = col / float(state.samples);
+
       // Apply Reinhard style tone mapping
       // Eq (3) from 'Photographic Tone Reproduction for Digital Images'
       // http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.164.483&rep=rep1&type=pdf
-      uint4 col = make_uint4(cols[index].x, cols[index].y, cols[index].z,
-                             cols[index].w);
-      col = col / (make_uint4(255) + col);
+      col = col / (make_float3(1.f) + col);
 
-      // HDR output
-      arr[pixel_index + 0] = float(col.x);  // R
-      arr[pixel_index + 1] = float(col.y);  // G
-      arr[pixel_index + 2] = float(col.z);  // B
+      arr[pixel_index + 0] = col.x;  // R
+      arr[pixel_index + 1] = col.y;  // G
+      arr[pixel_index + 2] = col.z;  // B
     }
 
   buffer->unmap();

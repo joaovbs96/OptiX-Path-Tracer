@@ -31,15 +31,26 @@ Buffer createFrameBuffer(int Nx, int Ny) {
   return pixelBuffer;
 }
 
-Buffer createStreamBuffer(int Nx, int Ny, float gamma = 1.f) {
-  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_PROGRESSIVE_STREAM);
+Buffer createDisplayBuffer(int Nx, int Ny) {
+  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
   pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
-
-  pixelBuffer->setAttribute(RT_BUFFER_ATTRIBUTE_STREAM_GAMMA, sizeof(float),
-                            (void *)&gamma);
-
   pixelBuffer->setSize(Nx, Ny);
   return pixelBuffer;
+}
+
+float renderFrame(int Nx, int Ny) {
+  auto t0 = std::chrono::system_clock::now();
+
+  // Validate settings
+  g_context->validate();
+
+  // Launch ray generation program
+  g_context->launch(/*program ID:*/ 0, /*launch dimensions:*/ Nx, Ny);
+
+  auto t1 = std::chrono::system_clock::now();
+  auto time = std::chrono::duration<float>(t1 - t0).count();
+
+  return (float)time;
 }
 
 int Optix_Config(ImGuiParams &state) {
@@ -90,23 +101,16 @@ int Optix_Config(ImGuiParams &state) {
       throw "Selected scene is unknown";
   }
 
-  // Create frame buffers
-  state.frame = createFrameBuffer(state.w, state.h);
-  g_context["fb"]->set(state.frame);
+  // Create an output buffer
+  state.accBuffer = createFrameBuffer(state.w, state.h);
+  g_context["acc_buffer"]->set(state.accBuffer);
 
-  // Create a stream buffer w/ gamma correction
-  state.stream = createStreamBuffer(state.w, state.h, 2.f);
-  state.stream->bindProgressiveStream(state.frame);
-
-  // create an output stream buffer w/ no gamma correction
-  state.output = createStreamBuffer(state.w, state.h);
-  state.output->bindProgressiveStream(state.frame);
+  // Create a display buffer
+  state.displayBuffer = createDisplayBuffer(state.w, state.h);
+  g_context["display_buffer"]->set(state.displayBuffer);
 
   // Validate settings
   g_context->validate();
-
-  // Launch progressive ray generation program
-  g_context->launchProgressive(0, state.w, state.h, state.samples);
 
   return 0;
 }
@@ -175,7 +179,6 @@ int main(int ac, char **av) {
   ImGui_ImplGlfw_InitForOpenGL(window, true);
   ImGui_ImplOpenGL3_Init(glsl_version);
 
-  bool ready;
   float Hf, Wf;
   uchar1 *imageData;
   ImGuiParams state;
@@ -188,10 +191,10 @@ int main(int ac, char **av) {
     ImGui::NewFrame();
 
     {
-      // Create and append program params window
-      ImGui::Begin("Program Parameters");
-
       if (!state.start) {
+        // Create and append program params window
+        ImGui::Begin("Program Parameters");
+
         ImGui::InputInt("width", &state.w, 1, 100);
         ImGui::InputInt("height", &state.h, 1, 100);
         ImGui::InputInt("samples", &state.samples, 1, 100);
@@ -199,18 +202,19 @@ int main(int ac, char **av) {
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "
                      "Week(Moving Spheres)\0Cornell Box\0Peter Shirley's The "
                      "Next Week(Final Scene)\0Model Test Scene\0");
+
         if (state.scene == 4)
           ImGui::Combo(
               "model selection", &state.model,
               "Placeholder Model\0Lucy\0Chinese Dragon\0Spheres\0Sponza\0");
 
-        ImGui::Checkbox("Save as HDR", &state.HDR);
-
         ImGui::Checkbox("Progressive Render", &state.progressive);
+        if (state.progressive)
+          ImGui::InputInt("Render Update Frequency", &state.frequency, 1, 100);
 
+        ImGui::Checkbox("Save as HDR", &state.HDR);
         ImGui::InputText("Filename", &state.fileName, 0, 0, 0);
-
-        ImGui::InputInt("Render Update Frequency", &state.frequency, 1, 100);
+        // TODO: add the filename extension automatically(.PNG or .HDR)
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
@@ -219,24 +223,28 @@ int main(int ac, char **av) {
 
             // start flag
             state.start = true;
+            state.currentSample = 0;
 
             // if frequency is 0, update every frame
             state.frequency = state.frequency == 0 ? 1 : state.frequency;
 
             // set proportional image size
-            if (state.w > state.h) {
-              Wf = window_height * 0.9f;
-              Hf = ((Wf * state.h) / state.w);
+            if ((window_width < state.w) || (window_height < state.h)) {
+              if (state.w > state.h) {
+                Wf = window_height * 0.9f;
+                Hf = ((Wf * state.h) / state.w);
+              } else {
+                Hf = window_width * 0.9f;
+                Wf = ((Hf * state.w) / state.h);
+              }
             } else {
-              Hf = window_width * 0.9f;
-              Wf = ((Hf * state.w) / state.h);
+              Wf = state.w * 1.f;
+              Hf = state.h * 1.f;
             }
 
             // allocate preview array
             imageData = (uchar1 *)malloc(state.dimensions() * sizeof(uchar4));
-          }
-
-          else {
+          } else {
             printf("Selected settings are invalid:\n");
 
             if (state.samples <= 0)
@@ -253,23 +261,23 @@ int main(int ac, char **av) {
         }
       }
 
+      // rendering has started
       else {
-        // pool render state
-        uint s = 0;
-        ready = state.stream->getProgressiveUpdateReady(s);
+        // Create and append program params window
+        ImGui::Begin("Progress");
 
-        if (ready) {
-          // update number of rendered samples
-          state.currentSample = s;
+        // render a frame
+        g_context["frame"]->setInt(state.currentSample);
+        renderFrame(state.w, state.h);
 
-          // only update the texture array every [frequency] rendered frames
-          if (state.progressive && s % state.frequency == 0) {
-            // copy stream buffer content
-            uchar1 *copyArr = (uchar1 *)state.stream->map();
-            memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
-            state.stream->unmap();
-          }
-        }
+        /*// only update the texture array every [frequency] rendered frames
+        if (state.progressive && (state.currentSample % state.frequency == 0))
+        {*/
+        // copy stream buffer content
+        uchar1 *copyArr = (uchar1 *)state.displayBuffer->map();
+        memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
+        state.displayBuffer->unmap();
+        //}
 
         ImGui::Text("sample = %d / %d", state.currentSample, state.samples);
         ImGui::Text("Progress: ");
@@ -293,10 +301,11 @@ int main(int ac, char **av) {
 
           return 0;
         }
+
+        // update number of rendered samples
+        state.currentSample++;
       }
 
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-                  1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
       ImGui::End();
     }
 
@@ -304,7 +313,7 @@ int main(int ac, char **av) {
     // progressively showing the progress needs more memory and might be slower
     // overall. Turn progressive rendering off if it's too slow.
     if (state.progressive && state.start) {
-      ImGui::Begin("Render Preview");
+      // ImGui::Begin("Render Preview");
 
       GLuint textureId;
       glGenTextures(1, &textureId);
@@ -318,7 +327,7 @@ int main(int ac, char **av) {
 
       // display progress
       ImGui::Image((void *)(intptr_t)textureId, ImVec2(Wf, Hf));
-      ImGui::End();
+      // ImGui::End();
 
       glBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -343,9 +352,9 @@ int main(int ac, char **av) {
           printf("Done rendering, output file will be saved.\n");
 
           if (state.HDR)
-            Save_SB_HDR(state, state.output);
+            Save_SB_HDR(state, state.accBuffer);
           else
-            Save_SB_PNG(state, state.stream);
+            Save_SB_PNG(state, state.accBuffer);
 
           state.done = true;
         }

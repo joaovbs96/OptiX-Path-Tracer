@@ -17,21 +17,23 @@
 #include "pdfs/pdf.h"
 #include "prd.h"
 
-// the 'builtin' launch index we need to render a frame
+// launch index and frame dimensions
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
 rtDeclareVariable(uint2, launchDim, rtLaunchDim, );
-rtDeclareVariable(unsigned int, index, rtSubframeIndex, );
 
-// the ray related state
+// ray related state
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtBuffer<float4, 2> fb;  // float4 color frame buffer
+rtBuffer<float4, 2> acc_buffer;      // HDR color frame buffer
+rtBuffer<uchar4, 2> display_buffer;  // display buffer
 
 rtDeclareVariable(int, samples, , );  // number of samples
+rtDeclareVariable(int, frame, , );    // frame number
 
-rtDeclareVariable(rtObject, world, , );  // scene variable
+rtDeclareVariable(rtObject, world, , );  // scene/top obj variable
 
+// Camera parameters
 rtDeclareVariable(float3, camera_lower_left_corner, , );
 rtDeclareVariable(float3, camera_horizontal, , );
 rtDeclareVariable(float3, camera_vertical, , );
@@ -78,6 +80,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   PDFParams pdfParams(prd.origin, prd.normal);
   Light_Sample[index](pdfParams, *prd.randState);
   float lightPDF = Light_PDF[index](pdfParams);
+  // TODO: check if pdf value is 0
 
   if (dot(pdfParams.direction, pdfParams.normal) <= 0.f)
     return make_float3(0.f);
@@ -96,6 +99,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample BRDF
   float matPDF = BRDF_PDF[prd.matType](pdfParams);
+  // TODO: check if pdf value is 0
   float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
 
   // MIS
@@ -161,6 +165,7 @@ RT_FUNCTION float3 color(Ray& ray, XorShift32& rnd) {
         PDFParams pdfParams(prd.origin, prd.normal);
         BRDF_Sample[prd.matType](pdfParams, rnd);
         float pdfValue = BRDF_PDF[prd.matType](pdfParams);
+        // TODO: check if pdf value is 0
 
         prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
 
@@ -202,13 +207,27 @@ RT_FUNCTION float3 de_nan(const float3& c) {
   return temp;
 }
 
+RT_FUNCTION uchar4 make_Color(float4 col) {
+  float3 temp = sqrt(make_float3(col.x, col.y, col.z) / (frame + 1));
+
+  int r = int(255.99 * Clamp(temp.x, 0.f, 1.f));  // R
+  int g = int(255.99 * Clamp(temp.y, 0.f, 1.f));  // G
+  int b = int(255.99 * Clamp(temp.z, 0.f, 1.f));  // B
+  int a = int(255.99 * Clamp(1.f, 0.f, 1.f));     // A
+
+  return make_uchar4(r, g, b, a);
+}
+
 RT_PROGRAM void renderPixel() {
   XorShift32 rnd;
 
-  // initiate RNG: (z + 1) * W * H + (y + 1) * W + (x + 1)
-  unsigned int a = (index + 1) * launchDim.x * launchDim.y;
-  a += (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
+  // initialize acc buffer if needed
+  uint2 index = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
+  if (frame == 0) acc_buffer[index] = make_float4(0.f);
 
+  // initiate RNG: (z + 1) * W * H + (y + 1) * W + (x + 1)
+  uint a = (frame + 1) * launchDim.x * launchDim.y;
+  a += (pixelID.y + 1) * launchDim.x + (pixelID.x + 1);
   rnd.init(a);
 
   // Subpixel jitter: send the ray through a different position inside the
@@ -221,6 +240,6 @@ RT_PROGRAM void renderPixel() {
 
   // accumulate color
   float3 col = de_nan(color(ray, rnd));
-  uint2 invertedId = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
-  fb[invertedId] = make_float4(col.x, col.y, col.z, 1.f);
+  acc_buffer[index] += make_float4(col.x, col.y, col.z, 1.f);
+  display_buffer[index] = make_Color(acc_buffer[index]);
 }
