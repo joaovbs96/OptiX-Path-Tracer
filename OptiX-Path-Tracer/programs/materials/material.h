@@ -51,43 +51,8 @@ RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
     return false;
 }
 
-RT_FUNCTION float Fresnel_Dielectric(float cosThetaI, float ni, float nt) {
-  // Copied from PBRT. This function calculates the full Fresnel term for a
-  // dielectric material. See Sebastion Legarde's link above for details.
-
-  cosThetaI = Clamp(cosThetaI, -1.f, 1.f);
-
-  // Swap index of refraction if this is coming from inside the surface
-  if (cosThetaI < 0.f) {
-    float temp = ni;
-    ni = nt;
-    nt = temp;
-
-    cosThetaI = -cosThetaI;
-  }
-
-  float sinThetaI = sqrtf(ffmax(0.f, 1.f - cosThetaI * cosThetaI));
-  float sinThetaT = ni / nt * sinThetaI;
-
-  // Check for total internal reflection
-  if (sinThetaT >= 1) return 1.f;
-
-  float cosThetaT = sqrtf(ffmax(0.f, 1.f - sinThetaT * sinThetaT));
-
-  float rParallel = ((nt * cosThetaI) - (ni * cosThetaT)) /
-                    ((nt * cosThetaI) + (ni * cosThetaT));
-  float rPerpendicuar = ((ni * cosThetaI) - (nt * cosThetaT)) /
-                        ((ni * cosThetaI) + (nt * cosThetaT));
-  return (rParallel * rParallel + rPerpendicuar * rPerpendicuar) / 2;
-}
-
-RT_FUNCTION float3 CalculateExtinction(float3 apparantColor,
-                                       float scatterDistance) {
-  float3 a = apparantColor;
-  float3 s = make_float3(1.9f) - a +
-             3.5f * (a - make_float3(0.8f)) * (a - make_float3(0.8f));
-
-  return 1.0f / (s * scatterDistance);
+RT_FUNCTION bool SameHemisphere(const float3 a, const float3 b) {
+  return a.y * b.y > 0.f;
 }
 
 RT_FUNCTION bool Transmit(float3 wm, float3 wi, float n, float3& wo) {
