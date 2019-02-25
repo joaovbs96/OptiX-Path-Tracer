@@ -1,4 +1,4 @@
-#include "../prd.h"
+#include "../prd.cuh"
 
 /*! the parameters that describe each individual triangle geometry */
 rtDeclareVariable(float3, center, , );

@@ -1,14 +1,14 @@
 #ifndef PARSERH
 #define PARSERH
 
-#include "../programs/vec.h"
-#include "camera.h"
-#include "hitables.h"
-#include "materials.h"
-#include "pdfs.h"
-#include "programs.h"
-#include "textures.h"
-#include "transforms.h"
+#include "../programs/vec.hpp"
+#include "camera.hpp"
+#include "hitables.hpp"
+#include "materials.hpp"
+#include "pdfs.hpp"
+#include "programs.hpp"
+#include "textures.hpp"
+#include "transforms.hpp"
 
 #include "../lib/RSJparser.tcc"
 
@@ -26,6 +26,7 @@ treatSampling(g_context, it));
     return new Cosine_PDF;
   }
   
+
 
   else if (data->first == "rect") {
     std::string axis = (it++)->second.as<std::string>();
@@ -56,6 +57,7 @@ treatSampling(g_context, it));
 
 
 
+
   else if (data->first == "sphere") {
     std::vector<float> center((it++)->second.as_vector<float>());
     float radius = it->second.as<float>();
@@ -63,6 +65,7 @@ treatSampling(g_context, it));
     return new Sphere_PDF(vec3f(center[0], center[1], center[2]), radius);
   }
   
+
 
 
 
@@ -78,6 +81,7 @@ treatSampling(g_context, it));
     return new Buffer_PDF(buffer);
   }
   
+
 
 
 
@@ -152,6 +156,7 @@ true, *white, g_context), group, g_context); // back walls
   addChild(createSphere(vec3f(190.f, 90.f, 190.f), 90.f, *glass, g_context),
 group, g_context);// glass sphere
   
+
 
 
 

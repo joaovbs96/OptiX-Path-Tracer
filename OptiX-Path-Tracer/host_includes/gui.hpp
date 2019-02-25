@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <string>
-#include "scenes.h"
+#include "scenes.hpp"
 
 #include "../lib/imgui/imgui.h"
 #include "../lib/imgui/imgui_impl_glfw.h"

@@ -14,8 +14,8 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "pdfs/pdf.h"
-#include "prd.h"
+#include "pdfs/pdf.cuh"
+#include "prd.cuh"
 
 // launch index and frame dimensions
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );

@@ -1,4 +1,4 @@
-#include "pdf.h"
+#include "pdf.cuh"
 
 // Boundary variables
 rtDeclareVariable(float, a0, , );

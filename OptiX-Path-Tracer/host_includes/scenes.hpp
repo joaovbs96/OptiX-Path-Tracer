@@ -3,14 +3,14 @@
 
 #include <chrono>
 
-#include "../programs/vec.h"
-#include "camera.h"
-#include "hitables.h"
-#include "materials.h"
-#include "pdfs.h"
-#include "programs.h"
-#include "textures.h"
-#include "transforms.h"
+#include "../programs/vec.hpp"
+#include "camera.hpp"
+#include "hitables.hpp"
+#include "materials.hpp"
+#include "pdfs.hpp"
+#include "programs.hpp"
+#include "textures.hpp"
+#include "transforms.hpp"
 
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../sampling.h"
-#include "../vec.h"
+#include "../sampling.cuh"
+#include "../vec.hpp"
 
 // communication between hit functions and the value programs
 struct PDFRecord {

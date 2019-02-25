@@ -1,8 +1,8 @@
 #ifndef TRANSFORMSH
 #define TRANSFORMSH
 
-#include "../programs/vec.h"
-#include "materials.h"
+#include "../programs/vec.hpp"
+#include "materials.hpp"
 
 // debug functions to check if children are NULL
 void check_child(GeometryInstance gi) {

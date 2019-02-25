@@ -5,7 +5,7 @@
 #include <math.h>
 #include <cmath>
 
-#include "../programs/vec.h"
+#include "../programs/vec.hpp"
 
 struct Camera {
   Camera() {}

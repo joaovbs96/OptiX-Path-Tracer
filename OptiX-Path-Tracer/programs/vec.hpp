@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "common.h"
+#include "common.hpp"
 
 inline __host__ __device__ float squared_length(const float3 &a) {
   return length(a) * length(a);

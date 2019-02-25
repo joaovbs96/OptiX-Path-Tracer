@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "texture.cuh"
 
 rtDeclareVariable(float, scale, , );
 

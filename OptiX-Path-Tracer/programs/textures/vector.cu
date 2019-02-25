@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "texture.cuh"
 
 rtDeclareVariable(int, size, , );
 rtBuffer<rtCallableProgramId<float3(float, float, float3)> > texture_vector;

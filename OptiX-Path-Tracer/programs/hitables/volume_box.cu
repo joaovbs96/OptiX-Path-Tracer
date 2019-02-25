@@ -1,5 +1,5 @@
-#include "../prd.h"
-#include "../random.h"
+#include "../prd.cuh"
+#include "../random.cuh"
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, boxmin, , );

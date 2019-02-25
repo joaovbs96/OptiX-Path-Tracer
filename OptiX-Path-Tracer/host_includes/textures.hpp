@@ -3,8 +3,8 @@
 
 #include <random>
 
-#include "../programs/vec.h"
-#include "buffers.h"
+#include "../programs/vec.hpp"
+#include "buffers.hpp"
 
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_IMPLEMENTATION

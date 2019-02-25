@@ -16,11 +16,11 @@
 
 #pragma once
 
-#include "../pdfs/pdf.h"
-#include "../prd.h"
-#include "../random.h"
-#include "../sampling.h"
-#include "../trigonometric.h"
+#include "../pdfs/pdf.cuh"
+#include "../prd.cuh"
+#include "../random.cuh"
+#include "../sampling.cuh"
+#include "../trigonometric.cuh"
 
 RT_FUNCTION float schlick(float cosine, float ref_idx) {
   float r0 = (1.f - ref_idx) / (1.f + ref_idx);

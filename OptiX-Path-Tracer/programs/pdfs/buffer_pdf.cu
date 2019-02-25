@@ -1,4 +1,4 @@
-#include "pdf.h"
+#include "pdf.cuh"
 
 rtDeclareVariable(int, size, , );
 

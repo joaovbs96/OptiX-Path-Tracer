@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "texture.cuh"
 
 rtTextureSampler<float4, 2> data;
 

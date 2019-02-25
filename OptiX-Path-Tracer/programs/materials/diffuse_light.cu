@@ -1,4 +1,4 @@
-#include "material.h"
+#include "material.cuh"
 
 // the implicit state's ray we will intersect against
 rtDeclareVariable(Ray, ray, rtCurrentRay, );

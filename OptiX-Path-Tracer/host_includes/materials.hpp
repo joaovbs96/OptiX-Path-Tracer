@@ -1,8 +1,8 @@
 #ifndef MATERIALSH
 #define MATERIALSH
 
-#include "../programs/vec.h"
-#include "textures.h"
+#include "../programs/vec.hpp"
+#include "textures.hpp"
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */

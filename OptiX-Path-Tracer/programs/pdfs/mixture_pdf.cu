@@ -1,4 +1,4 @@
-#include "pdf.h"
+#include "pdf.cuh"
 
 rtDeclareVariable(rtCallableProgramId<float(PDFParams &)>, p0_value, , );
 rtDeclareVariable(rtCallableProgramId<float(PDFParams &)>, p1_value, , );

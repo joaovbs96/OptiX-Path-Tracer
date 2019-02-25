@@ -1,10 +1,10 @@
 #ifndef HITABLESH
 #define HITABLESH
 
-#include "../programs/vec.h"
-#include "materials.h"
-#include "programs.h"
-#include "transforms.h"
+#include "../programs/vec.hpp"
+#include "materials.hpp"
+#include "programs.hpp"
+#include "transforms.hpp"
 
 #include "../lib/OBJ_Loader.h"
 

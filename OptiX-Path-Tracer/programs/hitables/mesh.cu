@@ -1,4 +1,4 @@
-#include "../prd.h"
+#include "../prd.cuh"
 
 // Triangle intersection function from McGuire's Graphics Codex:
 // http://graphicscodex.com

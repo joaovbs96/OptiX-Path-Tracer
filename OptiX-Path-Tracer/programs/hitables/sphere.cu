@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "../prd.h"
+#include "../prd.cuh"
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center, , );

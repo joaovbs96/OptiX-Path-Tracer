@@ -1,4 +1,4 @@
-#include "vec.h"
+#include "vec.hpp"
 
 RT_FUNCTION float Saturate(float x) {
   if (x < 0.f)

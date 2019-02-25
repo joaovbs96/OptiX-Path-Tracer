@@ -68,15 +68,6 @@ target_link_libraries(ImGuiLibs "${PROJECT_SOURCE_DIR}/OptiX-Path-Tracer/lib/img
 # this is doing the same using OptiX
 add_executable(OptiX-Path-Tracer
   # C++ host code
-  programs/vec.h
-  programs/materials/material.h
-  host_includes/hitables.h
-  host_includes/materials.h
-  host_includes/scenes.h
-  host_includes/camera.h
-  lib/stb_image.h
-  lib/stb_image_write.h
-  lib/HDRloader.h
   lib/HDRloader.cpp
   main.cpp
   # embedded cuda kernels:

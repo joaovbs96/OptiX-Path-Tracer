@@ -1,7 +1,7 @@
 #ifndef BUFFERSH
 #define BUFFERSH
 
-#include "../programs/vec.h"
+#include "../programs/vec.hpp"
 
 // create Callable Program id buffer
 Buffer createBuffer(std::vector<Program> &list, Context &g_context) {

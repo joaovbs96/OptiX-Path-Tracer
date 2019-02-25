@@ -1,10 +1,10 @@
 #ifndef PROGRAMSH
 #define PROGRAMSH
 
-#include "../programs/vec.h"
-#include "buffers.h"
-#include "pdfs.h"
-#include "textures.h"
+#include "../programs/vec.hpp"
+#include "buffers.hpp"
+#include "pdfs.hpp"
+#include "textures.hpp"
 
 #include <string>
 

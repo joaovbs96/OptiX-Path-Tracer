@@ -3,8 +3,8 @@
 
 #include <random>
 
-#include "../programs/vec.h"
-#include "programs.h"
+#include "../programs/vec.hpp"
+#include "programs.hpp"
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */

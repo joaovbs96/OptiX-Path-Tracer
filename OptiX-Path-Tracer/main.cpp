@@ -20,7 +20,7 @@
 #include <iostream>
 
 // Host side constructors and functions
-#include "host_includes/gui.h"
+#include "host_includes/gui.hpp"
 
 Context g_context;
 

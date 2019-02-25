@@ -16,46 +16,57 @@
 
 #pragma once
 
-#include "random.h"
-#include "vec.h"
+#include "random.cuh"
+#include "vec.hpp"
 
-typedef enum {
-  /*! ray could get properly bounced, and is still alive */
-  rayGotBounced,
-  /*! ray could not get scattered, and should get cancelled */
-  rayGotCancelled,
-  /*! ray didn't hit anything, and went into the environemnt */
-  rayMissed,
-} ScatterEvent;
+RT_FUNCTION float3 random_in_unit_disk(uint &seed) {
+  float a = rnd(seed) * 2.f * PI_F;
 
-struct HitRecord {
-  int index;
-  float distance;
-  float u;
-  float v;
-  float3 normal;
-  float3 p;
-};
+  float3 xy = make_float3(sin(a), cos(a), 0);
+  xy *= sqrt(rnd(seed));
 
-/*! "per ray data" (PRD) for our sample's rays. In the simple example, there is
-  only one ray type, and it only ever returns one thing, which is a color
-  (everything else is handled through the recursion). In addition to that return
-  type, rays have to carry recursion state, which in this case are recursion
-  depth and random number state */
-struct PerRayData {
-  uint seed;
-  float time;
-  ScatterEvent scatterEvent;
-  float3 origin;
-  float3 direction;
-  float3 normal;
-  float3 emitted;
-  float3 attenuation;
-  float3 throughput;
-  bool isSpecular;
-  MaterialType matType;
-};
+  return xy;
+}
 
-struct PerRayData_Shadow {
-  bool inShadow;
-};
+RT_FUNCTION float3 random_in_unit_sphere(uint &seed) {
+  float z = rnd(seed) * 2.f - 1.f;
+
+  float t = rnd(seed) * 2.f * PI_F;
+  float r = sqrt((0.f > (1.f - z * z) ? 0.f : (1.f - z * z)));
+
+  float x = r * cos(t);
+  float y = r * sin(t);
+
+  float3 res = make_float3(x, y, z);
+  res *= powf(rnd(seed), 1.f / 3.f);
+
+  return res;
+}
+
+RT_FUNCTION float3 random_on_unit_sphere(uint &seed) {
+  float z = rnd(seed) * 2.f - 1.f;
+
+  float t = rnd(seed) * 2.f * PI_F;
+  float r = sqrt((0.f > (1.f - z * z) ? 0.f : (1.f - z * z)));
+
+  float x = r * cos(t);
+  float y = r * sin(t);
+
+  float3 res = make_float3(x, y, z);
+  res *= powf(rnd(seed), 1.f / 3.f);
+
+  return unit_vector(res);
+}
+
+RT_FUNCTION float3 random_cosine_direction(uint &seed) {
+  float r1 = rnd(seed);
+  float r2 = rnd(seed);
+
+  float phi = 2 * PI_F * r1;
+
+  float x = cos(phi) * 2.f * sqrt(r2);
+  float y = sin(phi) * 2.f * sqrt(r2);
+  float z = sqrt(1.f - r2);
+
+  return make_float3(x, y, z);
+}

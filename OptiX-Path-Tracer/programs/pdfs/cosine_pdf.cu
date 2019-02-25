@@ -1,4 +1,4 @@
-#include "pdf.h"
+#include "pdf.cuh"
 
 RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, uint &seed) {
   float3 temp;
