@@ -17,12 +17,10 @@ expanded with new features being added even after being done with the final book
 - Multiple Importance Sampling
 - Russian Roulette Path Termination
 - Triangle Meshes
-- HDRi Environmental Mapping
+- HDRi Environmental Mapping & Tone Mapping
 
 ### TODO:
 - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
-- Tone Mapping & HDR Textures
-- OptiX's GeometryTriangles
 - [Pixar's OpenSubDiv](https://github.com/PixarAnimationStudios/OpenSubdiv)
 - [Pixar's USD](https://github.com/PixarAnimationStudios/USD)
 - Spectral Rendering
@@ -38,11 +36,8 @@ expanded with new features being added even after being done with the final book
 
 ## Prerequisites
 
-- A install of CUDA, preferably CUDA 10. Make sure to put your CUDA
-  binary directory into your path;
-- A install of OptiX, preferably (ie, tested with) OptiX 6.0.0. Under
-  Linux, I'd suggest to put a ```export OptiX_INSTALL_DIR=...``` into your
-  ```.bashrc```;
+- A install of CUDA, preferably CUDA 10 or above. Make sure to put your CUDA binary directory into your path;
+- A install of OptiX 6.0.0 or above. A Maxwell or newer GPU is also needed, as we make use of RTX-mode only features.
 - Compiler and build tools - GCC, MSVC, CLang, etc;
 - CMake.
 
@@ -51,8 +46,7 @@ expanded with new features being added even after being done with the final book
 
 - [straaljager's HDRloader](https://github.com/straaljager/GPU-path-tracing-tutorial-4/blob/9b0906f2850ae15833f16fa0e992208ac60cc1bd/HDRloader.cpp)
 - nothings' [stb_image](https://github.com/nothings/stb/blob/master/stb_image.h) and [stb_image_write](https://github.com/nothings/stb/blob/master/stb_image_write.h)
-- [Bly7's OBJ-Loader](https://github.com/Bly7/OBJ-Loader)
-- [subh83's RSJp-cpp](https://github.com/subh83/RSJp-cpp)
+- [syoyo's tinyobjloader](https://github.com/syoyo/tinyobjloader)
 
 
 ## Building
@@ -87,15 +81,8 @@ file from ```OptiX SDK X.X.X/SDK-precompiled-samples``` to the build folder.
 
 ## Code Overview
   
-- Host code, functions and constructors are separated into the main.cpp and different header files 
-under the ```host_includes/``` folder;
+- Host code, functions and constructors are separated into the main.cpp and different header files under the ```host_includes/``` folder;
 - Device related code is in the ```programs/``` folder;
-- The ```OptiX-Path-Tracer/CMakeLists``` scripts sets up the build; in
-particular, it defines all the cmake rules for compiling the device
-programs, embedding them into host object files, and linking them to
-the final binary;
-- Ingo Wald made two different versions of the code, a recursive one and
-an iterative one(better suited to GPUs). On my fork, I decided to keep 
-the iterative version only, but you can still check his original code on 
-his repository;
+- The ```OptiX-Path-Tracer/CMakeLists``` scripts sets up the build; in particular, it defines all the CMake rules for compiling the device programs, embedding them into host object files, and linking them tothe final binary;
+- Ingo Wald made two different versions of the code, a recursive one and an iterative one(better suited to GPUs). On my fork, I decided to keep the iterative version only, but you can still check his original code on his repository;
 - This project uses Clang-Format(Google's style with tab width equal to 2) to keep code style consistent.
