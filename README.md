@@ -16,7 +16,8 @@ expanded with new features being added even after being done with the final book
 - NVIDIA's OptiX based GPU Path Tracer
 - Multiple Importance Sampling
 - Russian Roulette Path Termination
-- Triangle Meshes
+- Triangle Meshes, Spheres and Rectangles.
+- Pinhole Camera
 - HDRi Environmental Mapping & Tone Mapping
 
 ### TODO:
