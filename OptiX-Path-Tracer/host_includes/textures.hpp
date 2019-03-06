@@ -1,10 +1,8 @@
 #ifndef TEXTURESH
 #define TEXTURESH
 
-#include <random>
-
-#include "../programs/vec.hpp"
 #include "buffers.hpp"
+#include "host_common.hpp"
 
 #define STBI_MSC_SECURE_CRT
 #define STB_IMAGE_IMPLEMENTATION
@@ -13,13 +11,6 @@
 #include "../lib/stb_image_write.h"
 
 #include "../lib/HDRloader.h"
-
-float rnd() {
-  static std::mt19937 gen(
-      0);  // Standard mersenne_twister_engine seeded with rd()
-  static std::uniform_real_distribution<float> dis(0.f, 1.f);
-  return dis(gen);
-}
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
@@ -36,9 +27,14 @@ struct Texture {
 struct Constant_Texture : public Texture {
   Constant_Texture(const float3 &c) : color(c) {}
 
+  Constant_Texture(const float &rgb) : color(make_float3(rgb)) {}
+
+  Constant_Texture(const float &r, const float &g, const float &b)
+      : color(make_float3(r, g, b)) {}
+
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg = g_context->createProgramFromPTXString(
-        constant_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(constant_texture_programs, "sample_texture", g_context);
 
     textProg["color"]->set3fv(&color.x);
 
@@ -52,8 +48,8 @@ struct Checker_Texture : public Texture {
   Checker_Texture(const Texture *o, const Texture *e) : odd(o), even(e) {}
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg = g_context->createProgramFromPTXString(
-        checker_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(checker_texture_programs, "sample_texture", g_context);
 
     textProg["odd"]->setProgramId(odd->assignTo(g_context));
     textProg["even"]->setProgramId(even->assignTo(g_context));
@@ -65,6 +61,7 @@ struct Checker_Texture : public Texture {
   const Texture *even;
 };
 
+// TODO: pass an axis parameters to choose
 struct Noise_Texture : public Texture {
   Noise_Texture(const float s) : scale(s) {}
 
@@ -107,8 +104,8 @@ struct Noise_Texture : public Texture {
     perlin_generate_perm(perm_y, g_context);
     perlin_generate_perm(perm_z, g_context);
 
-    Program textProg = g_context->createProgramFromPTXString(
-        noise_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(noise_texture_programs, "sample_texture", g_context);
 
     textProg["ranvec"]->set(ranvec);
     textProg["perm_x"]->set(perm_x);
@@ -130,6 +127,12 @@ struct Image_Texture : public Texture {
     int nx, ny, nn;
     unsigned char *tex_data =
         stbi_load((char *)fileName.c_str(), &nx, &ny, &nn, 0);
+
+    if (!tex_data) {
+      printf("Image is invalid or hasn't been found.\n");
+      system("PAUSE");
+      exit(0);
+    }
 
     TextureSampler sampler = context->createTextureSampler();
     sampler->setWrapMode(0, RT_WRAP_REPEAT);
@@ -169,8 +172,8 @@ struct Image_Texture : public Texture {
   }
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg = g_context->createProgramFromPTXString(
-        image_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(image_texture_programs, "sample_texture", g_context);
 
     textProg["data"]->setTextureSampler(loadTexture(g_context, fileName));
 
@@ -195,13 +198,8 @@ struct HDR_Texture : public Texture {
     sampler->setArraySize(1u);
 
     HDRImage HDRresult;
-    if (HDRLoader::load((char *)fileName.c_str(), HDRresult))
-      printf("HDR environment map loaded. Width: %d Height: %d\n",
-             HDRresult.width, HDRresult.height);
-    else {
-      printf(
-          "HDR environment map not found\nAn HDR map is required as light "
-          "source. Exiting now...\n");
+    if (!HDRLoader::load((char *)fileName.c_str(), HDRresult)) {
+      printf("HDR Image is invalid or hasn't been found.\n");
       system("PAUSE");
       exit(0);
     }
@@ -213,8 +211,7 @@ struct HDR_Texture : public Texture {
     for (int i = 0; i < HDRresult.width; i++)
       for (int j = 0; j < HDRresult.height; j++) {
         int bindex = (j * HDRresult.width + i) * 4;
-        // int iindex = 3 * ((HDRresult.height - j - 1) * HDRresult.width + i);
-        int iindex = 3 * (HDRresult.width * j + i);
+        int iindex = (j * HDRresult.width + i) * 3;
 
         buffer_data[bindex + 0] = HDRresult.colors[iindex + 0];
         buffer_data[bindex + 1] = HDRresult.colors[iindex + 1];
@@ -231,8 +228,8 @@ struct HDR_Texture : public Texture {
   }
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg = g_context->createProgramFromPTXString(
-        image_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(image_texture_programs, "sample_texture", g_context);
 
     textProg["data"]->setTextureSampler(loadHDRTexture(g_context, fileName));
 
@@ -242,13 +239,13 @@ struct HDR_Texture : public Texture {
   const std::string fileName;
 };
 
-// TODO: this won't work if one of the textures are another buffer
+// TODO: prevent a vector texture from taking a vector texture
 struct Vector_Texture : public Texture {
   Vector_Texture(const std::vector<Texture *> &tv) : texture_vector(tv) {}
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg = g_context->createProgramFromPTXString(
-        vector_texture_programs, "sample_texture");
+    Program textProg =
+        createProgram(vector_texture_programs, "sample_texture", g_context);
 
     std::vector<Program> programs;
     for (int i = 0; i < texture_vector.size(); i++) {
@@ -262,6 +259,46 @@ struct Vector_Texture : public Texture {
   }
 
   const std::vector<Texture *> texture_vector;
+};
+
+// Texture 'container'
+struct Texture_List {
+  Texture_List() {}
+
+  // Appends a geometry to the list and returns its index
+  int push(Texture *t) {
+    int index = (int)texList.size();
+
+    texList.push_back(t);
+
+    return index;
+  }
+
+  // Create int buffer
+  Buffer createBuffer(Context &g_context) {
+    std::vector<Program> prog_list;
+    for (int i = 0; i < texList.size(); i++)
+      prog_list.push_back(texList[i]->assignTo(g_context));
+
+    Buffer buffer =
+        g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID);
+    buffer->setSize(prog_list.size());
+
+    callableProgramId<int(int)> *data =
+        static_cast<callableProgramId<int(int)> *>(buffer->map());
+
+    for (int i = 0; i < prog_list.size(); i++)
+      data[i] = callableProgramId<int(int)>(prog_list[i]->getId());
+
+    buffer->unmap();
+
+    return buffer;
+  }
+
+  // returns the element of index 'i'
+  Texture *operator[](const int i) { return texList[i]; }
+
+  std::vector<Texture *> texList;
 };
 
 #endif

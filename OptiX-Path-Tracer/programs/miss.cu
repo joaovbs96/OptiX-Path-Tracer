@@ -35,7 +35,8 @@ RT_PROGRAM void dark() {
   prd.scatterEvent = rayMissed;
 }
 
-rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
 
 RT_PROGRAM void box() {
   prd.attenuation = make_float3(0.f);
@@ -49,7 +50,7 @@ RT_PROGRAM void img_background() {
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
   float v = 0.5f * (1.f + sinf(phi));
 
-  prd.attenuation = sample_texture[0](u, v, make_float3(0.f));
+  prd.attenuation = sample_texture(u, v, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }
 
@@ -81,6 +82,6 @@ RT_PROGRAM void environmental_mapping() {
     v = phi / PI_F;
   }
 
-  prd.attenuation = 2.f * sample_texture[0](u, v, make_float3(0.f));
+  prd.attenuation = 2.f * sample_texture(u, v, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }

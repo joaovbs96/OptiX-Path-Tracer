@@ -1,7 +1,7 @@
 #ifndef MATERIALSH
 #define MATERIALSH
 
-#include "../programs/vec.hpp"
+#include "host_common.hpp"
 #include "textures.hpp"
 
 /*! The precompiled programs code (in ptx) that our cmake script
@@ -9,286 +9,193 @@ will precompile (to ptx) and link to the generated executable */
 extern "C" const char metal_programs[];
 extern "C" const char dielectric_programs[];
 extern "C" const char lambertian_programs[];
-extern "C" const char diffuse_light_programs[];
+extern "C" const char light_programs[];
 extern "C" const char isotropic_programs[];
 extern "C" const char hit_program[];
 
+// TODO: add a material parameters in the PDFParams and PRD of the device side
+// -> this info will be needed in the BRDF programs
+
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
-struct Materials {
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const = 0;
+struct Host_Material {
+  Host_Material(MaterialType matType) : matType(matType) {}
+
+  virtual Material assignTo(Context &g_context) const = 0;
+
+  virtual MaterialType type() const { return matType; }
 
   virtual Program getAnyHitProgram(Context &g_context) const {
-    Program any = g_context->createProgramFromPTXString(hit_program, "any_hit");
-    any["is_light"]->setInt(false);
-    return any;
+    return createProgram(hit_program, "any_hit", g_context);
   }
+
+  static Program getBRDFProgram(Context &g_context, const MaterialType matType,
+                                const std::string name) {
+    switch (matType) {
+      case Lambertian_Material:
+        return createProgram(lambertian_programs, name, g_context);
+
+      case Metal_Material:
+        return createProgram(metal_programs, name, g_context);
+
+      case Diffuse_Light_Material:
+        return createProgram(light_programs, name, g_context);
+
+      case Isotropic_Material:
+        return createProgram(isotropic_programs, name, g_context);
+
+      case Dielectric_Material:
+        return createProgram(dielectric_programs, name, g_context);
+
+      default:
+        throw "Invalid Material";
+    }
+  }
+
+  const MaterialType matType;
 };
 
-/*! host side code for the "Lambertian" material; the actual
-  sampling code is in the programs/lambertian.cu closest hit program */
-struct Lambertian : public Materials {
-  Lambertian(const Texture *t) : texture(t) {}
+struct Lambertian : public Host_Material {
+  Lambertian(const Texture *t)
+      : texture(t), Host_Material(Lambertian_Material) {}
 
-  /* create optix material, and assign mat and mat values to geom instance */
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const override {
+  virtual Material assignTo(Context &g_context) const override {
     Material mat = g_context->createMaterial();
 
-    Program closest = g_context->createProgramFromPTXString(lambertian_programs,
-                                                            "closest_hit");
-    mat->setClosestHitProgram(0, closest);
+    Program hit = createProgram(lambertian_programs, "closest_hit", g_context);
+    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+
+    mat->setClosestHitProgram(0, hit);
     mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
 
-    gi->setMaterial(index, mat);
-    return texture->assignTo(g_context);
-  }
-
-  static Program Sample(Context &g_context) {
-    return g_context->createProgramFromPTXString(lambertian_programs,
-                                                 "BRDF_Sample");
-  }
-
-  static Program PDF(Context &g_context) {
-    return g_context->createProgramFromPTXString(lambertian_programs,
-                                                 "BRDF_PDF");
-  }
-
-  static Program Evaluate(Context &g_context) {
-    return g_context->createProgramFromPTXString(lambertian_programs,
-                                                 "BRDF_Evaluate");
+    return mat;
   }
 
   const Texture *texture;
 };
 
-/*! host side code for the "Metal" material; the actual
-  sampling code is in the programs/metal.cu closest hit program */
-struct Metal : public Materials {
-  Metal(const Texture *t, const float fuzz) : texture(t), fuzz(fuzz) {}
+struct Metal : public Host_Material {
+  Metal(const Texture *t, const float fuzz)
+      : texture(t), fuzz(fuzz), Host_Material(Metal_Material) {}
 
-  /* create optix material, and assign mat and mat values to geom instance */
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const override {
+  virtual Material assignTo(Context &g_context) const override {
     Material mat = g_context->createMaterial();
 
-    mat->setClosestHitProgram(0, g_context->createProgramFromPTXString(
-                                     metal_programs, "closest_hit"));
+    Program hit = createProgram(metal_programs, "closest_hit", g_context);
+    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    hit["fuzz"]->setFloat(fuzz);
+
+    mat->setClosestHitProgram(0, hit);
     mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
 
-    gi->setMaterial(index, mat);
-
-    // fuzz <= 1
-    if (fuzz < 1.f)
-      gi["fuzz"]->setFloat(fuzz);
-    else
-      gi["fuzz"]->setFloat(1.f);
-
-    return texture->assignTo(g_context);
-  }
-
-  static Program Sample(Context &g_context) {
-    return g_context->createProgramFromPTXString(metal_programs, "BRDF_Sample");
-  }
-
-  static Program PDF(Context &g_context) {
-    return g_context->createProgramFromPTXString(metal_programs, "BRDF_PDF");
-  }
-
-  static Program Evaluate(Context &g_context) {
-    return g_context->createProgramFromPTXString(metal_programs,
-                                                 "BRDF_Evaluate");
+    return mat;
   }
 
   const Texture *texture;
   const float fuzz;
 };
 
-/*! host side code for the "Dielectric" material; the actual
-  sampling code is in the programs/dielectric.cu closest hit program */
-struct Dielectric : public Materials {
-  Dielectric(const Texture *t, const float ref_idx, const float d = 0.f)
-      : texture(t), ref_idx(ref_idx), density(d) {}
+struct Dielectric : public Host_Material {
+  Dielectric(const Texture *baseTex, const Texture *volTex, const float ref_idx,
+             const float density = 0.f)
+      : baseTex(baseTex),
+        volTex(volTex),
+        ref_idx(ref_idx),
+        density(density),
+        Host_Material(Dielectric_Material) {}
 
-  /* create optix material, and assign mat and mat values to geom instance */
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const override {
+  virtual Material assignTo(Context &g_context) const override {
     Material mat = g_context->createMaterial();
 
-    mat->setClosestHitProgram(0, g_context->createProgramFromPTXString(
-                                     dielectric_programs, "closest_hit"));
+    Program hit = createProgram(dielectric_programs, "closest_hit", g_context);
+    hit["base_texture"]->setProgramId(baseTex->assignTo(g_context));
+    hit["volume_texture"]->setProgramId(volTex->assignTo(g_context));
+    hit["ref_idx"]->setFloat(ref_idx);
+    hit["density"]->setFloat(density);
+
+    mat->setClosestHitProgram(0, hit);
     mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
 
-    gi->setMaterial(index, mat);
-    gi["ref_idx"]->setFloat(ref_idx);
-    gi["density"]->setFloat(density);
-
-    return texture->assignTo(g_context);
+    return mat;
   }
 
-  static Program Sample(Context &g_context) {
-    return g_context->createProgramFromPTXString(dielectric_programs,
-                                                 "BRDF_Sample");
-  }
-
-  static Program PDF(Context &g_context) {
-    return g_context->createProgramFromPTXString(dielectric_programs,
-                                                 "BRDF_PDF");
-  }
-
-  static Program Evaluate(Context &g_context) {
-    return g_context->createProgramFromPTXString(dielectric_programs,
-                                                 "BRDF_Evaluate");
-  }
-
-  const Texture *texture;
+  const Texture *baseTex, *volTex;
   const float ref_idx;
   const float density;
 };
 
-/*! host side code for the "Diffuse Light" material; the actual
-  sampling code is in the programs/diffuse_light.cu closest hit program */
-struct Diffuse_Light : public Materials {
-  Diffuse_Light(const Texture *t) : texture(t) {}
+struct Diffuse_Light : public Host_Material {
+  Diffuse_Light(const Texture *t)
+      : texture(t), Host_Material(Diffuse_Light_Material) {}
 
-  /* create optix material, and assign mat and mat values to geom instance */
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const override {
+  virtual Material assignTo(Context &g_context) const override {
     Material mat = g_context->createMaterial();
 
-    mat->setClosestHitProgram(0, g_context->createProgramFromPTXString(
-                                     diffuse_light_programs, "closest_hit"));
-    Program any = g_context->createProgramFromPTXString(hit_program, "any_hit");
-    any["is_light"]->setInt(true);
-    mat->setAnyHitProgram(1, any);
+    Program hit = createProgram(light_programs, "closest_hit", g_context);
+    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
 
-    gi->setMaterial(index, mat);
-    return texture->assignTo(g_context);  // return texture callable program to
-                                          // add to a buffer outside
-  }
-
-  static Program Sample(Context &g_context) {
-    return g_context->createProgramFromPTXString(diffuse_light_programs,
-                                                 "BRDF_Sample");
-  }
-
-  static Program PDF(Context &g_context) {
-    return g_context->createProgramFromPTXString(diffuse_light_programs,
-                                                 "BRDF_PDF");
-  }
-
-  static Program Evaluate(Context &g_context) {
-    return g_context->createProgramFromPTXString(diffuse_light_programs,
-                                                 "BRDF_Evaluate");
-  }
-
-  const Texture *texture;
-};
-
-/*! host side code for the "Diffuse Light" material; the actual
-  sampling code is in the programs/diffuse_light.cu closest hit program */
-struct Isotropic : public Materials {
-  Isotropic(const Texture *t) : texture(t) {}
-
-  /* create optix material, and assign mat and mat values to geom instance */
-  virtual Program assignTo(GeometryInstance gi, Context &g_context,
-                           int index = 0) const override {
-    Material mat = g_context->createMaterial();
-
-    mat->setClosestHitProgram(0, g_context->createProgramFromPTXString(
-                                     isotropic_programs, "closest_hit"));
+    mat->setClosestHitProgram(0, hit);
     mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
 
-    gi->setMaterial(index, mat);
-    return texture->assignTo(g_context);
+    return mat;
   }
 
-  static Program Sample(Context &g_context) {
-    return g_context->createProgramFromPTXString(isotropic_programs,
-                                                 "BRDF_Sample");
-  }
-
-  static Program PDF(Context &g_context) {
-    return g_context->createProgramFromPTXString(isotropic_programs,
-                                                 "BRDF_PDF");
-  }
-
-  static Program Evaluate(Context &g_context) {
-    return g_context->createProgramFromPTXString(isotropic_programs,
-                                                 "BRDF_Evaluate");
+  virtual Program getAnyHitProgram(Context &g_context) const override {
+    Program any = createProgram(hit_program, "any_hit", g_context);
+    any["is_light"]->setInt(true);
+    return any;
   }
 
   const Texture *texture;
 };
 
-Program getPDFProgram(MaterialType type, Context &g_context) {
-  switch (type) {
-    case Lambertian_Material:
-      return Lambertian::PDF(g_context);
+struct Isotropic : public Host_Material {
+  Isotropic(const Texture *t) : texture(t), Host_Material(Isotropic_Material) {}
 
-    case Metal_Material:
-      return Metal::PDF(g_context);
+  virtual Material assignTo(Context &g_context) const override {
+    Material mat = g_context->createMaterial();
 
-    case Dielectric_Material:
-      return Dielectric::PDF(g_context);
+    Program hit = createProgram(isotropic_programs, "closest_hit", g_context);
+    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
 
-    case Diffuse_Light_Material:
-      return Diffuse_Light::PDF(g_context);
+    mat->setClosestHitProgram(0, hit);
+    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
 
-    case Isotropic_Material:
-      return Isotropic::PDF(g_context);
+    return mat;
+  }
 
-    default:
-      printf("Error: Material doesn't exist.\n");
-      exit(0);
-  };
-}
+  const Texture *texture;
+};
 
 Program getSampleProgram(MaterialType type, Context &g_context) {
-  switch (type) {
-    case Lambertian_Material:
-      return Lambertian::Sample(g_context);
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Sample");
+}
 
-    case Metal_Material:
-      return Metal::Sample(g_context);
-
-    case Dielectric_Material:
-      return Dielectric::Sample(g_context);
-
-    case Diffuse_Light_Material:
-      return Diffuse_Light::Sample(g_context);
-
-    case Isotropic_Material:
-      return Isotropic::Sample(g_context);
-
-    default:
-      printf("Error: Material doesn't exist.\n");
-      exit(0);
-  };
+Program getPDFProgram(MaterialType type, Context &g_context) {
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_PDF");
 }
 
 Program getEvaluateProgram(MaterialType type, Context &g_context) {
-  switch (type) {
-    case Lambertian_Material:
-      return Lambertian::Evaluate(g_context);
-
-    case Metal_Material:
-      return Metal::Evaluate(g_context);
-
-    case Dielectric_Material:
-      return Dielectric::Evaluate(g_context);
-
-    case Diffuse_Light_Material:
-      return Diffuse_Light::Evaluate(g_context);
-
-    case Isotropic_Material:
-      return Isotropic::Evaluate(g_context);
-
-    default:
-      printf("Error: Material doesn't exist.\n");
-      exit(0);
-  };
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Evaluate");
 }
+
+// Material 'container'
+struct Material_List {
+  Material_List() {}
+
+  // Appends a geometry to the list and returns its index
+  int push(Host_Material *m) {
+    int index = (int)matList.size();
+
+    matList.push_back(m);
+
+    return index;
+  }
+
+  // returns the element of index 'i'
+  Host_Material *operator[](const int i) { return matList[i]; }
+
+  std::vector<Host_Material *> matList;
+};
 
 #endif

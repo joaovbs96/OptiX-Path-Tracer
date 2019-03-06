@@ -11,19 +11,24 @@ rtDeclareVariable(rtObject, world, , );
 // program
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
-// and finally - that particular material's parameters
-rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
 
 RT_PROGRAM void closest_hit() {
+  // get material params from buffer
+  int texIndex = hit_rec.index;
+
+  // assign material params to prd
   prd.matType = Diffuse_Light_Material;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotCancelled;
 
+  // assign hit params to prd
   prd.normal = hit_rec.normal;
 
-  int index = hit_rec.index;
+  // assign emission prd
   if (dot(prd.normal, ray.direction) < 0.f)
-    prd.emitted = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
+    prd.emitted = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
   else
     prd.emitted = make_float3(0.f);
 }

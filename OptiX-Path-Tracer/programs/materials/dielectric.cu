@@ -33,7 +33,10 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 // Beer-Lambert Law Theory:
 // http://www.pci.tu-bs.de/aggericke/PC4/Kap_I/beerslaw.htm
 
-rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  base_texture, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  volume_texture, , );
 rtDeclareVariable(float, ref_idx, , );
 rtDeclareVariable(float, density, , );
 
@@ -47,7 +50,8 @@ RT_PROGRAM void closest_hit() {
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
-  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
+  prd.attenuation = base_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
+  float3 volumeColor = volume_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
 
   float3 outward_normal;
   float ni_over_nt;
@@ -59,14 +63,12 @@ RT_PROGRAM void closest_hit() {
     ni_over_nt = ref_idx;
     cosine = ref_idx * cosine / length(ray.direction);
 
-    // since it was from inside the object, compute the attenuation according to
-    // the Beer-Lambert Law
-    float3 volumeColor = make_float3(0.65f, 0.05f, 0.05f);
-    // TODO: change return of material.assignTo to std::vector<Program>
+    // since it was from inside the object, compute the attenuation according
+    // to the Beer-Lambert Law
     // TODO: check glass.cu from optix advanced samples
     if (density > 0.f) {
-      float3 absordb = hit_rec.distance * density * volumeColor;
-      prd.attenuation = prd.attenuation * absordb;
+      float3 absorb = hit_rec.distance * density * volumeColor;
+      prd.attenuation *= expf(-absorb);
     }
   }
 
@@ -90,10 +92,10 @@ RT_PROGRAM void closest_hit() {
     prd.direction = refracted;
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams& pdf, uint& seed) {
   return make_float3(1.f);
 }
 
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams& pdf) { return 1.f; }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams& pdf) { return 1.f; }

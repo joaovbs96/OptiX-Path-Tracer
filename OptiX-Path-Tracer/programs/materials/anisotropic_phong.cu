@@ -13,13 +13,10 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 /*! and finally - that particular material's parameters */
-rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
-rtDeclareVariable(float, nv, , );
-rtDeclareVariable(float, nu, , );
-// TODO: change the index of the geometry to the index of its first texture of
-// the buffer. In a similar manner, make the buffer available to the whole
-// context, not just the material, so other materials may be able to use
-// the buffer as well.
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
+rtBuffer<MaterialParameters> Material_Parameters;
+// TODO: update material parameters
 
 // Paper & Tech Report
 // https://www.cs.utah.edu/~shirley/papers/jgtbrdf.pdf
@@ -42,7 +39,7 @@ RT_PROGRAM void closest_hit() {
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
-  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
+  prd.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
@@ -67,6 +64,7 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
   return lerp(CosHemispherePdf(wi), pdf_wh / (4.0f * Dot(wo, wh)), 0.5f);
 }
 
+// TODO: add material params index to the PDFParams to have access to them here
 RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
   // origin -> k1
   // direction -> k2

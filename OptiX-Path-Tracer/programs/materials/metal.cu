@@ -28,23 +28,28 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 // and finally - that particular material's parameters
-rtBuffer<rtCallableProgramId<float3(float, float, float3)> > sample_texture;
-rtDeclareVariable(float, fuzz, , );  // how 'rough'/fuzzy the metal is
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
+rtDeclareVariable(float, fuzz, , );
 
 RT_PROGRAM void closest_hit() {
+  // get material params from buffer
+  int texIndex = hit_rec.index;
+
+  // assign material params to prd
   prd.matType = Metal_Material;
   prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
 
+  prd.emitted = make_float3(0.f);
+  prd.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
+
+  // assign hit params to prd
   prd.origin = hit_rec.p;
   prd.normal = hit_rec.normal;
 
   float3 reflected = reflect(unit_vector(ray.direction), prd.normal);
   prd.direction = reflected + fuzz * random_in_unit_sphere(prd.seed);
-
-  int index = hit_rec.index;
-  prd.emitted = make_float3(0.f);
-  prd.attenuation = sample_texture[index](hit_rec.u, hit_rec.v, hit_rec.p);
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {

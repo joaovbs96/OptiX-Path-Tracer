@@ -58,6 +58,6 @@ RT_FUNCTION float turb(float3 p) {
   return fabs(accum);
 }
 
-RT_CALLABLE_PROGRAM float3 sample_texture(float u, float v, float3 p) {
+RT_CALLABLE_PROGRAM float3 sample_texture(float u, float v, float3 p, int i) {
   return make_float3(1.f) * 0.5 * (1 + sin(scale * p.x + 5 * turb(scale * p)));
 }
