@@ -24,20 +24,6 @@
 
 Context g_context;
 
-Buffer createFrameBuffer(int Nx, int Ny) {
-  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
-  pixelBuffer->setFormat(RT_FORMAT_FLOAT4);
-  pixelBuffer->setSize(Nx, Ny);
-  return pixelBuffer;
-}
-
-Buffer createDisplayBuffer(int Nx, int Ny) {
-  Buffer pixelBuffer = g_context->createBuffer(RT_BUFFER_OUTPUT);
-  pixelBuffer->setFormat(RT_FORMAT_UNSIGNED_BYTE4);
-  pixelBuffer->setSize(Nx, Ny);
-  return pixelBuffer;
-}
-
 float renderFrame(int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
@@ -53,24 +39,22 @@ float renderFrame(int Nx, int Ny) {
   return (float)time;
 }
 
-int Optix_Config(ImGuiParams &state) {
-  // Set RTX global attribute
-  // Should be done before creating the context
+int Optix_Config(GUIState &state) {
+  // Set RTX global attribute(should be done before creating the context)
   const int RTX = true;
   RTresult res;
   res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX);
-  if (res != RT_SUCCESS)
-    printf("Error setting RTX mode. \n");
-  else
-    printf("OptiX RTX execution mode is %s.\n", (RTX) ? "on" : "off");
+  if (res != RT_SUCCESS) {
+    printf("Error: RTX mode is required for this application, exiting. \n");
+    system("PAUSE");
+    exit(0);
+  } else
+    printf("OptiX RTX execution mode is ON.\n");
 
   // Create an OptiX context
   g_context = Context::create();
-  g_context->setRayTypeCount(2);
-  g_context->setStackSize(5000);
-  // it's recommended to keep it under 10k, it's per core
-  // TODO: investigate new OptiX stack size API(sets number of recursions
-  // rather than bytes)
+  g_context->setRayTypeCount(2);  // radiance rays and shadow rays
+  g_context->setMaxTraceDepth(5);
 
   // Set number of samples
   g_context["samples"]->setInt(state.samples);
@@ -102,15 +86,14 @@ int Optix_Config(ImGuiParams &state) {
   }
 
   // Create an output buffer
-  state.accBuffer = createFrameBuffer(state.w, state.h);
+  state.accBuffer = createFrameBuffer(state.w, state.h, g_context);
   g_context["acc_buffer"]->set(state.accBuffer);
 
   // Create a display buffer
-  state.displayBuffer = createDisplayBuffer(state.w, state.h);
+  state.displayBuffer = createDisplayBuffer(state.w, state.h, g_context);
   g_context["display_buffer"]->set(state.displayBuffer);
 
-  // Validate settings
-  g_context->validate();
+  printf("OptiX Building Time: %.2f\n", renderFrame(0, 0));
 
   return 0;
 }
@@ -141,8 +124,10 @@ int main(int ac, char **av) {
 
   const GLFWvidmode *mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
 
-  int window_width = mode->width;
-  int window_height = mode->height;
+  //  int window_width = mode->width;
+  //  int window_height = mode->height;
+  int window_width = 1280;
+  int window_height = 720;
 
   // Create window with graphics context
   GLFWwindow *window = glfwCreateWindow(window_width, window_height,
@@ -181,7 +166,8 @@ int main(int ac, char **av) {
 
   float Hf, Wf;
   uchar1 *imageData;
-  ImGuiParams state;
+  GUIState state;
+  float renderTime = 0.f;
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
 
@@ -209,24 +195,21 @@ int main(int ac, char **av) {
               "Placeholder Model\0Lucy\0Chinese Dragon\0Spheres\0Sponza\0");
 
         ImGui::Checkbox("Progressive Render", &state.progressive);
-        if (state.progressive)
-          ImGui::InputInt("Render Update Frequency", &state.frequency, 1, 100);
 
         ImGui::Checkbox("Save as HDR", &state.HDR);
         ImGui::InputText("Filename", &state.fileName, 0, 0, 0);
-        // TODO: add the filename extension automatically(.PNG or .HDR)
+        ImGui::SameLine();
+        ShowHelpMarker("File extension will be added automatically.");
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
           if (state.w > 0 && state.h > 0 && state.samples > 0) {
+            // Convifugre OptiX context & scene
             Optix_Config(state);
 
             // start flag
             state.start = true;
             state.currentSample = 0;
-
-            // if frequency is 0, update every frame
-            state.frequency = state.frequency == 0 ? 1 : state.frequency;
 
             // set proportional image size
             if ((window_width < state.w) || (window_height < state.h)) {
@@ -268,16 +251,14 @@ int main(int ac, char **av) {
 
         // render a frame
         g_context["frame"]->setInt(state.currentSample);
-        renderFrame(state.w, state.h);
+        renderTime += renderFrame(state.w, state.h);
 
-        /*// only update the texture array every [frequency] rendered frames
-        if (state.progressive && (state.currentSample % state.frequency == 0))
-        {*/
         // copy stream buffer content
-        uchar1 *copyArr = (uchar1 *)state.displayBuffer->map();
-        memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
-        state.displayBuffer->unmap();
-        //}
+        if (state.progressive) {
+          uchar1 *copyArr = (uchar1 *)state.displayBuffer->map();
+          memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
+          state.displayBuffer->unmap();
+        }
 
         ImGui::Text("sample = %d / %d", state.currentSample, state.samples);
         ImGui::Text("Progress: ");
@@ -286,8 +267,6 @@ int main(int ac, char **av) {
 
         // check if cancel button has been pressed
         if (ImGui::Button("Cancel")) {
-          state.open = false;
-
           // cancel progressive rendering
           g_context->stopProgressive();
 
@@ -356,6 +335,8 @@ int main(int ac, char **av) {
           else
             Save_SB_PNG(state, state.accBuffer);
 
+          printf("Render time: %.2fs\n", renderTime);
+
           state.done = true;
         }
 
@@ -363,10 +344,10 @@ int main(int ac, char **av) {
     if (state.done) break;
   }
 
-  // TODO: properly destroy OptiX context
-
   glfwDestroyWindow(window);
   glfwTerminate();
+
+  system("PAUSE");
 
   return 0;
 }

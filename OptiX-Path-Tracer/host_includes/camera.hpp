@@ -1,11 +1,7 @@
 #ifndef CAMERAH
 #define CAMERAH
 
-#define _USE_MATH_DEFINES 1
-#include <math.h>
-#include <cmath>
-
-#include "../programs/vec.hpp"
+#include "host_common.hpp"
 
 struct Camera {
   Camera() {}
@@ -20,7 +16,7 @@ struct Camera {
     time0 = t0;
     time1 = t1;
 
-    float theta = vfov * ((float)M_PI) / 180.f;
+    float theta = vfov * PI_F / 180.f;
     float half_height = tan(theta / 2.f);
     float half_width = aspect * half_height;
 

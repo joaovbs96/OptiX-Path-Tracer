@@ -80,9 +80,12 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   PDFParams pdfParams(prd.origin, prd.normal);
   Light_Sample[index](pdfParams, prd.seed);
   float lightPDF = Light_PDF[index](pdfParams);
-  // TODO: check if pdf value is 0
 
-  if (dot(pdfParams.direction, pdfParams.normal) <= 0.f)
+  // if PDF is 0, return
+  if (!lightPDF) return make_float3(0.f);
+
+  // if hit is in the 'wrong side' of the light, return
+  if (dot(pdfParams.direction, pdfParams.normal) >= 0.f)
     return make_float3(0.f);
 
   // Check if light is occluded
@@ -99,7 +102,10 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample BRDF
   float matPDF = BRDF_PDF[prd.matType](pdfParams);
-  // TODO: check if pdf value is 0
+
+  // if PDF is 0, return
+  if (!matPDF) return make_float3(0.f);
+
   float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
 
   // MIS
@@ -137,7 +143,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
   // iterative version of recursion, up to depth 50
   for (int depth = 0; depth < 50; depth++) {
-    rtTrace(world, ray, prd);
+    rtTrace(world, ray, prd);  // Trace a new ray
 
     // Only sample direct light if last bounce wasn't specular
     if (!prd.isSpecular) radiance += prd.throughput * Direct_Light(prd);
@@ -162,20 +168,25 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
       // do importance sample
       else {
+        // Sample BRDF
         PDFParams pdfParams(prd.origin, prd.normal);
         BRDF_Sample[prd.matType](pdfParams, seed);
         float pdfValue = BRDF_PDF[prd.matType](pdfParams);
-        // TODO: check if pdf value is 0
+        // TODO: what if PDF is zero here?
 
+        // Evaluate BRDF
         prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
 
+        // Accumulate color
         prd.throughput *= prd.attenuation / pdfValue;
         prd.throughput = Clamp(prd.throughput);
 
+        // Update ray origin and direction
         prd.origin = pdfParams.origin;
         prd.direction = pdfParams.direction;
       }
 
+      // generate a new ray
       ray = make_Ray(/* origin   : */ prd.origin,
                      /* direction: */ prd.direction,
                      /* ray type : */ 0,

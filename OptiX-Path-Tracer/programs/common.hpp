@@ -33,6 +33,26 @@ typedef enum {
 
 #define NUMBER_OF_MATERIALS 5
 
+// TODO: what would be a better way to do this? We use this data type to keep
+// the programs generic. We can keep the PRD minimal this way. Is it faster or
+// slower? Alternatives?
+struct MaterialParameters {
+  int textureIndex;
+  MaterialType type;
+  // All materials need at least a texture, so this 'index' is used by all.
+  // The ones who need extra textures can specify in their sub-structs.
+
+  struct {
+    float fuzz;
+  } metal;
+
+  struct {
+    float ref_idx;
+    float density;
+    int volumeTexIndex;
+  } dielectric;
+};
+
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;
 

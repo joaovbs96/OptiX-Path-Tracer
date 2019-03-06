@@ -4,7 +4,7 @@ rtDeclareVariable(int, size, , );
 
 rtBuffer<rtCallableProgramId<float(PDFParams&)>> values;
 
-RT_CALLABLE_PROGRAM float buffer_value(PDFParams& in) {
+RT_CALLABLE_PROGRAM float value(PDFParams& in) {
   float sum = 0.f;
 
   for (int i = 0; i < size; i++) sum += values[i](in);
@@ -15,7 +15,7 @@ RT_CALLABLE_PROGRAM float buffer_value(PDFParams& in) {
 
 rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> generators;
 
-RT_CALLABLE_PROGRAM float3 buffer_generate(PDFParams& in, uint& seed) {
+RT_CALLABLE_PROGRAM float3 generate(PDFParams& in, uint& seed) {
   int index = int(rnd(seed) * size);
   return generators[index](in, seed);
 }

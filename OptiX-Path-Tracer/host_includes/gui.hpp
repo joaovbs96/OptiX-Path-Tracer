@@ -1,14 +1,7 @@
 #ifndef GUIH
 #define GUIH
 
-// dear imgui: standalone example application for GLFW + OpenGL 3, using
-// programmable pipeline If you are new to dear imgui, see examples/README.txt
-// and documentation at the top of imgui.cpp. (GLFW is a cross-platform general
-// purpose library for handling windows, inputs, OpenGL/Vulkan graphics context
-// creation, etc.)
-
-#include <stdio.h>
-#include <string>
+#include "host_common.hpp"
 #include "scenes.hpp"
 
 #include "../lib/imgui/imgui.h"
@@ -16,11 +9,6 @@
 #include "../lib/imgui/imgui_impl_opengl3.h"
 #include "../lib/imgui/imgui_stdlib.h"
 
-// About OpenGL function loaders: modern OpenGL doesn't have a standard header
-// file and requires individual function pointers to be loaded manually. Helper
-// libraries are often used for this purpose! Here we are supporting a few
-// common ones: gl3w, glew, glad. You may use another loader/header of your
-// choice (glext, glLoadGen, etc.), or chose to manually implement your own.
 #if defined(IMGUI_IMPL_OPENGL_LOADER_GL3W)
 #include <GL/gl3w.h>  // Initialize with gl3wInit()
 #elif defined(IMGUI_IMPL_OPENGL_LOADER_GLEW)
@@ -34,12 +22,6 @@
 // Include glfw3.h after our OpenGL definitions
 #include <GLFW/glfw3.h>
 
-// [Win32] Our example includes a copy of glfw3.lib pre-compiled with VS2010 to
-// maximize ease of testing and compatibility with old VS compilers. To link
-// with VS2010-era libraries, VS2015+ requires linking with
-// legacy_stdio_definitions.lib, which we do using this pragma. Your own project
-// should not be affected, as you are likely to link with a newer binary of GLFW
-// that is adequate for your version of Visual Studio.
 #if defined(_MSC_VER) && (_MSC_VER >= 1900) && \
     !defined(IMGUI_DISABLE_WIN32_FUNCTIONS)
 #pragma comment(lib, "legacy_stdio_definitions")
@@ -49,32 +31,41 @@ static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-struct ImGuiParams {
-  ImGuiParams()
+struct GUIState {
+  GUIState()
       : w(0),
         h(0),
         samples(0),
         scene(0),
         model(0),
-        frequency(0),
+        frequency(1),
         currentSample(0),
-        renderedFrame(false),
         progressive(false),
-        open(true),
         done(false),
         start(false),
-        hasStarted(false),
         HDR(false),
-        fileName("out.png") {}
+        fileName("out") {}
   int w, h, samples, scene, currentSample, model, frequency;
-  bool renderedFrame, open, done, start, close, hasStarted, HDR, progressive;
+  bool done, start, HDR, progressive;
   Buffer accBuffer, displayBuffer;
   std::string fileName;
 
   int dimensions() { return w * h; }
 };
 
-int Save_SB_PNG(ImGuiParams &state, Buffer &buffer) {
+// Helper to display a little (?) mark which shows a tooltip when hovered.
+static void ShowHelpMarker(const char *desc) {
+  ImGui::TextDisabled("(?)");
+  if (ImGui::IsItemHovered()) {
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextUnformatted(desc);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+  }
+}
+
+int Save_SB_PNG(GUIState &state, Buffer &buffer) {
   unsigned char *arr;
   arr = (unsigned char *)malloc(state.dimensions() * 3 * sizeof(unsigned char));
 
@@ -101,11 +92,12 @@ int Save_SB_PNG(ImGuiParams &state, Buffer &buffer) {
   buffer->unmap();
 
   // output png file
+  state.fileName += ".png";
   const char *name = (char *)state.fileName.c_str();
   return stbi_write_png(name, state.w, state.h, 3, arr, 0);
 }
 
-int Save_SB_HDR(ImGuiParams &state, Buffer &buffer) {
+int Save_SB_HDR(GUIState &state, Buffer &buffer) {
   float *arr;
   arr = (float *)malloc(state.dimensions() * 3 * sizeof(float));
 
@@ -133,6 +125,7 @@ int Save_SB_HDR(ImGuiParams &state, Buffer &buffer) {
   buffer->unmap();
 
   // output hdr file
+  state.fileName += ".hdr";
   const char *name = (char *)state.fileName.c_str();
   return stbi_write_hdr(name, state.w, state.h, 3, arr);
 

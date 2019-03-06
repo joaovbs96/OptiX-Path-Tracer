@@ -1,9 +1,7 @@
 #ifndef PDFSH
 #define PDFSH
 
-#include <random>
-
-#include "../programs/vec.hpp"
+#include "host_common.hpp"
 #include "programs.hpp"
 
 /*! The precompiled programs code (in ptx) that our cmake script
@@ -22,20 +20,14 @@ struct PDF {
 struct Cosine_PDF : public PDF {
   Cosine_PDF() {}
 
+  // create PDF generate callable program
   virtual Program createSample(Context &g_context) const override {
-    // create PDF generate callable program
-    Program generate = g_context->createProgramFromPTXString(
-        cosine_pdf_programs, "cosine_generate");
-
-    return generate;
+    return createProgram(cosine_pdf_programs, "generate", g_context);
   }
 
+  // create PDF value callable program
   virtual Program createPDF(Context &g_context) const override {
-    // create PDF value callable program
-    Program value = g_context->createProgramFromPTXString(cosine_pdf_programs,
-                                                          "cosine_value");
-
-    return value;
+    return createProgram(cosine_pdf_programs, "value", g_context);
   }
 };
 
@@ -50,16 +42,15 @@ struct Rectangle_PDF : public PDF {
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                         "rect_x_generate");
+        generate = createProgram(rect_pdf_programs, "generate_x", g_context);
         break;
+
       case Y_AXIS:
-        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                         "rect_y_generate");
+        generate = createProgram(rect_pdf_programs, "generate_y", g_context);
         break;
+
       case Z_AXIS:
-        generate = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                         "rect_x_generate");
+        generate = createProgram(rect_pdf_programs, "generate_z", g_context);
         break;
     }
 
@@ -79,16 +70,15 @@ struct Rectangle_PDF : public PDF {
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        value = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                      "rect_x_value");
+        value = createProgram(rect_pdf_programs, "value_x", g_context);
         break;
+
       case Y_AXIS:
-        value = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                      "rect_y_value");
+        value = createProgram(rect_pdf_programs, "value_y", g_context);
         break;
+
       case Z_AXIS:
-        value = g_context->createProgramFromPTXString(rect_pdf_programs,
-                                                      "rect_z_value");
+        value = createProgram(rect_pdf_programs, "value_z", g_context);
         break;
     }
 
@@ -111,8 +101,8 @@ struct Mixture_PDF : public PDF {
 
   virtual Program createSample(Context &g_context) const override {
     // create PDF generate callable program
-    Program generate = g_context->createProgramFromPTXString(
-        mixture_pdf_programs, "mixture_generate");
+    Program generate =
+        createProgram(mixture_pdf_programs, "generate", g_context);
 
     // assign children callable programs to mixture program
     generate["p0_generate"]->setProgramId(p0->createSample(g_context));
@@ -123,8 +113,7 @@ struct Mixture_PDF : public PDF {
 
   virtual Program createPDF(Context &g_context) const override {
     // create PDF value callable program
-    Program value = g_context->createProgramFromPTXString(mixture_pdf_programs,
-                                                          "mixture_value");
+    Program value = createProgram(mixture_pdf_programs, "value", g_context);
 
     // assign children callable programs to mixture program
     value["p0_value"]->setProgramId(p0->createPDF(g_context));
@@ -142,8 +131,8 @@ struct Sphere_PDF : public PDF {
 
   virtual Program createSample(Context &g_context) const override {
     // create PDF generate callable program
-    Program generate = g_context->createProgramFromPTXString(
-        sphere_pdf_programs, "sphere_generate");
+    Program generate =
+        createProgram(sphere_pdf_programs, "generate", g_context);
 
     // Basic parameters
     generate["center"]->setFloat(center.x, center.y, center.z);
@@ -154,8 +143,7 @@ struct Sphere_PDF : public PDF {
 
   virtual Program createPDF(Context &g_context) const override {
     // create PDF value callable program
-    Program value = g_context->createProgramFromPTXString(sphere_pdf_programs,
-                                                          "sphere_value");
+    Program value = createProgram(sphere_pdf_programs, "value", g_context);
 
     // Basic parameters
     value["center"]->setFloat(center.x, center.y, center.z);
@@ -173,8 +161,8 @@ struct Buffer_PDF : public PDF {
 
   virtual Program createSample(Context &g_context) const override {
     // create PDF generate callable program
-    Program generate = g_context->createProgramFromPTXString(
-        buffer_pdf_programs, "buffer_generate");
+    Program generate =
+        createProgram(buffer_pdf_programs, "generate", g_context);
 
     // create buffer of callable programs
     std::vector<Program> buffer;
@@ -189,8 +177,7 @@ struct Buffer_PDF : public PDF {
 
   virtual Program createPDF(Context &g_context) const override {
     // create PDF value callable program
-    Program value = g_context->createProgramFromPTXString(buffer_pdf_programs,
-                                                          "buffer_value");
+    Program value = createProgram(buffer_pdf_programs, "value", g_context);
 
     // create buffer of callable programs
     std::vector<Program> buffer;

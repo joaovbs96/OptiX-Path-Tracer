@@ -29,7 +29,7 @@ cuda_compile_and_embed( aarect_programs programs/hitables/aarect.cu )
 cuda_compile_and_embed( checker_texture_programs programs/textures/checkered_texture.cu )
 cuda_compile_and_embed( noise_texture_programs programs/textures/noise_texture.cu )
 cuda_compile_and_embed( image_texture_programs programs/textures/image_texture.cu )
-cuda_compile_and_embed( diffuse_light_programs programs/materials/diffuse_light.cu )
+cuda_compile_and_embed( light_programs programs/materials/diffuse_light.cu )
 cuda_compile_and_embed( box_programs programs/hitables/box.cu )
 cuda_compile_and_embed( isotropic_programs programs/materials/isotropic.cu )
 cuda_compile_and_embed( volume_sphere_programs programs/hitables/volume_sphere.cu )
@@ -40,10 +40,10 @@ cuda_compile_and_embed( mixture_pdf_programs programs/pdfs/mixture_pdf.cu )
 cuda_compile_and_embed( sphere_pdf_programs programs/pdfs/sphere_pdf.cu )
 cuda_compile_and_embed( buffer_pdf_programs programs/pdfs/buffer_pdf.cu )
 cuda_compile_and_embed( triangle_programs programs/hitables/triangle.cu )
-cuda_compile_and_embed( mesh_programs programs/hitables/mesh.cu )
 cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
 cuda_compile_and_embed( hit_program programs/hit.cu )
 cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
+cuda_compile_and_embed( geom_tri_programs programs/hitables/geometry_triangles.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -66,9 +66,10 @@ target_link_libraries(ImGuiLibs opengl32)
 target_link_libraries(ImGuiLibs "${PROJECT_SOURCE_DIR}/OptiX-Path-Tracer/lib/imgui/glfw/lib-vc2010-64/glfw3.lib")
 
 # this is doing the same using OptiX
-add_executable(OptiX-Path-Tracer
+add_executable(OptiX_Path_Tracer
   # C++ host code
   lib/HDRloader.cpp
+  lib/tiny_obj_loader.cc
   main.cpp
   # embedded cuda kernels:
   ${exception_program}
@@ -84,7 +85,7 @@ add_executable(OptiX-Path-Tracer
   ${checker_texture_programs}
   ${noise_texture_programs}
   ${image_texture_programs}
-  ${diffuse_light_programs}
+  ${light_programs}
   ${box_programs}
   ${isotropic_programs}
   ${volume_sphere_programs}
@@ -95,12 +96,12 @@ add_executable(OptiX-Path-Tracer
   ${sphere_pdf_programs}
   ${buffer_pdf_programs}
   ${triangle_programs}
-  ${mesh_programs}
   ${plane_programs}
   ${hit_program}
   ${vector_texture_programs}
+  ${geom_tri_programs}
   )
 
-target_link_libraries(OptiX-Path-Tracer ImGuiLibs)
+target_link_libraries(OptiX_Path_Tracer ImGuiLibs)
 
-target_link_libraries(OptiX-Path-Tracer ${optix_LIBRARY})
+target_link_libraries(OptiX_Path_Tracer ${optix_LIBRARY})

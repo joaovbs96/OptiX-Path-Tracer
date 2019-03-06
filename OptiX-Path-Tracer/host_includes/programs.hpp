@@ -1,8 +1,8 @@
 #ifndef PROGRAMSH
 #define PROGRAMSH
 
-#include "../programs/vec.hpp"
 #include "buffers.hpp"
+#include "host_common.hpp"
 #include "pdfs.hpp"
 #include "textures.hpp"
 
@@ -14,20 +14,10 @@ extern "C" const char miss_program[];
 extern "C" const char exception_program[];
 extern "C" const char raygen_program[];
 
-struct BRDF_Sampler {
-  std::vector<Program> sample, pdf, eval;
-};
-
-struct Light_Sampler {
-  std::vector<Program> sample, pdf;
-  std::vector<float3> emissions;
-};
-
 void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
                              Light_Sampler &lights) {
   // create raygen program of the scene
-  Program raygen =
-      g_context->createProgramFromPTXString(raygen_program, "renderPixel");
+  Program raygen = createProgram(raygen_program, "renderPixel", g_context);
 
   // BRDF callable program buffers
   raygen["BRDF_Sample"]->setBuffer(createBuffer(brdf.sample, g_context));
@@ -45,55 +35,46 @@ void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
   g_context->setRayGenerationProgram(/*program ID:*/ 0, raygen);
 }
 
-typedef enum { SKY, DARK, BOX, IMG, HDR } Miss_Programs;
+typedef enum { SKY, DARK, IMG, HDR } Miss_Programs;
 
 void setMissProgram(Context &g_context, Miss_Programs id,
                     std::string fileName = "file", bool isSpherical = true) {
   Program missProgram;
 
   if (id == SKY)  // Blue sky pattern
-    missProgram = g_context->createProgramFromPTXString(miss_program, "sky");
+    missProgram = createProgram(miss_program, "sky", g_context);
 
   else if (id == DARK)  // Dark/Black background
-    missProgram = g_context->createProgramFromPTXString(miss_program, "dark");
-
-  else if (id == BOX)  // TODO: implement a proper skybox
-    missProgram = g_context->createProgramFromPTXString(miss_program, "box");
+    missProgram = createProgram(miss_program, "dark", g_context);
 
   else if (id == IMG) {  // rgbe image background
-    missProgram =
-        g_context->createProgramFromPTXString(miss_program, "img_background");
+    missProgram = createProgram(miss_program, "img_background", g_context);
 
     Image_Texture img(fileName);
-    Program texture = img.assignTo(g_context);
-    missProgram["sample_texture"]->setBuffer(createBuffer(texture, g_context));
+    missProgram["sample_texture"]->setProgramId(img.assignTo(g_context));
   }
 
   else if (id == HDR) {
-    missProgram = g_context->createProgramFromPTXString(
-        miss_program, "environmental_mapping");
+    missProgram =
+        createProgram(miss_program, "environmental_mapping", g_context);
 
     HDR_Texture img(fileName);
-    Program texture = img.assignTo(g_context);
-    missProgram["sample_texture"]->setBuffer(createBuffer(texture, g_context));
+    missProgram["sample_texture"]->setProgramId(img.assignTo(g_context));
 
     // set to false if it's a cylindrical map
     missProgram["isSpherical"]->setInt(isSpherical);
   }
 
-  else {
-    printf("Error: Miss Program unknown or not yet implemented.\n");
-    system("PAUSE");
-    exit(0);
-  }
+  else
+    throw "Miss Program unknown or not yet implemented";
 
   g_context->setMissProgram(/*program ID:*/ 0, missProgram);
 }
 
 void setExceptionProgram(Context &g_context) {
-  Program exceptionProgram = g_context->createProgramFromPTXString(
-      exception_program, "exception_program");
-  g_context->setExceptionProgram(/*program ID:*/ 0, exceptionProgram);
+  Program program =
+      createProgram(exception_program, "exception_program", g_context);
+  g_context->setExceptionProgram(/*program ID:*/ 0, program);
 }
 
 #endif

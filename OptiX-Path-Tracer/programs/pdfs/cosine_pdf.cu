@@ -1,6 +1,6 @@
 #include "pdf.cuh"
 
-RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, uint &seed) {
+RT_CALLABLE_PROGRAM float3 generate(PDFParams &pdf, uint &seed) {
   float3 temp;
 
   cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
@@ -13,7 +13,7 @@ RT_CALLABLE_PROGRAM float3 cosine_generate(PDFParams &pdf, uint &seed) {
   return pdf.direction;
 }
 
-RT_CALLABLE_PROGRAM float cosine_value(PDFParams &pdf) {
+RT_CALLABLE_PROGRAM float value(PDFParams &pdf) {
   float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
   if (cosine > 0.f)

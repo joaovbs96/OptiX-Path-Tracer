@@ -46,7 +46,7 @@ RT_FUNCTION bool hit_boundary(PDFParams &in, const float tmin, const float tmax,
 }
 
 // Value program
-RT_CALLABLE_PROGRAM float sphere_value(PDFParams &in) {
+RT_CALLABLE_PROGRAM float value(PDFParams &in) {
   PDFRecord rec;
 
   if (hit_boundary(in, 0.001f, FLT_MAX, rec)) {
@@ -74,7 +74,7 @@ RT_FUNCTION float3 random_to_sphere(float distance_squared, uint &seed) {
 }
 
 // Generate program: generate directions relative to the sphere
-RT_CALLABLE_PROGRAM float3 sphere_generate(PDFParams &in, uint &seed) {
+RT_CALLABLE_PROGRAM float3 generate(PDFParams &in, uint &seed) {
   float3 direction = center - in.origin;
   float distance_squared = squared_length(direction);
 

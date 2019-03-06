@@ -60,7 +60,7 @@ RT_FUNCTION bool hit_z(PDFParams &in, const float tmin, const float tmax,
 }
 
 // Value Programs
-RT_CALLABLE_PROGRAM float rect_x_value(PDFParams &in) {
+RT_CALLABLE_PROGRAM float value_x(PDFParams &in) {
   PDFRecord rec;
 
   if (hit_x(in, 0.001f, FLT_MAX, rec)) {
@@ -73,7 +73,7 @@ RT_CALLABLE_PROGRAM float rect_x_value(PDFParams &in) {
     return 0.f;
 }
 
-RT_CALLABLE_PROGRAM float rect_y_value(PDFParams &in) {
+RT_CALLABLE_PROGRAM float value_y(PDFParams &in) {
   PDFRecord rec;
 
   if (hit_y(in, 0.001f, FLT_MAX, rec)) {
@@ -86,7 +86,7 @@ RT_CALLABLE_PROGRAM float rect_y_value(PDFParams &in) {
     return 0.f;
 }
 
-RT_CALLABLE_PROGRAM float rect_z_value(PDFParams &in) {
+RT_CALLABLE_PROGRAM float value_z(PDFParams &in) {
   PDFRecord rec;
 
   if (hit_z(in, 0.001f, FLT_MAX, rec)) {
@@ -100,21 +100,21 @@ RT_CALLABLE_PROGRAM float rect_z_value(PDFParams &in) {
 }
 
 // Generate Programs
-RT_CALLABLE_PROGRAM float3 rect_x_generate(PDFParams &in, uint &seed) {
+RT_CALLABLE_PROGRAM float3 generate_x(PDFParams &in, uint &seed) {
   float3 random_point =
       make_float3(k, a0 + rnd(seed) * (a1 - a0), b0 + rnd(seed) * (b1 - b0));
   in.direction = random_point - in.origin;
   return in.direction;
 }
 
-RT_CALLABLE_PROGRAM float3 rect_y_generate(PDFParams &in, uint &seed) {
+RT_CALLABLE_PROGRAM float3 generate_y(PDFParams &in, uint &seed) {
   float3 random_point =
       make_float3(a0 + rnd(seed) * (a1 - a0), k, b0 + rnd(seed) * (b1 - b0));
   in.direction = random_point - in.origin;
   return in.direction;
 }
 
-RT_CALLABLE_PROGRAM float3 rect_z_generate(PDFParams &in, uint &seed) {
+RT_CALLABLE_PROGRAM float3 generate_z(PDFParams &in, uint &seed) {
   float3 random_point =
       make_float3(a0 + rnd(seed) * (a1 - a0), b0 + rnd(seed) * (b1 - b0), k);
   in.direction = random_point - in.origin;

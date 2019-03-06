@@ -6,3 +6,7 @@ CMakeFiles/
 *.code-workspace
 CMakeCache.txt
 *.ini
+*.mtl
+*.obj
+*.zip
+*.rar

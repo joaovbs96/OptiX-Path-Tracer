@@ -14,7 +14,7 @@
 # limitations under the License.                                           #
 # ======================================================================== #
 
-project(OptiX-Path-Tracer)
+project(OptiX_Path_Tracer)
 
 cmake_minimum_required(VERSION 2.8)
 
