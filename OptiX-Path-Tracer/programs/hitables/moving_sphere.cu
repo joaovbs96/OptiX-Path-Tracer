@@ -14,7 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "../prd.cuh"
+#include "hitables.cuh"
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center0, , );
@@ -53,6 +53,10 @@ RT_FUNCTION float3 center(float time) {
 // stable variants out there, but for now let's stick with the one that
 // the reference code used.
 RT_PROGRAM void hit_sphere(int pid) {
+  float pt;
+  // int2 idx = Get_Motion_Data(motionRange, curTime, vertex_buffers.size(),
+  // pt);
+
   const float3 oc = ray.origin - center(prd.time);
 
   // if the ray hits the sphere, the following equation has two roots:

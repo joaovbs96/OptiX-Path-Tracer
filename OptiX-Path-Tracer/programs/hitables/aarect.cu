@@ -1,4 +1,4 @@
-#include "../prd.cuh"
+#include "hitables.cuh"
 
 // the parameters that describe each individual rectangle
 rtDeclareVariable(float, a0, , );

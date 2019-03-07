@@ -26,7 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../prd.cuh"
+#include "hitables.cuh"
 
 // Original code from the OptiX 6.0 SDK samples
 

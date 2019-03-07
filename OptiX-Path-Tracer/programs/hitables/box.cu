@@ -1,4 +1,4 @@
-#include "../prd.cuh"
+#include "hitables.cuh"
 
 // references:
 // AABB intersection function from Peter Shirley's "The Next Week"
