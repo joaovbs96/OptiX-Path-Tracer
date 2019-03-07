@@ -50,10 +50,9 @@ RT_PROGRAM void closest_hit() {
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float3 temp;
-
   cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
 
-  Onb uvw(pdf.normal);
+  Onb uvw((pdf.normal));
   uvw.inverse_transform(temp);
 
   pdf.direction = temp;
@@ -62,17 +61,13 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 }
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
+  return dot(unit_vector(pdf.direction), unit_vector(pdf.normal)) / (2 * PI_F);
+}
+
+RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
   float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
   if (cosine < 0.f) cosine = 0.f;
 
-  return cosine / PI_F;
-}
-
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
-  float cosine = dot(unit_vector(pdf.normal), unit_vector(pdf.direction));
-
-  if (cosine < 0.f) cosine = 0.f;
-
-  return cosine / PI_F;
+  return cosine / (2 * PI_F);
 }

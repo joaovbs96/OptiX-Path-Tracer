@@ -35,6 +35,7 @@ struct GUIState {
   GUIState()
       : w(0),
         h(0),
+        pW(0),
         samples(0),
         scene(0),
         model(0),
@@ -45,7 +46,7 @@ struct GUIState {
         start(false),
         HDR(false),
         fileName("out") {}
-  int w, h, samples, scene, currentSample, model, frequency;
+  int w, h, pW, samples, scene, currentSample, model, frequency;
   bool done, start, HDR, progressive;
   Buffer accBuffer, displayBuffer;
   std::string fileName;
@@ -78,7 +79,7 @@ int Save_SB_PNG(GUIState &state, Buffer &buffer) {
 
       // average & gamma correct output color
       float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
-      col = sqrt(col / float(state.samples));
+      col = sqrt(col / float(state.samples * state.pW * state.pW * 2));
 
       int r = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
       int g = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
@@ -110,7 +111,7 @@ int Save_SB_HDR(GUIState &state, Buffer &buffer) {
 
       // average output color
       float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
-      col = col / float(state.samples);
+      col = col / float(state.samples * state.pW * state.pW * 2);
 
       // Apply Reinhard style tone mapping
       // Eq (3) from 'Photographic Tone Reproduction for Digital Images'

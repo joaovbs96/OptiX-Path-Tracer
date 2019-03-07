@@ -59,6 +59,9 @@ int Optix_Config(GUIState &state) {
   // Set number of samples
   g_context["samples"]->setInt(state.samples);
 
+  // Set pixel dimension
+  g_context["pixelDim"]->setInt(state.pW, state.pW);
+
   // Create and set the world
   switch (state.scene) {
     case 0:  // Peter Shirley's "In One Weekend" scene
@@ -184,6 +187,7 @@ int main(int ac, char **av) {
         ImGui::InputInt("width", &state.w, 1, 100);
         ImGui::InputInt("height", &state.h, 1, 100);
         ImGui::InputInt("samples", &state.samples, 1, 100);
+        ImGui::InputInt("pixel dimension", &state.pW, 1, 100);
         ImGui::Combo("scene", &state.scene,
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "
                      "Week(Moving Spheres)\0Cornell Box\0Peter Shirley's The "
@@ -194,7 +198,7 @@ int main(int ac, char **av) {
               "model selection", &state.model,
               "Placeholder Model\0Lucy\0Chinese Dragon\0Spheres\0Sponza\0");
 
-        ImGui::Checkbox("Progressive Render", &state.progressive);
+        ImGui::Checkbox("Show Progress", &state.progressive);
 
         ImGui::Checkbox("Save as HDR", &state.HDR);
         ImGui::InputText("Filename", &state.fileName, 0, 0, 0);

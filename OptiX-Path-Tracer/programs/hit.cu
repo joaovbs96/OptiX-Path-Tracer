@@ -13,10 +13,13 @@ rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData_Shadow, prd_shadow, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
 
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
+
 rtDeclareVariable(int, is_light, , );
 
 RT_PROGRAM void any_hit() {
-  if (is_light)
+  // only iluminate if ray is against the light normal
+  if (is_light && dot(hit_rec.normal, ray.direction) < 0.f)
     prd_shadow.inShadow = false;
   else
     prd_shadow.inShadow = true;

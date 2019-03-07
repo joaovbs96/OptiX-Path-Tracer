@@ -47,7 +47,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
   cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
 
-  Onb uvw(pdf.normal);
+  Onb uvw((pdf.normal));
   uvw.inverse_transform(temp);
 
   pdf.direction = temp;
