@@ -15,8 +15,6 @@
 // - materials have one or more textures assigned to them
 // - For GeometryTriangles, as it's done in the Mesh class, make use of the
 // Vector_Texture.
-// - Note that each Triangle mesh should have its own, separate texture program
-// buffer. This makes it easier to give an index to its program.
 
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
@@ -34,7 +32,9 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, SKY);
+  setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+                 make_float3(1.f),               // white
+                 make_float3(0.5f, 0.7f, 1.f));  // light blue
   setExceptionProgram(g_context);
 
   // Set acceleration structure
@@ -135,7 +135,7 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, COLOR);
+  setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
   // Set acceleration structure
@@ -242,7 +242,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, COLOR, "", false, make_float3(0.f));
+  setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
   // create scene group
@@ -270,7 +270,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int glassMt =
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
-  int whiteSmokeMt = mats.push(new Isotropic(textures[pWhiteTx]));
+
   int testMt = mats.push(new Lambertian(textures[testTx]));
 
   // create geometries/hitables
@@ -352,7 +352,7 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, COLOR);
+  setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
   Group group = g_context->createGroup();
@@ -492,6 +492,10 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   int alumTx = txts.push(new Constant_Texture(0.8f, 0.85f, 0.88f));
   int noiseTx = txts.push(new Noise_Texture(0.01f));
   int blueTx = txts.push(new Constant_Texture(0.2f, 0.4f, 0.9f));
+  int perlinXTx = txts.push(new Noise_Texture(0.01f, X_AXIS));
+  int perlinYTx = txts.push(new Noise_Texture(0.01f, Y_AXIS));
+  int perlinZTx = txts.push(new Noise_Texture(0.01f, Z_AXIS));
+  int pWhiteTx = txts.push(new Constant_Texture(1.f));
 
   // create materials
   Material_List mats;
@@ -502,6 +506,12 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
       mats.push(new Dielectric(txts[noiseTx], txts[blueTx], 1.5f, 0.f));
   int blueMt =
       mats.push(new Dielectric(txts[alumTx], txts[whiteTx], 1.5f, 0.f));
+  int normalMt = mats.push(new Normal_Shader());
+  int shadingMt = mats.push(new Normal_Shader(true));
+  int perlinXMt = mats.push(new Lambertian(txts[perlinXTx]));
+  int perlinYMt = mats.push(new Lambertian(txts[perlinYTx]));
+  int perlinZMt = mats.push(new Lambertian(txts[perlinZTx]));
+  int whiteIso = mats.push(new Isotropic(txts[blueTx]));
 
   // create geometries
   Hitable_List list;
@@ -510,22 +520,22 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   if (modelID == 0) {
     Mesh_List meshList;
 
-    Mesh model1 = Mesh("nam.obj", "../../../assets/nam/");
+    Mesh model1 = Mesh("nam.obj", "../../../assets/nam/", mats[shadingMt]);
     model1.scale(make_float3(1400.f));
     model1.rotate(180.f, Y_AXIS);
-    model1.translate(make_float3(-100.f, -600.f, 0.f));
+    model1.translate(make_float3(-300.f, -600.f, 0.f));
     meshList.push(&model1);
 
-    /*Mesh model2 = Mesh("nam.obj", "../../../assets/nam/", mats[alumMt]);
+    Mesh model2 = Mesh("nam.obj", "../../../assets/nam/", mats[normalMt]);
     model2.scale(make_float3(1400.f));
     model2.rotate(180.f, Y_AXIS);
-    model2.translate(make_float3(100.f, -600.f, 0.f));
-    meshList.push(&model2);*/
+    model2.translate(make_float3(300.f, -600.f, 0.f));
+    meshList.push(&model2);
 
     meshList.addChildren(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[whiteMt]));
+                         mats[normalMt]));
   }
 
   // lucy
@@ -553,10 +563,11 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // spheres
   else if (modelID == 3) {
-    list.push(
-        new Sphere(make_float3(300.f, -300.f, 300.f), 300.f, mats[glassMt]));
-    list.push(
-        new Sphere(make_float3(-300.f, -300.f, 150.f), 300.f, mats[blueMt]));
+    /*list.push(
+        new Sphere(make_float3(-350.f, -300.f, 0.f), 150.f, mats[perlinXMt]));*/
+    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, mats[whiteIso]));
+    /*list.push(
+        new Sphere(make_float3(350.f, -300.f, 0.f), 150.f, mats[perlinZMt]));*/
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          mats[whiteMt]));
   }

@@ -28,10 +28,11 @@ typedef enum {
   Diffuse_Light_Material,
   Metal_Material,
   Dielectric_Material,
-  Isotropic_Material
+  Isotropic_Material,
+  Normal_Material
 } MaterialType;
 
-#define NUMBER_OF_MATERIALS 5
+#define NUMBER_OF_MATERIALS 6
 
 // TODO: what would be a better way to do this? We use this data type to keep
 // the programs generic. We can keep the PRD minimal this way. Is it faster or

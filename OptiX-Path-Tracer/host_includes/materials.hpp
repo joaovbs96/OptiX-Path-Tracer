@@ -11,10 +11,11 @@ extern "C" const char dielectric_programs[];
 extern "C" const char lambertian_programs[];
 extern "C" const char light_programs[];
 extern "C" const char isotropic_programs[];
+extern "C" const char normal_programs[];
 extern "C" const char hit_program[];
 
 // TODO: add a material parameters in the PDFParams and PRD of the device side
-// -> this info will be needed in the BRDF programs
+// -> this info will be needed in some of the BRDF programs
 
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */
@@ -46,6 +47,9 @@ struct Host_Material {
 
       case Dielectric_Material:
         return createProgram(dielectric_programs, name, g_context);
+
+      case Normal_Material:
+        return createProgram(normal_programs, name, g_context);
 
       default:
         throw "Invalid Material";
@@ -165,6 +169,25 @@ struct Isotropic : public Host_Material {
   }
 
   const Texture *texture;
+};
+
+struct Normal_Shader : public Host_Material {
+  Normal_Shader(const bool useShadingNormal = false)
+      : useShadingNormal(useShadingNormal), Host_Material(Normal_Material) {}
+
+  virtual Material assignTo(Context &g_context) const override {
+    Material mat = g_context->createMaterial();
+
+    Program hit = createProgram(normal_programs, "closest_hit", g_context);
+    hit["useShadingNormal"]->setInt(useShadingNormal);
+
+    mat->setClosestHitProgram(0, hit);
+    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
+
+    return mat;
+  }
+
+  const bool useShadingNormal;
 };
 
 Program getSampleProgram(MaterialType type, Context &g_context) {

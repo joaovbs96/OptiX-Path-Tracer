@@ -44,6 +44,7 @@ cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
 cuda_compile_and_embed( hit_program programs/hit.cu )
 cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
 cuda_compile_and_embed( geom_tri_programs programs/hitables/geometry_triangles.cu )
+cuda_compile_and_embed( normal_programs programs/materials/normal_shader.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -100,6 +101,7 @@ add_executable(OptiX_Path_Tracer
   ${hit_program}
   ${vector_texture_programs}
   ${geom_tri_programs}
+  ${normal_programs}
   )
 
 target_link_libraries(OptiX_Path_Tracer ImGuiLibs)

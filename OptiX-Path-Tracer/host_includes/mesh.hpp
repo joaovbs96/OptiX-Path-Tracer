@@ -140,7 +140,7 @@ struct Mesh {
           mat_vector.push_back(0);  // uses the material given as parameter
       }
 
-      // TODO: check normal smoothing in the example
+      // TODO: check normal smoothing in the tinyobj example
     }
 
     // Create a GeometryTriangles object
