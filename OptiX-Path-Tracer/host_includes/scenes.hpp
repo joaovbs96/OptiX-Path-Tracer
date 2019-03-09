@@ -135,7 +135,7 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, DARK);
+  setMissProgram(g_context, COLOR);
   setExceptionProgram(g_context);
 
   // Set acceleration structure
@@ -242,7 +242,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, DARK);
+  setMissProgram(g_context, COLOR, "", false, make_float3(0.f));
   setExceptionProgram(g_context);
 
   // create scene group
@@ -258,6 +258,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int alumTx = textures.push(new Constant_Texture(0.8f, 0.85f, 0.88f));
   int pWhiteTx = textures.push(new Constant_Texture(1.f));
   int pBlackTx = textures.push(new Constant_Texture(0.f));
+  int testTx = textures.push(new Constant_Texture(0.5f));
 
   // create materials
   Material_List mats;
@@ -270,6 +271,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int whiteSmokeMt = mats.push(new Isotropic(textures[pWhiteTx]));
+  int testMt = mats.push(new Lambertian(textures[testTx]));
 
   // create geometries/hitables
   Hitable_List list;
@@ -285,8 +287,11 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  // list.push(new Sphere(make_float3(190.f, 90.f, 190.f), 90.f,
-  // mats[glassMt]));
+  /*list.push(
+      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f,
+     mats[testMt]));*/
+  /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
+                       mats[testMt]));*/
 
   // Aluminium box
   Box box =
@@ -347,7 +352,7 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, DARK);
+  setMissProgram(g_context, COLOR);
   setExceptionProgram(g_context);
 
   Group group = g_context->createGroup();
@@ -511,11 +516,11 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model1.translate(make_float3(-100.f, -600.f, 0.f));
     meshList.push(&model1);
 
-    Mesh model2 = Mesh("nam.obj", "../../../assets/nam/", mats[alumMt]);
+    /*Mesh model2 = Mesh("nam.obj", "../../../assets/nam/", mats[alumMt]);
     model2.scale(make_float3(1400.f));
     model2.rotate(180.f, Y_AXIS);
     model2.translate(make_float3(100.f, -600.f, 0.f));
-    meshList.push(&model2);
+    meshList.push(&model2);*/
 
     meshList.addChildren(group, g_context);
 

@@ -52,7 +52,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float3 temp;
   cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
 
-  Onb uvw((pdf.normal));
+  Onb uvw(pdf.normal);
   uvw.inverse_transform(temp);
 
   pdf.direction = temp;
@@ -61,13 +61,19 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 }
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  return dot(unit_vector(pdf.direction), unit_vector(pdf.normal)) / (2 * PI_F);
+  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
+
+  if (cosine < 0.f)
+    return 0.f;
+  else
+    return cosine / PI_F;
 }
 
 RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
   float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
-  if (cosine < 0.f) cosine = 0.f;
-
-  return cosine / (2 * PI_F);
+  if (cosine < 0.f)
+    return 0.f;
+  else
+    return cosine / PI_F;
 }

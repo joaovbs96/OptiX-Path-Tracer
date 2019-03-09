@@ -106,7 +106,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   if (lightPDF != 0.f && !isNull(emission)) {
     float matPDF = BRDF_PDF[prd.matType](pdfParams);
     float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
-    if (lightPDF != 0.f && !isNull(emission)) {
+    if (matPDF != 0.f && !isNull(matValue)) {
       float weight = PowerHeuristic(1, lightPDF, 1, matPDF);
       directLight += matValue * emission * weight / lightPDF;
     }
@@ -120,7 +120,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
     lightPDF = Light_PDF[index](pdfParams);
 
     // we didn't hit anything, ignore BRDF sample
-    if (!lightPDF) return directLight;
+    if (!lightPDF || isNull(emission)) return directLight;
 
     float weight = PowerHeuristic(1, matPDF, 1, lightPDF);
     directLight += matValue * emission * weight / matPDF;
@@ -128,6 +128,8 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   return directLight;
 }
+
+// TODO: cleanup changes, refactor code, add light index to the diffuse lights
 
 struct Camera {
   static RT_FUNCTION Ray generateRay(float s, float t, uint& seed) {
@@ -152,8 +154,9 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
   prd.throughput = make_float3(1.f);
   float3 radiance = make_float3(0.f);
+  bool previousHitSpecular = false;
 
-  // iterative version of recursion, up to depth 50
+  // iterative version of recursion
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
 
@@ -164,13 +167,16 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     // return attenuation set by miss shader
     if (prd.scatterEvent == rayMissed) {
       radiance += prd.throughput * prd.attenuation;
-      break;
+      return radiance;
     }
 
-    // ray hit a light, return emission
+    // ray hit a light, return radiance
     else if (prd.scatterEvent == rayGotCancelled) {
-      radiance += prd.throughput * prd.emitted;
-      break;
+      // Take care not to double dip
+      if (depth == 0 || previousHitSpecular)
+        radiance += prd.throughput * prd.emitted;
+
+      return radiance;
     }
 
     // ray is still alive, and got properly bounced
@@ -180,15 +186,16 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         prd.throughput *= prd.attenuation;
 
       else {
+        // importance sample BRDF
         PDFParams pdfParams(prd.origin, prd.normal);
         BRDF_Sample[prd.matType](pdfParams, seed);
-        float pdfValue = BRDF_PDF[prd.matType](pdfParams);
+        float matPDF = BRDF_PDF[prd.matType](pdfParams);
 
         // Evaluate BRDF
         prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
 
         // Accumulate color
-        prd.throughput *= prd.attenuation / pdfValue;
+        prd.throughput *= prd.attenuation / matPDF;
 
         // Update ray origin and direction
         prd.origin = pdfParams.origin;
@@ -201,6 +208,9 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
                      /* ray type : */ 0,
                      /* tmin     : */ 1e-3f,
                      /* tmax     : */ RT_DEFAULT_MAX);
+
+      // update variable with previous ray hit
+      previousHitSpecular = prd.isSpecular;
     }
 
     // Russian Roulette Path Termination
@@ -214,7 +224,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   }
 
   // recursion did not terminate - cancel it
-  return radiance;
+  return make_float3(0.f);
 }
 
 // Remove NaN values
@@ -227,46 +237,6 @@ RT_FUNCTION float3 de_nan(const float3& c) {
   return temp;
 }
 
-/*RT_FUNCTION uchar4 make_Color(float4 col, int2 pixelDim) {
-  float3 temp = make_float3(col.x, col.y, col.z) / (2 * (frame + 1));
-  temp = sqrt(temp / (pixelDim.x * pixelDim.y));
-
-  int r = int(255.99 * Clamp(temp.x, 0.f, 1.f));  // R
-  int g = int(255.99 * Clamp(temp.y, 0.f, 1.f));  // G
-  int b = int(255.99 * Clamp(temp.z, 0.f, 1.f));  // B
-  int a = int(255.99 * Clamp(1.f, 0.f, 1.f));     // A
-
-  return make_uchar4(r, g, b, a);
-}
-
-RT_PROGRAM void renderPixel() {
-  // get RNG seed
-  uint seed = tea<16>(launchDim.x * pixelID.y + pixelID.x, frame + 1);
-
-  // initialize acc buffer if needed
-  uint2 index = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
-  if (frame == 0) acc_buffer[index] = make_float4(0.f);
-
-  // stratification: run once for each strata
-  for (int i = 0; i < pixelDim.x; i++) {
-    for (int j = 0; j < pixelDim.y; j++) {
-      // Subpixel jitter: send the ray through a different position inside the
-      // pixel each time, to provide antialiasing.
-      float u = float(pixelID.x + ((i + rnd(seed)) / pixelDim.x)) / launchDim.x;
-      float v = float(pixelID.y + ((j + rnd(seed)) / pixelDim.y)) / launchDim.y;
-
-      // trace ray
-      Ray ray = Camera::generateRay(u, v, seed);
-
-      // accumulate color
-      float3 col = de_nan(color(ray, seed));
-      acc_buffer[index] += make_float4(col.x, col.y, col.z, 1.f);
-    }
-  }
-
-  display_buffer[index] = make_Color(acc_buffer[index], pixelDim);
-}*/
-
 RT_FUNCTION uchar4 make_Color(float4 col) {
   float3 temp = sqrt(make_float3(col.x, col.y, col.z) / (frame + 1));
 
@@ -277,10 +247,6 @@ RT_FUNCTION uchar4 make_Color(float4 col) {
 
   return make_uchar4(r, g, b, a);
 }
-
-// TODO: test rng from cudapt
-// https://
-// github.com/straaljager/GPU-path-tracing-tutorial-1/blob/master/smallptCUDA.cu
 
 RT_PROGRAM void renderPixel() {
   // get RNG seed

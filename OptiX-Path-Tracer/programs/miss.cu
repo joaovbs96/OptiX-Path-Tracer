@@ -21,6 +21,9 @@ rtDeclareVariable(Ray, ray, rtCurrentRay, );
 // the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
+
 RT_PROGRAM void sky() {
   const float3 unit_direction = normalize(ray.direction);
   const float t = 0.5f * (unit_direction.y + 1.f);
@@ -30,13 +33,10 @@ RT_PROGRAM void sky() {
   prd.scatterEvent = rayMissed;
 }
 
-RT_PROGRAM void dark() {
-  prd.attenuation = make_float3(0.f);
+RT_PROGRAM void color() {
+  prd.attenuation = sample_texture(0, 0, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }
-
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
 
 RT_PROGRAM void box() {
   prd.attenuation = make_float3(0.f);

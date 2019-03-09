@@ -35,19 +35,22 @@ void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
   g_context->setRayGenerationProgram(/*program ID:*/ 0, raygen);
 }
 
-typedef enum { SKY, DARK, IMG, HDR } Miss_Programs;
+typedef enum { SKY, COLOR, IMG, HDR } Miss_Programs;
 
 void setMissProgram(Context &g_context, Miss_Programs id,
-                    std::string fileName = "file", bool isSpherical = true) {
+                    std::string fileName = "file", bool isSpherical = true,
+                    float3 colorValue = make_float3(0.f)) {
   Program missProgram;
 
   if (id == SKY)  // Blue sky pattern
     missProgram = createProgram(miss_program, "sky", g_context);
 
-  else if (id == DARK)  // Dark/Black background
-    missProgram = createProgram(miss_program, "dark", g_context);
+  else if (id == COLOR) {  // constant color background
+    missProgram = createProgram(miss_program, "color", g_context);
 
-  else if (id == IMG) {  // rgbe image background
+    Constant_Texture color(colorValue);
+    missProgram["sample_texture"]->setProgramId(color.assignTo(g_context));
+  } else if (id == IMG) {  // rgbe image background
     missProgram = createProgram(miss_program, "img_background", g_context);
 
     Image_Texture img(fileName);
