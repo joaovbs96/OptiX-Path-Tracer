@@ -81,7 +81,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample Light
   float3 emission = Light_Emissions[index];
-  PDFParams pdfParams(prd.origin, prd.normal);
+  PDFParams pdfParams(prd.origin, prd.shading_normal);  // TODO: confirm
   Light_Sample[index](pdfParams, prd.seed);
   float lightPDF = Light_PDF[index](pdfParams);
 
@@ -160,6 +160,9 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
 
+    // if the material is the normal shader, return its color
+    if (prd.matType == Normal_Material) return prd.attenuation;
+
     // Only sample direct light if last bounce wasn't specular
     if (!prd.isSpecular) radiance += prd.throughput * Direct_Light(prd);
 
@@ -181,13 +184,13 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
     // ray is still alive, and got properly bounced
     else {
-      // ideal specular hit
-      if (prd.isSpecular)
-        prd.throughput *= prd.attenuation;
+      // if it was an ideal specular hit, accumulate color
+      if (prd.isSpecular) prd.throughput *= prd.attenuation;
 
+      // otherwise, do importance sample
       else {
-        // importance sample BRDF
-        PDFParams pdfParams(prd.origin, prd.normal);
+        // Sample BRDF
+        PDFParams pdfParams(prd.origin, prd.shading_normal);
         BRDF_Sample[prd.matType](pdfParams, seed);
         float matPDF = BRDF_PDF[prd.matType](pdfParams);
 
@@ -202,15 +205,15 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         prd.direction = pdfParams.direction;
       }
 
+      // update variable with current ray hit
+      previousHitSpecular = prd.isSpecular;
+
       // generate a new ray
       ray = make_Ray(/* origin   : */ prd.origin,
                      /* direction: */ prd.direction,
                      /* ray type : */ 0,
                      /* tmin     : */ 1e-3f,
                      /* tmax     : */ RT_DEFAULT_MAX);
-
-      // update variable with previous ray hit
-      previousHitSpecular = prd.isSpecular;
     }
 
     // Russian Roulette Path Termination

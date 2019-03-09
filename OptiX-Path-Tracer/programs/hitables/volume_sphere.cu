@@ -88,7 +88,8 @@ RT_PROGRAM void hit_sphere(int pid) {
 
         float3 normal = make_float3(1.f, 0.f, 0.f);
         normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-        hit_rec.normal = normal;
+        hit_rec.geometric_normal = normal;
+        hit_rec.shading_normal = hit_rec.geometric_normal;
 
         hit_rec.u = 0.f;
         hit_rec.v = 0.f;

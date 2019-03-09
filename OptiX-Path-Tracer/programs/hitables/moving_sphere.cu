@@ -88,7 +88,8 @@ RT_PROGRAM void hit_sphere(int pid) {
 
       float3 normal = (hit_rec.p - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.normal = normal;
+      hit_rec.geometric_normal = normal;
+      hit_rec.shading_normal = hit_rec.geometric_normal;
 
       get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
 
@@ -110,7 +111,8 @@ RT_PROGRAM void hit_sphere(int pid) {
 
       float3 normal = (hit_rec.p - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.normal = normal;
+      hit_rec.geometric_normal = normal;
+      hit_rec.shading_normal = hit_rec.geometric_normal;
 
       get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
 

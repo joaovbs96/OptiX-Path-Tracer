@@ -31,6 +31,8 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
                   sample_texture, , );
 
+// TODO: add geometric_normal and shading_normal params to PRD
+
 RT_PROGRAM void closest_hit() {
   // get material params from buffer
   int texIndex = hit_rec.index;
@@ -45,7 +47,8 @@ RT_PROGRAM void closest_hit() {
 
   // assign hit params to prd
   prd.origin = hit_rec.p;
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {

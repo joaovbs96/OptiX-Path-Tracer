@@ -21,7 +21,7 @@ RT_PROGRAM void closest_hit() {
 
   // assign material params to prd
   prd.matType = Isotropic_Material;
-  prd.isSpecular = true;
+  prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 
   prd.emitted = make_float3(0.f);
@@ -29,7 +29,8 @@ RT_PROGRAM void closest_hit() {
 
   // assign hit params to prd
   prd.origin = hit_rec.p;
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {

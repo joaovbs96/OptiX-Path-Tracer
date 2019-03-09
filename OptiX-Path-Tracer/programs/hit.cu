@@ -19,7 +19,7 @@ rtDeclareVariable(int, is_light, , );
 
 RT_PROGRAM void any_hit() {
   // only iluminate if ray is against the light normal
-  if (is_light && dot(hit_rec.normal, ray.direction) < 0.f)
+  if (is_light && dot(hit_rec.shading_normal, ray.direction) < 0.f)
     prd_shadow.inShadow = false;
   else
     prd_shadow.inShadow = true;

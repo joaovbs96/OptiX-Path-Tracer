@@ -33,7 +33,8 @@ struct HitRecord {
   float distance;
   float u;
   float v;
-  float3 normal;
+  float3 geometric_normal;
+  float3 shading_normal;
   float3 p;
 };
 
@@ -48,7 +49,8 @@ struct PerRayData {
   ScatterEvent scatterEvent;
   float3 origin;
   float3 direction;
-  float3 normal;
+  float3 geometric_normal;
+  float3 shading_normal;
   float3 emitted;
   float3 attenuation;
   float3 throughput;

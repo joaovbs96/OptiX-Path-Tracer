@@ -46,9 +46,10 @@ RT_PROGRAM void closest_hit() {
 
   // assign hit params to prd
   prd.origin = hit_rec.p;
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 
-  float3 reflected = reflect(unit_vector(ray.direction), prd.normal);
+  float3 reflected = reflect(unit_vector(ray.direction), prd.shading_normal);
   prd.direction = reflected + fuzz * random_in_unit_sphere(prd.seed);
 }
 

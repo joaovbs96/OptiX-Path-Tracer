@@ -54,7 +54,9 @@ RT_PROGRAM void hit_triangle(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      float3 Ng = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec.geometric_normal = Ng;
+      hit_rec.shading_normal = hit_rec.geometric_normal;
 
       hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
       hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);

@@ -24,10 +24,11 @@ RT_PROGRAM void closest_hit() {
   prd.scatterEvent = rayGotCancelled;
 
   // assign hit params to prd
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 
   // assign emission prd
-  if (dot(prd.normal, ray.direction) < 0.f)
+  if (dot(prd.shading_normal, ray.direction) < 0.f)
     prd.emitted = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
   else
     prd.emitted = make_float3(0.f);

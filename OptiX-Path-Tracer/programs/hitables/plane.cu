@@ -16,8 +16,8 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 // Intersection program by Sam Symons -
-// https://samsymons.com/blog/math-notes-ray-plane-intersection/ Program that
-// performs the ray-triangle intersection
+// https://samsymons.com/blog/math-notes-ray-plane-intersection/
+// Program that performs the ray-plane intersection
 RT_PROGRAM void hit_plane(int pid) {
   float denominator = dot(normal, ray.direction);
 
@@ -34,8 +34,11 @@ RT_PROGRAM void hit_plane(int pid) {
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
 
-      hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      float3 pN = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+      hit_rec.geometric_normal = pN;
+      hit_rec.shading_normal = hit_rec.geometric_normal;
 
+      // TODO: fix
       if (normal.x != 0) {
         hit_rec.u = hit_rec.p.y / 2500.f;
         hit_rec.v = hit_rec.p.z / 2500.f;

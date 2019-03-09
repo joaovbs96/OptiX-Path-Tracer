@@ -51,13 +51,13 @@ RT_PROGRAM void attributes() {
   // Get geometric normal
   float3 e1 = b - a;
   float3 e2 = c - a;
-  float3 Ng = optix::cross(e1, e2);
-  Ng = optix::normalize(Ng);
-
-  float2 barycentrics = rtGetTriangleBarycentrics();
+  float3 normal = cross(e1, e2);
+  normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normalize(normal)));
+  hit_rec.geometric_normal = normal;
 
   // Get hit distance
-  float t = (dot(Ng, ray.origin) + dot(Ng, e1)) / dot(Ng, ray.direction);
+  float t = (dot(normal, ray.origin) + dot(normal, e1));
+  t /= dot(normal, ray.direction);
   hit_rec.distance = t;
 
   // Get triangle hit point
@@ -66,13 +66,15 @@ RT_PROGRAM void attributes() {
   hit_rec.p = hit_point;
 
   // Get shading normal, if possible
+  float2 barycentrics = rtGetTriangleBarycentrics();
   if (normal_buffer.size() == 0) {
-    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, Ng));
+    hit_rec.shading_normal = hit_rec.geometric_normal;
   } else {
-    float3 normal = normal_buffer[v_idx.y] * barycentrics.x;
+    normal = normal_buffer[v_idx.y] * barycentrics.x;
     normal += normal_buffer[v_idx.z] * barycentrics.y;
     normal += normal_buffer[v_idx.x] * (1.0f - barycentrics.x - barycentrics.y);
-    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.shading_normal = normal;
   }
 
   // Get texture coordinate, if possible

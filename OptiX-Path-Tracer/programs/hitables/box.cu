@@ -49,7 +49,8 @@ RT_PROGRAM void hit_box(int pid) {
 
       float3 normal = boxnormal(tmin, t0, t1);
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.normal = normal;
+      hit_rec.geometric_normal = normal;
+      hit_rec.shading_normal = hit_rec.geometric_normal;
 
       hit_rec.index = index;
 
@@ -69,7 +70,8 @@ RT_PROGRAM void hit_box(int pid) {
 
         float3 normal = boxnormal(tmax, t0, t1);
         normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-        hit_rec.normal = normal;
+        hit_rec.geometric_normal = normal;
+        hit_rec.shading_normal = hit_rec.geometric_normal;
 
         hit_rec.index = index;
 

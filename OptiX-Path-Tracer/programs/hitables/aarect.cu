@@ -37,7 +37,9 @@ RT_PROGRAM void hit_rect_X(int pid) {
     // flip normal if needed
     float3 normal = make_float3(1.f, 0.f, 0.f);
     if (flip) normal = -normal;
-    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.geometric_normal = normal;
+    hit_rec.shading_normal = hit_rec.geometric_normal;
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
@@ -66,7 +68,9 @@ RT_PROGRAM void hit_rect_Y(int pid) {
     // flip normal if needed
     float3 normal = make_float3(0.f, 1.f, 0.f);
     if (flip) normal = -normal;
-    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.geometric_normal = normal;
+    hit_rec.shading_normal = hit_rec.geometric_normal;
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);
@@ -95,7 +99,9 @@ RT_PROGRAM void hit_rect_Z(int pid) {
     // flip normal if needed
     float3 normal = make_float3(0.f, 0.f, 1.f);
     if (flip) normal = -normal;
-    hit_rec.normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+    hit_rec.geometric_normal = normal;
+    hit_rec.shading_normal = hit_rec.geometric_normal;
 
     hit_rec.u = (a - a0) / (a1 - a0);
     hit_rec.v = (b - b0) / (b1 - b0);

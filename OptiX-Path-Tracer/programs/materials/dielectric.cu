@@ -46,7 +46,8 @@ RT_PROGRAM void closest_hit() {
   prd.scatterEvent = rayGotBounced;
 
   prd.origin = hit_rec.p;
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
@@ -55,11 +56,11 @@ RT_PROGRAM void closest_hit() {
 
   float3 outward_normal;
   float ni_over_nt;
-  float cosine = dot(ray.direction, prd.normal);
+  float cosine = dot(ray.direction, prd.shading_normal);
 
   if (cosine > 0.f) {
     // from inside the object
-    outward_normal = -1 * prd.normal;
+    outward_normal = -1 * prd.shading_normal;
     ni_over_nt = ref_idx;
     cosine = ref_idx * cosine / length(ray.direction);
 
@@ -73,7 +74,7 @@ RT_PROGRAM void closest_hit() {
   }
 
   else {
-    outward_normal = prd.normal;
+    outward_normal = prd.shading_normal;
     ni_over_nt = 1.f / ref_idx;
     cosine = -cosine / length(ray.direction);
   }
@@ -85,7 +86,7 @@ RT_PROGRAM void closest_hit() {
   } else
     reflect_prob = 1.f;
 
-  float3 reflected = reflect(ray.direction, prd.normal);
+  float3 reflected = reflect(ray.direction, prd.shading_normal);
   if (rnd(prd.seed) < reflect_prob)
     prd.direction = reflected;
   else

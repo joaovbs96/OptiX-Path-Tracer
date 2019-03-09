@@ -35,7 +35,8 @@ RT_PROGRAM void closest_hit() {
   prd.scatterEvent = rayGotBounced;
 
   prd.origin = hit_rec.p;
-  prd.normal = hit_rec.normal;
+  prd.geometric_normal = hit_rec.geometric_normal;
+  prd.shading_normal = hit_rec.shading_normal;
 
   int index = hit_rec.index;
   prd.emitted = make_float3(0.f);
