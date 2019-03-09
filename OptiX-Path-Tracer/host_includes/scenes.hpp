@@ -386,7 +386,6 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   Host_Material* light = new Diffuse_Light(txt[lightTx]);
   list.push(new AARect(113.f, 443.f, 127.f, 432.f, 554.f, true, Y_AXIS, light));
 
-  // TODO: motion blur isn't working anymore, implement the OptiX's one
   // brown sphere
   float3 center = make_float3(400.f, 400.f, 200.f);
   int brownTx = txt.push(new Constant_Texture(0.7f, 0.3f, 0.1f));

@@ -14,8 +14,8 @@ extern "C" const char isotropic_programs[];
 extern "C" const char normal_programs[];
 extern "C" const char hit_program[];
 
-// TODO: add a material parameters in the PDFParams and PRD of the device side
-// -> this info will be needed in some of the BRDF programs
+// TODO: add a material parameter var to the PDFParams and PRD of the device
+// side -> this info will be needed in some of the BRDF programs
 
 /*! abstraction for a material that can create, and parameterize,
   a newly created GI's material and closest hit program */

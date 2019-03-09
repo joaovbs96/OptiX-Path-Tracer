@@ -81,7 +81,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample Light
   float3 emission = Light_Emissions[index];
-  PDFParams pdfParams(prd.origin, prd.shading_normal);  // TODO: confirm
+  PDFParams pdfParams(prd.origin, prd.shading_normal);
   Light_Sample[index](pdfParams, prd.seed);
   float lightPDF = Light_PDF[index](pdfParams);
 
@@ -129,7 +129,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   return directLight;
 }
 
-// TODO: cleanup changes, refactor code, add light index to the diffuse lights
+// TODO: cleanup changes, refactor code
 
 struct Camera {
   static RT_FUNCTION Ray generateRay(float s, float t, uint& seed) {

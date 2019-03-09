@@ -31,8 +31,6 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
                   sample_texture, , );
 
-// TODO: add geometric_normal and shading_normal params to PRD
-
 RT_PROGRAM void closest_hit() {
   // get material params from buffer
   int texIndex = hit_rec.index;
