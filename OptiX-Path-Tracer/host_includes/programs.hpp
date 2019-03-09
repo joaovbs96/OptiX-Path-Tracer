@@ -35,28 +35,22 @@ void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
   g_context->setRayGenerationProgram(/*program ID:*/ 0, raygen);
 }
 
-typedef enum { SKY, COLOR, IMG, HDR } Miss_Programs;
+typedef enum { GRADIENT, CONSTANT, IMG, HDR } Miss_Programs;
 
-void setMissProgram(Context &g_context, Miss_Programs id,
-                    std::string fileName = "file", bool isSpherical = true,
-                    float3 colorValue = make_float3(0.f)) {
+// Image Miss Programs
+void setMissProgram(Context &g_context, Miss_Programs id, std::string fileName,
+                    bool isSpherical = true) {
   Program missProgram;
 
-  if (id == SKY)  // Blue sky pattern
-    missProgram = createProgram(miss_program, "sky", g_context);
-
-  else if (id == COLOR) {  // constant color background
-    missProgram = createProgram(miss_program, "color", g_context);
-
-    Constant_Texture color(colorValue);
-    missProgram["sample_texture"]->setProgramId(color.assignTo(g_context));
-  } else if (id == IMG) {  // rgbe image background
-    missProgram = createProgram(miss_program, "img_background", g_context);
+  // LDR image background
+  if (id == IMG) {
+    missProgram = createProgram(miss_program, "image_background", g_context);
 
     Image_Texture img(fileName);
     missProgram["sample_texture"]->setProgramId(img.assignTo(g_context));
   }
 
+  // HDR image background
   else if (id == HDR) {
     missProgram =
         createProgram(miss_program, "environmental_mapping", g_context);
@@ -69,7 +63,37 @@ void setMissProgram(Context &g_context, Miss_Programs id,
   }
 
   else
-    throw "Miss Program unknown or not yet implemented";
+    throw "Parameters invalid, miss program unknown or not yet implemented";
+
+  g_context->setMissProgram(/*program ID:*/ 0, missProgram);
+}
+
+// Color Miss Programs
+void setMissProgram(Context &g_context, Miss_Programs id,
+                    float3 colorValue1 = make_float3(0.f),
+                    float3 colorValue2 = make_float3(0.f)) {
+  Program missProgram;
+
+  // gradient pattern background
+  if (id == GRADIENT) {
+    missProgram = createProgram(miss_program, "gradient_color", g_context);
+
+    Constant_Texture color1(colorValue1);
+    Constant_Texture color2(colorValue2);
+    missProgram["sample_color1"]->setProgramId(color1.assignTo(g_context));
+    missProgram["sample_color2"]->setProgramId(color2.assignTo(g_context));
+  }
+
+  // constant color background
+  else if (id == CONSTANT) {
+    missProgram = createProgram(miss_program, "constant_color", g_context);
+
+    Constant_Texture color(colorValue1);
+    missProgram["sample_texture"]->setProgramId(color.assignTo(g_context));
+  }
+
+  else
+    throw "Parameters invalid, miss program unknown or not yet implemented";
 
   g_context->setMissProgram(/*program ID:*/ 0, missProgram);
 }

@@ -22,29 +22,37 @@ rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+                  sample_color1, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_color2, , );
 
-RT_PROGRAM void sky() {
+// Gradient Color Background
+RT_PROGRAM void gradient_color() {
   const float3 unit_direction = normalize(ray.direction);
   const float t = 0.5f * (unit_direction.y + 1.f);
-  const float3 c =
-      (1.f - t) * make_float3(1.f) + t * make_float3(0.5f, 0.7f, 1.f);
+
+  // make gradient color
+  float3 c = (1.f - t) * sample_color1(0, 0, make_float3(0.f), 0);
+  c += t * sample_color2(0, 0, make_float3(0.f), 0);
+
   prd.attenuation = c;
   prd.scatterEvent = rayMissed;
 }
 
-RT_PROGRAM void color() {
+// texture sampling
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
+
+// Constant Color Background
+RT_PROGRAM void constant_color() {
   prd.attenuation = sample_texture(0, 0, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }
 
-RT_PROGRAM void box() {
-  prd.attenuation = make_float3(0.f);
-  prd.scatterEvent = rayMissed;
-}
-
-// rgbe image background
-RT_PROGRAM void img_background() {
+// RGB Image Background
+// from OptiX Quick-start Tutorial
+// https://docs.nvidia.com/gameworks/content/gameworkslibrary/optix/optix_quickstart.htm
+RT_PROGRAM void image_background() {
   float theta = atan2f(ray.direction.x, ray.direction.z);
   float phi = M_PIf * 0.5f - acosf(ray.direction.y);
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
@@ -54,12 +62,13 @@ RT_PROGRAM void img_background() {
   prd.scatterEvent = rayMissed;
 }
 
+// HDRi Environmental Mapping
 rtDeclareVariable(int, isSpherical, , );
 
-// HDRi environmental mapping
 RT_PROGRAM void environmental_mapping() {
   float u, v;
 
+  // spherical HDRI mapping
   if (isSpherical) {
     // https://www.gamedev.net/forums/topic/637220-equirectangular-environment-map/
     float r = length(ray.direction);
@@ -69,16 +78,19 @@ RT_PROGRAM void environmental_mapping() {
     float2 rads = make_float2(1.f / (PI_F * 2.f), 1.f / PI_F);
     u = lon * rads.x;
     v = lat * rads.y;
+  }
 
-  } else {  // cylindrical HDRI mapping
+  // cylindrical HDRI mapping
+  else {
     // Y is up, swap x for y and z for x
     float theta = atan2f(ray.direction.x, ray.direction.z);
+
     // wrap around full circle if negative
     theta = theta < 0.f ? theta + (2.f * PI_F) : theta;
     float phi = acosf(ray.direction.y);
 
     // map theta and phi to u and v texturecoordinates in [0,1] x [0,1] range
-    u = 1.f - (theta / (2.f * PI_F));  // +offsetY;
+    u = 1.f - (theta / (2.f * PI_F));
     v = phi / PI_F;
   }
 
