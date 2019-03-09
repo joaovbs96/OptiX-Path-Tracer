@@ -1,6 +1,7 @@
 #include "texture.cuh"
 
 rtDeclareVariable(float, scale, , );
+rtDeclareVariable(int, ax, , );
 
 // buffer definitions
 rtBuffer<float3, 1> ranvec;
@@ -59,5 +60,17 @@ RT_FUNCTION float turb(float3 p) {
 }
 
 RT_CALLABLE_PROGRAM float3 sample_texture(float u, float v, float3 p, int i) {
-  return make_float3(1.f) * 0.5 * (1 + sin(scale * p.x + 5 * turb(scale * p)));
+  float sinValue;
+
+  // get value of sin term according to chosen axis
+  switch (AXIS(ax)) {
+    case X_AXIS:
+      sinValue = sin(scale * p.x + 5 * turb(scale * p));
+    case Y_AXIS:
+      sinValue = sin(scale * p.y + 5 * turb(scale * p));
+    case Z_AXIS:
+      sinValue = sin(scale * p.z + 5 * turb(scale * p));
+  }
+
+  return make_float3(1.f) * 0.5 * (1 + sinValue);
 }

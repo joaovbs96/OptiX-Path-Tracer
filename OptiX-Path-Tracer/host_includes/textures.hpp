@@ -61,9 +61,9 @@ struct Checker_Texture : public Texture {
   const Texture *even;
 };
 
-// TODO: pass an axis parameters to choose
+// Creates Perlin Noise Texture, sampled on the chosen axis
 struct Noise_Texture : public Texture {
-  Noise_Texture(const float s) : scale(s) {}
+  Noise_Texture(const float s, const AXIS ax = X_AXIS) : scale(s), ax(ax) {}
 
   virtual float3 unit_float3(float x, float y, float z) const {
     float l = sqrt(x * x + y * y + z * z);
@@ -112,11 +112,13 @@ struct Noise_Texture : public Texture {
     textProg["perm_y"]->set(perm_y);
     textProg["perm_z"]->set(perm_z);
     textProg["scale"]->setFloat(scale);
+    textProg["axis"]->setInt(ax);
 
     return textProg;
   }
 
   const float scale;
+  const AXIS ax;
 };
 
 struct Image_Texture : public Texture {
