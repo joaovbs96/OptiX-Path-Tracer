@@ -100,7 +100,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // if light is occluded, return black
   if (prdShadow.inShadow) return make_float3(0.f);
 
-  // multiple importance sample
+  // Multiple Importance Sample
 
   // Sample light
   if (lightPDF != 0.f && !isNull(emission)) {
@@ -128,8 +128,6 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   return directLight;
 }
-
-// TODO: cleanup changes, refactor code
 
 struct Camera {
   static RT_FUNCTION Ray generateRay(float s, float t, uint& seed) {
