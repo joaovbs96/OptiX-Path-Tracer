@@ -17,67 +17,76 @@ extern "C" const char volume_box_programs[];
 extern "C" const char triangle_programs[];
 
 // Base geometry primitve class
-struct Hitable {
+class Hitable {
+ public:
+  std::vector<TransformParameter> transforms;  // vector of transforms
+
   Hitable(Host_Material *material) : material(material) {}
 
   // Get GeometryInstance of Hitable element
   virtual GeometryInstance getGeometryInstance(Context &g_context) = 0;
 
-  // Creates GeometryInstance
-  virtual GeometryInstance createGeometryInstance(Context &g_context) {
-    GeometryInstance gi = g_context->createGeometryInstance();
-    gi->setGeometry(geometry);
-    gi->setMaterialCount(1);
-    gi->setMaterial(0, material->assignTo(g_context));
-
-    return gi;
-  }
-
-  // Apply a rotation to the hitable
+  // Apply a rotation to the Hitable
   virtual void rotate(float angle, AXIS axis) {
     TransformParameter param(Rotate_Transform,   // Transform type
                              angle,              // Rotation Angle
                              axis,               // Rotation Axis
                              make_float3(0.f),   // Scale value
                              make_float3(0.f));  // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
-  // Apply a scale to the hitable
+  // Apply a scale to the Hitable
   virtual void scale(float3 scale) {
     TransformParameter param(Scale_Transform,    // Transform type
                              0.f,                // Rotation Angle
                              X_AXIS,             // Rotation Axis
                              scale,              // Scale value
                              make_float3(0.f));  // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
-  // Apply a translation to the hitable
+  // Apply a translation to the Hitable
   virtual void translate(float3 pos) {
     TransformParameter param(Translate_Transform,  // Transform type
                              0.f,                  // Rotation Angle
                              X_AXIS,               // Rotation Axis
                              make_float3(0.f),     // Scale value
                              pos);                 // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
-  // add Hitable to the scene graph
+  // Add the Hitable to the scene graph
   virtual void addChild(Group &d_world, Context &g_context) {
     // reverse vector of transforms
-    std::reverse(arr.begin(), arr.end());
+    std::reverse(transforms.begin(), transforms.end());
+
+    // create geometry instance
     GeometryInstance gi = getGeometryInstance(g_context);
-    addAndTransform(gi, d_world, g_context, arr);
+
+    // apply transforms and add Hitable to the scene
+    addAndTransform(gi, d_world, g_context, transforms);
   }
 
-  Geometry geometry;                    // Geometry object
-  Host_Material *material;              // Host side material object
-  std::vector<TransformParameter> arr;  // primitive vector of Transforms
+ protected:
+  Geometry geometry;        // Geometry object
+  Host_Material *material;  // Host side material object
+
+  // Creates GeometryInstance
+  virtual GeometryInstance createGeometryInstance(Context &g_context) {
+    GeometryInstance gi = g_context->createGeometryInstance();
+
+    gi->setGeometry(geometry);
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, material->assignTo(g_context));
+
+    return gi;
+  }
 };
 
 // Creates a Sphere
-struct Sphere : public Hitable {
+class Sphere : public Hitable {
+ public:
   Sphere(const float3 &c, const float r, Host_Material *material)
       : center(c), radius(r), Hitable(material) {}
 
@@ -104,12 +113,14 @@ struct Sphere : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 center;  // center of the sphere
   const float radius;   // radius of the sphere
 };
 
 // FIXME: not working, adapt to OptiX's motion blur
-struct Moving_Sphere : public Hitable {
+class Moving_Sphere : public Hitable {
+ public:
   Moving_Sphere(const float3 &c0, const float3 &c1, const float r,
                 const float t0, const float t1, Host_Material *material)
       : center0(c0),
@@ -146,13 +157,15 @@ struct Moving_Sphere : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 center0, center1;  // ending point of movement
   const float radius;             // radius of the sphere
   const float time0, time1;       // times of start and ending of movement
 };
 
 // Creates a sphere of volumetric material
-struct Volumetric_Sphere : public Hitable {
+class Volumetric_Sphere : public Hitable {
+ public:
   Volumetric_Sphere(const float3 &c, const float r, const float d,
                     Host_Material *material)
       : center(c), radius(r), density(d), Hitable(material) {}
@@ -183,6 +196,7 @@ struct Volumetric_Sphere : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 center;  // center of the sphere
   const float radius;   // radius of the sphere
   const float density;  // density of the sphere
@@ -196,7 +210,8 @@ The meaning of K, A0/A1 and B0/B1 change depending on the chosen axis. If ax is:
  point in the Y axis.
  - Z_AXIS: a0 and a1 are points in the X axis, b0 and b1 in the Y axis. k is a
  point in the Z axis. */
-struct AARect : public Hitable {
+class AARect : public Hitable {
+ public:
   AARect(const float a0, const float a1, const float b0, const float b1,
          const float k, const bool flip, const AXIS ax, Host_Material *material)
       : a0(a0),
@@ -248,13 +263,15 @@ struct AARect : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float a0, a1, b0, b1, k;  // rectangle coordinates
   const AXIS axis;                // axis to which rect is alligned to
   const bool flip;                // flip normal
 };
 
 // Creates a Box
-struct Box : public Hitable {
+class Box : public Hitable {
+ public:
   Box(const float3 &p0, const float3 &p1, Host_Material *material)
       : p0(p0), p1(p1), Hitable(material) {}
 
@@ -281,11 +298,13 @@ struct Box : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 p0, p1;  // box is built by projecting two points
 };
 
 // Creates box with volumetric material
-struct Volumetric_Box : public Hitable {
+class Volumetric_Box : public Hitable {
+ public:
   Volumetric_Box(const float3 &p0, const float3 &p1, const float d,
                  Host_Material *material)
       : p0(p0), p1(p1), density(d), Hitable(material) {}
@@ -315,12 +334,14 @@ struct Volumetric_Box : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 p0, p1;  // box is built by projecting two points
   const float density;  // volumetric material density
 };
 
 // Creates triangle geometry primitive
-struct Triangle : public Hitable {
+class Triangle : public Hitable {
+ public:
   Triangle(const float3 &a, const float2 &a_uv, const float3 &b,
            const float2 &b_uv, const float3 &c, const float2 &c_uv,
            Host_Material *material)
@@ -373,12 +394,14 @@ struct Triangle : public Hitable {
     return createGeometryInstance(g_context);
   }
 
+ protected:
   const float3 a, b, c;           // vertex coordinates
   const float2 a_uv, b_uv, c_uv;  // vertex texture coordinates
 };
 
 // List of Hitable objects
-struct Hitable_List {
+class Hitable_List {
+ public:
   Hitable_List() {}
 
   // Appends a geometry to the list and returns its index
@@ -397,7 +420,7 @@ struct Hitable_List {
                              axis,               // Rotation Axis
                              make_float3(0.f),   // Scale value
                              make_float3(0.f));  // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
   // Apply a scale to the list
@@ -407,7 +430,7 @@ struct Hitable_List {
                              X_AXIS,             // Rotation Axis
                              scale,              // Scale value
                              make_float3(0.f));  // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
   // Apply a translation to the list
@@ -417,7 +440,7 @@ struct Hitable_List {
                              X_AXIS,               // Rotation Axis
                              make_float3(0.f),     // Scale value
                              pos);                 // Translation delta
-    arr.push_back(param);
+    transforms.push_back(param);
   }
 
   // converts list to a GeometryGroup object
@@ -434,19 +457,20 @@ struct Hitable_List {
   // adds and transforms Hitable_List as a whole to the scene graph
   void addList(Group &d_world, Context &g_context) {
     GeometryGroup gg = getGroup(g_context);
-    addAndTransform(gg, d_world, g_context, arr);
+    addAndTransform(gg, d_world, g_context, transforms);
   }
 
   // adds and transforms each list element to the scene graph individually
   void addChildren(Group &d_world, Context &g_context) {
     for (int i = 0; i < (int)hitList.size(); i++) {
       GeometryInstance gi = hitList[i]->getGeometryInstance(g_context);
-      addAndTransform(gi, d_world, g_context, hitList[i]->arr);
+      addAndTransform(gi, d_world, g_context, hitList[i]->transforms);
     }
   }
 
+ protected:
   std::vector<Hitable *> hitList;
-  std::vector<TransformParameter> arr;
+  std::vector<TransformParameter> transforms;
 };
 
 #endif

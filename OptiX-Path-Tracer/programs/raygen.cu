@@ -28,9 +28,9 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtBuffer<float4, 2> acc_buffer;      // HDR color frame buffer
 rtBuffer<uchar4, 2> display_buffer;  // display buffer
 
-rtDeclareVariable(int, samples, , );    // number of samples
-rtDeclareVariable(int, frame, , );      // frame number
-rtDeclareVariable(int2, pixelDim, , );  // pxiel dimension for stratification
+rtDeclareVariable(int, samples, , );   // number of samples
+rtDeclareVariable(int, frame, , );     // frame number
+rtDeclareVariable(int, pixelDim, , );  // pxiel dimension for stratification
 
 rtDeclareVariable(rtObject, world, , );  // scene/top obj variable
 
@@ -233,6 +233,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 // Remove NaN values
 RT_FUNCTION float3 de_nan(const float3& c) {
   float3 temp = c;
+
   if (!(temp.x == temp.x)) temp.x = 0.f;
   if (!(temp.y == temp.y)) temp.y = 0.f;
   if (!(temp.z == temp.z)) temp.z = 0.f;
@@ -259,16 +260,26 @@ RT_PROGRAM void renderPixel() {
   uint2 index = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
   if (frame == 0) acc_buffer[index] = make_float4(0.f);
 
-  // Subpixel jitter: send the ray through a different position inside the
-  // pixel each time, to provide antialiasing.
-  float u = float(pixelID.x + rnd(seed)) / float(launchDim.x);
-  float v = float(pixelID.y + rnd(seed)) / float(launchDim.y);
+  float3 col = make_float3(0.f);
+  for (int i = 0; i < pixelDim; i++) {
+    for (int j = 0; j < pixelDim; j++) {
+      // Subpixel jitter: send the ray through a different position inside the
+      // pixel each time, to provide antialiasing.
+      float u = float(pixelID.x + (i + rnd(seed)) / pixelDim) / launchDim.x;
+      float v = float(pixelID.y + (j + rnd(seed)) / pixelDim) / launchDim.y;
 
-  // trace ray
-  Ray ray = Camera::generateRay(u, v, seed);
+      // trace ray
+      Ray ray = Camera::generateRay(u, v, seed);
 
-  // accumulate color
-  float3 col = de_nan(color(ray, seed));
+      // accumulate subpixel color
+      col += de_nan(color(ray, seed));
+    }
+  }
+
+  // average subpixel sum
+  col /= (pixelDim * pixelDim);
+
+  // accumulate pixel color
   acc_buffer[index] += make_float4(col.x, col.y, col.z, 1.f);
   display_buffer[index] = make_Color(acc_buffer[index]);
 }

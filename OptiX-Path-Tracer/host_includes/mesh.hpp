@@ -15,10 +15,10 @@ extern "C" const char geom_tri_programs[];
 // https://github.com/syoyo/tinyobjloader/tree/master/examples/viewer
 
 // Parse and convert OBJ file
-struct Mesh {
+class Mesh {
   // - If no assets folder is given as parameter, model is in CWD.
   // - If no material is given as parameter, parse material from MTL file.
-
+ public:
   Mesh(std::string fileName)
       : fileName(fileName), assetsFolder(""), givenMaterial(nullptr) {}
 
@@ -174,23 +174,6 @@ struct Mesh {
     return g_context->createGeometryInstance(geom_tri, device_material);
   }
 
-  // TODO: make it private
-  // Make a float3 vertex out of a vector and an index
-  float3 make_Vertex3(std::vector<tinyobj::real_t> &vertices, int index) {
-    float x = vertices[3 * index + 0];
-    float y = vertices[3 * index + 1];
-    float z = vertices[3 * index + 2];
-    return make_float3(x, y, z);
-  }
-
-  // TODO: make it private
-  // Make a float2 vertex out of a vector and an index
-  float2 make_Vertex2(std::vector<tinyobj::real_t> &vertices, int index) {
-    float x = vertices[2 * index + 0];
-    float y = vertices[2 * index + 1];
-    return make_float2(x, y);
-  }
-
   // Apply a rotation to the hitable
   void rotate(float angle, AXIS axis) {
     TransformParameter param(Rotate_Transform,   // Transform type
@@ -221,12 +204,28 @@ struct Mesh {
     arr.push_back(param);
   }
 
-  // add Hitable to the scene graph
+  // Adds Hitable to the scene graph
   void addToScene(Group &d_world, Context &g_context) {
     // reverse vector of transforms
     std::reverse(arr.begin(), arr.end());
     GeometryInstance gi = getGeometryInstance(g_context);
     addAndTransform(gi, d_world, g_context, arr);
+  }
+
+ private:
+  // Make a float3 vertex out of a vector and an index
+  float3 make_Vertex3(std::vector<tinyobj::real_t> &vertices, int index) {
+    float x = vertices[3 * index + 0];
+    float y = vertices[3 * index + 1];
+    float z = vertices[3 * index + 2];
+    return make_float3(x, y, z);
+  }
+
+  // Make a float2 vertex out of a vector and an index
+  float2 make_Vertex2(std::vector<tinyobj::real_t> &vertices, int index) {
+    float x = vertices[2 * index + 0];
+    float y = vertices[2 * index + 1];
+    return make_float2(x, y);
   }
 
   const Host_Material *givenMaterial;
@@ -235,7 +234,8 @@ struct Mesh {
 };
 
 // List of Mesh variables
-struct Mesh_List {
+class Mesh_List {
+ public:
   Mesh_List() {}
 
   // Appends a mesh to the list and returns its index
@@ -303,6 +303,7 @@ struct Mesh_List {
       list[i]->addToScene(d_world, g_context);
   }
 
+ private:
   std::vector<Mesh *> list;
   std::vector<TransformParameter> arr;
 };

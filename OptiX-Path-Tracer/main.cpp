@@ -60,7 +60,7 @@ int Optix_Config(GUIState &state) {
   g_context["samples"]->setInt(state.samples);
 
   // Set pixel dimension
-  g_context["pixelDim"]->setInt(state.pW, state.pW);
+  g_context["pixelDim"]->setInt(state.pW);
 
   // Create and set the world
   switch (state.scene) {
@@ -129,8 +129,8 @@ int main(int ac, char **av) {
 
   //  int window_width = mode->width;
   //  int window_height = mode->height;
-  int window_width = 1280;
-  int window_height = 720;
+  int window_width = 1366;
+  int window_height = 768;
 
   // Create window with graphics context
   GLFWwindow *window = glfwCreateWindow(window_width, window_height,
@@ -184,11 +184,16 @@ int main(int ac, char **av) {
         // Create and append program params window
         ImGui::Begin("Program Parameters");
 
-        ImGui::InputInt("width", &state.w, 1, 100);
-        ImGui::InputInt("height", &state.h, 1, 100);
-        ImGui::InputInt("samples", &state.samples, 1, 100);
-        ImGui::InputInt("pixel dimension", &state.pW, 1, 100);
-        ImGui::Combo("scene", &state.scene,
+        ImGui::InputInt("Width", &state.w, 1, 100);
+        ImGui::InputInt("Height", &state.h, 1, 100);
+
+        ImGui::InputInt("Samples Per Pixel", &state.samples, 1, 100);
+
+        ImGui::InputInt("Subpixel Size", &state.pW, 1, 100);
+        ImGui::SameLine();
+        ShowHelpMarker("Greatly impacts execution time.");
+
+        ImGui::Combo("Scene", &state.scene,
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "
                      "Week(Moving Spheres)\0Cornell Box\0Peter Shirley's The "
                      "Next Week(Final Scene)\0Model Test Scene\0");
@@ -198,12 +203,13 @@ int main(int ac, char **av) {
               "model selection", &state.model,
               "Placeholder Model\0Lucy\0Chinese Dragon\0Spheres\0Sponza\0");
 
-        ImGui::Checkbox("Show Progress", &state.progressive);
+        ImGui::Checkbox("Show Progress", &state.showProgress);
 
-        ImGui::Checkbox("Save as HDR", &state.HDR);
+        ImGui::Text("Save as:");
         ImGui::InputText("Filename", &state.fileName, 0, 0, 0);
         ImGui::SameLine();
         ShowHelpMarker("File extension will be added automatically.");
+        ImGui::Combo("Filetype", &state.fileType, ".PNG\0.JPG\0.HDR\0");
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
@@ -230,7 +236,7 @@ int main(int ac, char **av) {
             }
 
             // allocate preview array
-            imageData = (uchar1 *)malloc(state.dimensions() * sizeof(uchar4));
+            imageData = (uchar1 *)malloc(state.w * state.h * sizeof(uchar4));
           } else {
             printf("Selected settings are invalid:\n");
 
@@ -258,9 +264,9 @@ int main(int ac, char **av) {
         renderTime += renderFrame(state.w, state.h);
 
         // copy stream buffer content
-        if (state.progressive) {
+        if (state.showProgress) {
           uchar1 *copyArr = (uchar1 *)state.displayBuffer->map();
-          memcpy(imageData, copyArr, state.dimensions() * sizeof(uchar4));
+          memcpy(imageData, copyArr, state.w * state.h * sizeof(uchar4));
           state.displayBuffer->unmap();
         }
 
@@ -271,9 +277,6 @@ int main(int ac, char **av) {
 
         // check if cancel button has been pressed
         if (ImGui::Button("Cancel")) {
-          // cancel progressive rendering
-          g_context->stopProgressive();
-
           // destroy window & opengl state
           glfwDestroyWindow(window);
           glfwTerminate();
@@ -295,7 +298,7 @@ int main(int ac, char **av) {
     // Only show the image if 'progressive' is true.
     // progressively showing the progress needs more memory and might be slower
     // overall. Turn progressive rendering off if it's too slow.
-    if (state.progressive && state.start) {
+    if (state.showProgress && state.start) {
       ImGui::Begin("Render Preview");
 
       GLuint textureId;
@@ -315,7 +318,7 @@ int main(int ac, char **av) {
       glBindTexture(GL_TEXTURE_2D, 0);
     }
 
-    // Rendering
+    // Render GUI frame
     ImGui::Render();
     int display_w, display_h;
     glfwMakeContextCurrent(window);
@@ -334,10 +337,13 @@ int main(int ac, char **av) {
         if (state.currentSample == state.samples) {
           printf("Done rendering, output file will be saved.\n");
 
-          if (state.HDR)
-            Save_SB_HDR(state, state.accBuffer);
+          // Save to file type selected in the initial setup
+          if (state.fileType == 0)
+            Save_PNG(state, state.accBuffer);
+          else if (state.fileType == 1)
+            Save_JPG(state, state.accBuffer);
           else
-            Save_SB_PNG(state, state.accBuffer);
+            Save_HDR(state, state.accBuffer);
 
           printf("Render time: %.2fs\n", renderTime);
 

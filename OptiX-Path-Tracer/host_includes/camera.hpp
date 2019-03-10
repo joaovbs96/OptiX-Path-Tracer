@@ -1,9 +1,13 @@
 #ifndef CAMERAH
 #define CAMERAH
 
+// camera.hpp: Define camera class and functions
+
 #include "host_common.hpp"
 
-struct Camera {
+// Create Camera
+class Camera {
+ public:
   Camera() {}
 
   Camera(const float3 &lookfrom, const float3 &lookat, const float3 &vup,
@@ -46,6 +50,7 @@ struct Camera {
     g_context["camera_lens_radius"]->setFloat(lens_radius);
   }
 
+ private:
   float3 origin;
   float3 lower_left_corner;
   float3 horizontal;

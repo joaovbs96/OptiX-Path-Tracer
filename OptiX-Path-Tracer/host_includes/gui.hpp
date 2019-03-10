@@ -1,6 +1,8 @@
 #ifndef GUIH
 #define GUIH
 
+// gui.hpp: Define functions and include libraries used by GUI
+
 #include "host_common.hpp"
 #include "scenes.hpp"
 
@@ -31,27 +33,26 @@ static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
+// Struct used to keep GUI state
 struct GUIState {
   GUIState()
       : w(0),
         h(0),
-        pW(0),
+        pW(1),
         samples(0),
         scene(0),
         model(0),
         frequency(1),
         currentSample(0),
-        progressive(false),
+        showProgress(false),
         done(false),
         start(false),
-        HDR(false),
+        fileType(0),
         fileName("out") {}
-  int w, h, pW, samples, scene, currentSample, model, frequency;
-  bool done, start, HDR, progressive;
+  int w, h, pW, samples, scene, currentSample, model, frequency, fileType;
+  bool done, start, showProgress;
   Buffer accBuffer, displayBuffer;
   std::string fileName;
-
-  int dimensions() { return w * h; }
 };
 
 // Helper to display a little (?) mark which shows a tooltip when hovered.
@@ -66,9 +67,10 @@ static void ShowHelpMarker(const char *desc) {
   }
 }
 
-int Save_SB_PNG(GUIState &state, Buffer &buffer) {
+// Save OptiX output buffer to .PNG file
+int Save_PNG(GUIState &state, Buffer &buffer) {
   unsigned char *arr;
-  arr = (unsigned char *)malloc(state.dimensions() * 3 * sizeof(unsigned char));
+  arr = (unsigned char *)malloc(state.w * state.h * 3 * sizeof(unsigned char));
 
   const float4 *cols = (const float4 *)buffer->map();
 
@@ -81,26 +83,63 @@ int Save_SB_PNG(GUIState &state, Buffer &buffer) {
       float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
       col = sqrt(col / float(state.samples));
 
-      int r = int(255.99 * Clamp(col.x, 0.f, 1.f));  // R
-      int g = int(255.99 * Clamp(col.y, 0.f, 1.f));  // G
-      int b = int(255.99 * Clamp(col.z, 0.f, 1.f));  // B
+      // Clamp and convert to [0, 255]
+      col = 255.99f * clamp(col, 0.f, 1.f);
 
-      arr[pixel_index + 0] = r;  // R
-      arr[pixel_index + 1] = g;  // G
-      arr[pixel_index + 2] = b;  // B
+      // Copy int values to array
+      arr[pixel_index + 0] = (int)col.x;  // R
+      arr[pixel_index + 1] = (int)col.y;  // G
+      arr[pixel_index + 2] = (int)col.z;  // B
     }
 
   buffer->unmap();
 
-  // output png file
+  // Save .PNG file
   state.fileName += ".png";
   const char *name = (char *)state.fileName.c_str();
   return stbi_write_png(name, state.w, state.h, 3, arr, 0);
 }
 
-int Save_SB_HDR(GUIState &state, Buffer &buffer) {
+// TODO: not working
+// Save OptiX output buffer to .JPG file
+int Save_JPG(GUIState &state, Buffer &buffer, int quality = 99) {
+  if (quality < 1 || quality > 100) throw "Invalid JPG quality value";
+
+  unsigned char *arr;
+  arr = (unsigned char *)malloc(state.w * state.h * 3 * sizeof(unsigned char));
+
+  const float4 *cols = (const float4 *)buffer->map();
+
+  for (int j = state.h - 1; j >= 0; j--)
+    for (int i = 0; i < state.w; i++) {
+      int index = state.w * j + i;
+      int pixel_index = 3 * (state.w * j + i);
+
+      // average & gamma correct output color
+      float3 col = make_float3(cols[index].x, cols[index].y, cols[index].z);
+      col = sqrt(col / float(state.samples));
+
+      // Clamp and convert to [0, 255]
+      col = 255.99f * clamp(col, 0.f, 1.f);
+
+      // Copy color values to array
+      arr[pixel_index + 0] = (int)col.x;  // R
+      arr[pixel_index + 1] = (int)col.y;  // G
+      arr[pixel_index + 2] = (int)col.z;  // B
+    }
+
+  buffer->unmap();
+
+  // Save .JPG file
+  state.fileName += ".jpg";
+  const char *name = (char *)state.fileName.c_str();
+  return stbi_write_jpg(name, state.w, state.h, 3, arr, quality);
+}
+
+// Save OptiX output buffer to .HDR file
+int Save_HDR(GUIState &state, Buffer &buffer) {
   float *arr;
-  arr = (float *)malloc(state.dimensions() * 3 * sizeof(float));
+  arr = (float *)malloc(state.w * state.h * 3 * sizeof(float));
 
   const float4 *cols = (const float4 *)buffer->map();
 
@@ -125,7 +164,7 @@ int Save_SB_HDR(GUIState &state, Buffer &buffer) {
 
   buffer->unmap();
 
-  // output hdr file
+  // Save .HDR file
   state.fileName += ".hdr";
   const char *name = (char *)state.fileName.c_str();
   return stbi_write_hdr(name, state.w, state.h, 3, arr);
