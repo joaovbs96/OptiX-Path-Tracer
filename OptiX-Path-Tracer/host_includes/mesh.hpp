@@ -46,7 +46,8 @@ class Mesh {
 
     // load obj & mtl files
     bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
-                                fileName.c_str(), assetsFolder.c_str(), true);
+                                (assetsFolder + fileName).c_str(),
+                                assetsFolder.c_str(), true);
 
     // Check if there was a warning while reading the file
     if (!warn.empty()) std::cout << "WARN: " << warn << std::endl;

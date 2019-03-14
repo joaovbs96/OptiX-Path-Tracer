@@ -1,8 +1,14 @@
 #ifndef TRANSFORMSH
 #define TRANSFORMSH
 
+// transforms.hpp: Define Transform related types and functions
+
 #include "host_common.hpp"
 #include "materials.hpp"
+
+//////////////////////////////////////////
+// Transform Types & Auxiliar Functions //
+//////////////////////////////////////////
 
 // Throw exception if GeometryInstance object is NULL
 void check_if_null(GeometryInstance gi) {
@@ -36,6 +42,10 @@ struct TransformParameter {
   float3 scale;
   float3 pos;
 };
+
+/////////////////////////
+// Translate functions //
+/////////////////////////
 
 // Translate a GeometryInstance object in (x, y, z) coordinates
 Transform translate(GeometryInstance gi, float3 &xyz, Context &g_context) {
@@ -86,6 +96,10 @@ Transform translate(Transform tr, float3 &xyz, Context &g_context) {
 
   return transform;
 }
+
+//////////////////////
+// Rotate functions //
+//////////////////////
 
 // Rotates a GeometryInstance object in (angle) degrees in the given axis
 Transform rotate(GeometryInstance gi, float angle, AXIS ax,
@@ -186,6 +200,10 @@ Transform rotate(Transform tr, float angle, AXIS ax, Context &g_context) {
   return transform;
 }
 
+/////////////////////
+// Scale functions //
+/////////////////////
+
 // Scales a GeometryInstance object with (x, y, z) factors for each axis
 Transform scale(GeometryInstance gi, float3 &xyz, Context &g_context) {
   check_if_null(gi);
@@ -235,6 +253,10 @@ Transform scale(Transform tr, float3 &xyz, Context &g_context) {
 
   return transform;
 }
+
+///////////////////////////////
+// Transform Apply functions //
+///////////////////////////////
 
 // Functions to apply Transforms: Apply and return a Transform, given a
 // TransformParam from a list. Check if the list size if zero. If it's zero,

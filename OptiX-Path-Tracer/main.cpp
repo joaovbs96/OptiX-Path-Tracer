@@ -199,9 +199,9 @@ int main(int ac, char **av) {
                      "Next Week(Final Scene)\0Model Test Scene\0");
 
         if (state.scene == 4)
-          ImGui::Combo(
-              "model selection", &state.model,
-              "Placeholder Model\0Lucy\0Chinese Dragon\0Spheres\0Sponza\0");
+          ImGui::Combo("model selection", &state.model,
+                       "Placeholder Model\0Lucy\0Chinese "
+                       "Dragon\0Spheres\0Pie\0Sponza\0");
 
         ImGui::Checkbox("Show Progress", &state.showProgress);
 

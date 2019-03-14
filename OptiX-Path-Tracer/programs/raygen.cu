@@ -54,7 +54,7 @@ rtBuffer<rtCallableProgramId<float(PDFParams&)>> Light_PDF;
 // BRDF sampling callable programs
 rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> BRDF_Sample;
 rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_PDF;
-rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_Evaluate;
+rtBuffer<rtCallableProgramId<float3(PDFParams&)>> BRDF_Evaluate;
 
 RT_FUNCTION float PowerHeuristic(unsigned int numf, float fPdf,
                                  unsigned int numg, float gPdf) {
@@ -81,7 +81,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample Light
   float3 emission = Light_Emissions[index];
-  PDFParams pdfParams(prd.origin, prd.shading_normal);
+  PDFParams pdfParams(prd);
   Light_Sample[index](pdfParams, prd.seed);
   float lightPDF = Light_PDF[index](pdfParams);
 
@@ -105,7 +105,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // Sample light
   if (lightPDF != 0.f && !isNull(emission)) {
     float matPDF = BRDF_PDF[prd.matType](pdfParams);
-    float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
+    float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
     if (matPDF != 0.f && !isNull(matValue)) {
       float weight = PowerHeuristic(1, lightPDF, 1, matPDF);
       directLight += matValue * emission * weight / lightPDF;
@@ -115,7 +115,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // Sample BRDF
   BRDF_Sample[prd.matType](pdfParams, prd.seed);
   float matPDF = BRDF_PDF[prd.matType](pdfParams);
-  float3 matValue = prd.attenuation * BRDF_Evaluate[prd.matType](pdfParams);
+  float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
   if (matPDF != 0.f && !isNull(matValue)) {
     lightPDF = Light_PDF[index](pdfParams);
 
@@ -154,6 +154,8 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   float3 radiance = make_float3(0.f);
   bool previousHitSpecular = false;
 
+  // TODO: Isotropic isn't working when light is present
+
   // iterative version of recursion
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
@@ -188,15 +190,13 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
       // otherwise, do importance sample
       else {
         // Sample BRDF
-        PDFParams pdfParams(prd.origin, prd.shading_normal);
+        // TODO: rename type to SampleParams
+        PDFParams pdfParams(prd);
         BRDF_Sample[prd.matType](pdfParams, seed);
         float matPDF = BRDF_PDF[prd.matType](pdfParams);
 
-        // Evaluate BRDF
-        prd.attenuation *= BRDF_Evaluate[prd.matType](pdfParams);
-
         // Accumulate color
-        prd.throughput *= prd.attenuation / matPDF;
+        prd.throughput *= BRDF_Evaluate[prd.matType](pdfParams) / matPDF;
 
         // Update ray origin and direction
         prd.origin = pdfParams.origin;
@@ -241,11 +241,12 @@ RT_FUNCTION float3 de_nan(const float3& c) {
 
 RT_FUNCTION uchar4 make_Color(float4 col) {
   float3 temp = sqrt(make_float3(col.x, col.y, col.z) / (frame + 1));
+  temp = clamp(temp, 0.f, 1.f);
 
-  int r = int(255.99 * Clamp(temp.x, 0.f, 1.f));  // R
-  int g = int(255.99 * Clamp(temp.y, 0.f, 1.f));  // G
-  int b = int(255.99 * Clamp(temp.z, 0.f, 1.f));  // B
-  int a = int(255.99 * Clamp(1.f, 0.f, 1.f));     // A
+  int r = int(255.99 * temp.x);  // R
+  int g = int(255.99 * temp.y);  // G
+  int b = int(255.99 * temp.z);  // B
+  int a = int(255.99 * 1.f);     // A
 
   return make_uchar4(r, g, b, a);
 }

@@ -52,12 +52,12 @@ RT_FUNCTION float Tan2Theta(const float3& w) {
 
 RT_FUNCTION float CosPhi(const float3& w) {
   float sinTheta = SinTheta(w);
-  return (sinTheta == 0) ? 1.0f : Clamp(w.x / sinTheta, -1.0f, 1.0f);
+  return (sinTheta == 0) ? 1.0f : clamp(w.x / sinTheta, -1.0f, 1.0f);
 }
 
 RT_FUNCTION float SinPhi(const float3& w) {
   float sinTheta = SinTheta(w);
-  return (sinTheta == 0) ? 1.0f : Clamp(w.z / sinTheta, -1.0f, 1.0f);
+  return (sinTheta == 0) ? 1.0f : clamp(w.z / sinTheta, -1.0f, 1.0f);
 }
 
 RT_FUNCTION float Cos2Phi(const float3& w) {

@@ -50,7 +50,6 @@ RT_PROGRAM void closest_hit() {
   prd.shading_normal = hit_rec.shading_normal;
 
   int index = hit_rec.index;
-  prd.emitted = make_float3(0.f);
   prd.attenuation = base_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
   float3 volumeColor = volume_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
 
@@ -99,4 +98,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams& pdf, uint& seed) {
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams& pdf) { return 1.f; }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams& pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams& pdf) {
+  return make_float3(1.f);
+}

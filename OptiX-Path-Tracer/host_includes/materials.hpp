@@ -1,6 +1,8 @@
 #ifndef MATERIALSH
 #define MATERIALSH
 
+// materials.hpp: define host-side material related classes and functions
+
 #include "host_common.hpp"
 #include "textures.hpp"
 
@@ -12,13 +14,14 @@ extern "C" const char lambertian_programs[];
 extern "C" const char light_programs[];
 extern "C" const char isotropic_programs[];
 extern "C" const char normal_programs[];
+extern "C" const char anisotropic_programs[];
 extern "C" const char hit_program[];
 
-// TODO: add a material parameter var to the PDFParams and PRD of the device
-// side -> this info will be needed in some of the BRDF programs
+//////////////////////////////////
+//  Host-side Material Classes  //
+//////////////////////////////////
 
-/*! abstraction for a material that can create, and parameterize,
-  a newly created GI's material and closest hit program */
+// Creates base Host Material class
 struct Host_Material {
   Host_Material(MaterialType matType) : matType(matType) {}
 
@@ -51,54 +54,64 @@ struct Host_Material {
       case Normal_Material:
         return createProgram(normal_programs, name, g_context);
 
+      case Anisotropic_Material:
+        return createProgram(anisotropic_programs, name, g_context);
+
       default:
         throw "Invalid Material";
     }
   }
 
+  // Creates device material object
+  static Material createMaterial(Program &closest, Program &any,
+                                 Context &g_context) {
+    Material mat = g_context->createMaterial();
+    mat->setClosestHitProgram(0, closest);
+    mat->setAnyHitProgram(1, any);
+
+    return mat;
+  }
+
   const MaterialType matType;
 };
 
+// Create Lambertian material
 struct Lambertian : public Host_Material {
   Lambertian(const Texture *t)
       : texture(t), Host_Material(Lambertian_Material) {}
 
+  // Assign host side Lambertian material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(lambertian_programs, "closest_hit", g_context);
     hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
   const Texture *texture;
 };
 
+// Create Metal material
 struct Metal : public Host_Material {
   Metal(const Texture *t, const float fuzz)
       : texture(t), fuzz(fuzz), Host_Material(Metal_Material) {}
 
+  // Assign host side Metal material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(metal_programs, "closest_hit", g_context);
     hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
     hit["fuzz"]->setFloat(fuzz);
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
   const Texture *texture;
   const float fuzz;
 };
 
+// Create Dielectric material
 struct Dielectric : public Host_Material {
   Dielectric(const Texture *baseTex, const Texture *volTex, const float ref_idx,
              const float density = 0.f)
@@ -108,19 +121,16 @@ struct Dielectric : public Host_Material {
         density(density),
         Host_Material(Dielectric_Material) {}
 
+  // Assign host side Dielectric material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(dielectric_programs, "closest_hit", g_context);
     hit["base_texture"]->setProgramId(baseTex->assignTo(g_context));
     hit["volume_texture"]->setProgramId(volTex->assignTo(g_context));
     hit["ref_idx"]->setFloat(ref_idx);
     hit["density"]->setFloat(density);
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
   const Texture *baseTex, *volTex;
@@ -128,22 +138,21 @@ struct Dielectric : public Host_Material {
   const float density;
 };
 
+// Create Diffuse Light material
 struct Diffuse_Light : public Host_Material {
   Diffuse_Light(const Texture *t)
       : texture(t), Host_Material(Diffuse_Light_Material) {}
 
+  // Assign host side Diffuse Light material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(light_programs, "closest_hit", g_context);
     hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
+  // Get any hit program
   virtual Program getAnyHitProgram(Context &g_context) const override {
     Program any = createProgram(hit_program, "any_hit", g_context);
     any["is_light"]->setInt(true);
@@ -153,56 +162,67 @@ struct Diffuse_Light : public Host_Material {
   const Texture *texture;
 };
 
+// Creates Isotropic material
 struct Isotropic : public Host_Material {
   Isotropic(const Texture *t) : texture(t), Host_Material(Isotropic_Material) {}
 
+  // Assign host side Isotropic material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(isotropic_programs, "closest_hit", g_context);
     hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
   const Texture *texture;
 };
 
+// Creates Normal Shader material
 struct Normal_Shader : public Host_Material {
   Normal_Shader(const bool useShadingNormal = false)
       : useShadingNormal(useShadingNormal), Host_Material(Normal_Material) {}
 
+  // Assign host side Normal Shader material to device Material object
   virtual Material assignTo(Context &g_context) const override {
-    Material mat = g_context->createMaterial();
-
+    // Creates closest hit programs and assigns variables
     Program hit = createProgram(normal_programs, "closest_hit", g_context);
     hit["useShadingNormal"]->setInt(useShadingNormal);
 
-    mat->setClosestHitProgram(0, hit);
-    mat->setAnyHitProgram(1, getAnyHitProgram(g_context));
-
-    return mat;
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
 
   const bool useShadingNormal;
 };
 
-Program getSampleProgram(MaterialType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Sample");
-}
+// Creates Anisotropic-Phong material
+struct Anisotropic : public Host_Material {
+  Anisotropic(const Texture *diffuse_tex, const Texture *specular_tex,
+              const float nu, const float nv)
+      : diffuse_tex(diffuse_tex),
+        specular_tex(specular_tex),
+        nu(nu),
+        nv(nv),
+        Host_Material(Anisotropic_Material) {}
 
-Program getPDFProgram(MaterialType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_PDF");
-}
+  // Assign host side Anisotropic material to device Material object
+  virtual Material assignTo(Context &g_context) const override {
+    // Creates closest hit programs and assigns variables and textures
+    Program hit = createProgram(anisotropic_programs, "closest_hit", g_context);
+    hit["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
+    hit["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
+    hit["nu"]->setFloat(nu);
+    hit["nv"]->setFloat(nv);
 
-Program getEvaluateProgram(MaterialType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Evaluate");
-}
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
 
-// Material 'container'
+  const Texture *specular_tex;
+  const Texture *diffuse_tex;
+  const float nu, nv;
+};
+
+// List of Host_Materials
 struct Material_List {
   Material_List() {}
 
@@ -220,5 +240,24 @@ struct Material_List {
 
   std::vector<Host_Material *> matList;
 };
+
+///////////////////////////////////////
+//  BRDF Program Creation Functions  //
+///////////////////////////////////////
+
+// Returns a BRDF_Sample program object of the given material type
+Program getSampleProgram(MaterialType type, Context &g_context) {
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Sample");
+}
+
+// Returns a BRDF_PDF program object of the given material type
+Program getPDFProgram(MaterialType type, Context &g_context) {
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_PDF");
+}
+
+// Returns a BRDF_Evaluate program object of the given material type
+Program getEvaluateProgram(MaterialType type, Context &g_context) {
+  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Evaluate");
+}
 
 #endif

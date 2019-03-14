@@ -40,8 +40,8 @@ RT_PROGRAM void closest_hit() {
   prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 
-  prd.emitted = make_float3(0.f);
-  prd.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
+  float3 color = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
+  prd.matParams.attenuation = color;
 
   // assign hit params to prd
   prd.origin = hit_rec.p;
@@ -70,11 +70,11 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
     return cosine / PI_F;
 }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) {
+RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
 
   if (cosine < 0.f)
-    return 0.f;
+    return make_float3(0.f);
   else
-    return cosine / PI_F;
+    return (cosine * pdf.matParams.attenuation) / PI_F;
 }

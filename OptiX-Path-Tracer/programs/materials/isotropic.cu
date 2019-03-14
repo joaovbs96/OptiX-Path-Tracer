@@ -21,11 +21,12 @@ RT_PROGRAM void closest_hit() {
 
   // assign material params to prd
   prd.matType = Isotropic_Material;
-  prd.isSpecular = false;
+  prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
+  prd.direction = random_on_unit_sphere(prd.seed);
 
-  prd.emitted = make_float3(0.f);
-  prd.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
+  float3 color = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
+  prd.matParams.attenuation = color;
 
   // assign hit params to prd
   prd.origin = hit_rec.p;
@@ -34,10 +35,12 @@ RT_PROGRAM void closest_hit() {
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
-  pdf.direction = random_in_unit_sphere(seed);
+  pdf.direction = random_on_unit_sphere(seed);
   return pdf.direction;
 }
 
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 0.25 * PI_F; }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
+  return 0.25 * PI_F * pdf.matParams.attenuation;
+}

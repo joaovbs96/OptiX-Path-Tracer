@@ -41,7 +41,6 @@ RT_PROGRAM void closest_hit() {
   prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
 
-  prd.emitted = make_float3(0.f);
   prd.attenuation = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
 
   // assign hit params to prd
@@ -59,4 +58,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
+  return make_float3(1.f);
+}

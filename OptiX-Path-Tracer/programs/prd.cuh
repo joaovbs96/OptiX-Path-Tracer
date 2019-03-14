@@ -19,6 +19,22 @@
 #include "random.cuh"
 #include "vec.hpp"
 
+// TODO: clean up material parameters
+// Parameters used in some BRDF callable programs
+struct MaterialParameters {
+  MaterialType type;
+  int index;
+  float u, v;
+  float3 attenuation;
+
+  // anisotropic material specific parameters
+  struct {
+    float3 diffuse_color;
+    float3 specular_color;
+    float nu, nv;
+  } anisotropic;
+};
+
 typedef enum {
   /*! ray could get properly bounced, and is still alive */
   rayGotBounced,
@@ -56,6 +72,7 @@ struct PerRayData {
   float3 throughput;
   bool isSpecular;
   MaterialType matType;
+  MaterialParameters matParams;
 };
 
 struct PerRayData_Shadow {

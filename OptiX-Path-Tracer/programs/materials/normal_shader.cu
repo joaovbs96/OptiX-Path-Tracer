@@ -34,4 +34,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 1.f; }
 
-RT_CALLABLE_PROGRAM float BRDF_Evaluate(PDFParams &pdf) { return 1.f; }
+RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
+  return make_float3(1.f);
+}

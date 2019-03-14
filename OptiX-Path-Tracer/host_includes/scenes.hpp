@@ -1,6 +1,8 @@
 #ifndef SCENESH
 #define SCENESH
 
+// scene.hpp: Define test scene creation functions
+
 #include <chrono>
 
 #include "camera.hpp"
@@ -8,7 +10,7 @@
 #include "mesh.hpp"
 #include "pdfs.hpp"
 
-// TODO: look into converting pointers into smart pointers
+// TODO: convert pointers to smart/shared pointers
 
 // Assumptions taken on scene functions:
 // - each Geometry(or GeometryTriangle) has only one material
@@ -270,8 +272,8 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int glassMt =
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
-
-  int testMt = mats.push(new Lambertian(textures[testTx]));
+  int aniso = mats.push(
+      new Anisotropic(textures[redTx], textures[greenTx], 10.f, 10.f));
 
   // create geometries/hitables
   Hitable_List list;
@@ -287,14 +289,13 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  /*list.push(
-      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f,
-     mats[testMt]));*/
+  list.push(
+      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mats[aniso]));
   /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
                        mats[testMt]));*/
 
   // Aluminium box
-  Box box =
+  /*Box box =
       Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
   box.translate(make_float3(265.f, 0.f, 295.f));
   box.rotate(15.f, Y_AXIS);
@@ -304,7 +305,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);
+  list.push(&box2);*/
 
   // assign texture programs to a context-wide sample_texture buffer
   Buffer texBuffer = textures.createBuffer(g_context);
@@ -477,7 +478,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, HDR, "../../../assets/hdr/red.hdr");
+  setMissProgram(g_context, HDR, "../../../assets/hdr/fireplace.hdr");
   setExceptionProgram(g_context);
 
   // create scene group
@@ -571,6 +572,17 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
                          mats[whiteMt]));
   }
 
+  // pie
+  else if (modelID == 4) {
+    Mesh model = Mesh("pie.obj", "../../../assets/pie/");
+    model.scale(make_float3(150.f));
+    model.translate(make_float3(0.f, -550.f, 0.f));
+    model.addToScene(group, g_context);
+
+    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                         mats[whiteMt]));
+  }
+
   // sponza
   else {
     Mesh model = Mesh("sponza.obj", "../../../assets/sponza/");
@@ -589,7 +601,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   g_context["world"]->set(group);
 
   // configure camera
-  if ((modelID >= 0) && (modelID < 4)) {
+  if ((modelID >= 0) && (modelID < 5)) {
     const float3 lookfrom = make_float3(0.f, 0.f, -800.f);
     const float3 lookat = make_float3(0.f, 0.f, 0.f);
     const float3 up = make_float3(0.f, 1.f, 0.f);
@@ -602,7 +614,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   }
 
   // for sponza
-  else if (modelID == 4) {
+  else if (modelID == 5) {
     const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
     const float3 lookat = make_float3(278.f, 278.f, 0.f);
     const float3 up = make_float3(0.f, 1.f, 0.f);
