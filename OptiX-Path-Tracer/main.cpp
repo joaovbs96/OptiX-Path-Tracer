@@ -214,7 +214,7 @@ int main(int ac, char **av) {
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
           if (state.w > 0 && state.h > 0 && state.samples > 0) {
-            // Convifugre OptiX context & scene
+            // Configure OptiX context & scene
             Optix_Config(state);
 
             // start flag

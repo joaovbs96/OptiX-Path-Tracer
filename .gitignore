@@ -10,5 +10,4 @@ CMakeCache.txt
 *.obj
 *.zip
 *.rar
-cmake/configure_optix.cmake
-configure_optix.cmake
+cmake/
