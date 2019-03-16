@@ -101,7 +101,7 @@ RT_FUNCTION float3 Blinn_Sample(float u, float v, float nu, float nv) {
   float sin_phi_h_sq = sin_phi_h * sin_phi_h;
   float alpha = expU * (1.f - sin_phi_h_sq) + expV * sin_phi_h_sq;
   float cos_theta = pow(u, 1.f / (alpha + 2.f));
-  float sin_theta = sqrt(ffmax(0.f, 1.f - cos_theta * cos_theta));
+  float sin_theta = sqrt(1.f - cos_theta * cos_theta);
 
   return Spherical_Vector(sin_theta, cos_theta, phi);
 }
@@ -112,7 +112,7 @@ RT_FUNCTION float Blinn_Density(float3& normal, float nu, float nv) {
   float expV = convert_exp(nv);
   float expUV = sqrt((expU + 2.0f) * (expV + 2.0f));
 
-  float NoH = AbsCosTheta(normal);
+  float NoH = ffmax(AbsCosTheta(normal), 0.001f);
 
   float exponent = (1 - Sin2Phi(normal)) * expU;
   exponent += Sin2Phi(normal) * expV;

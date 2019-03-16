@@ -32,7 +32,7 @@ rtDeclareVariable(float, nv, , );
 // Material Programs
 RT_PROGRAM void closest_hit() {
   prd.matType = Anisotropic_Material;
-  prd.isSpecular = false;
+  prd.isSpecular = false; // this parameter refers to 'ideal specular BRDFs', like Metal and Dielectric
   prd.scatterEvent = rayGotBounced;
 
   prd.origin = hit_rec.p;
@@ -60,16 +60,15 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   MaterialParameters param = pdf.matParams;
   float nu = param.anisotropic.nu;
   float nv = param.anisotropic.nv;
-  float u = param.u;
-  float v = param.v;
+  float u = rnd(seed);
+  float v = rnd(seed);
 
   float3 direction;
   if (u < 0.5f) {
     cosine_sample_hemisphere(u, v, direction);
 
-    Onb uvw((pdf.normal));
+    Onb uvw(pdf.normal);
     uvw.inverse_transform(direction);
-
   } else {
     direction = Blinn_Sample(u, v, nu, nv);
     direction = 2 * dot(pdf.origin, direction) * direction - pdf.origin;
@@ -79,6 +78,9 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
   return pdf.direction;
 }
+
+// TODO: check microfacet BRDF description in the SIGGRAPH courses and the following link
+// http://simonstechblog.blogspot.com/2011/12/microfacet-brdf.html
 
 // TODO: check blinn functions, they are most likely returning the NaNs
 
@@ -90,7 +92,9 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 
   // half vector = (v1 + v2) / |v1 + v2|
   float3 half_vector = unit_vector(pdf.origin + pdf.direction);
+  //printf("%f %f %f \n", half_vector.x, half_vector.y, half_vector.z);
   float h_pdf = Blinn_PDF(half_vector, nu, nv);
+  h_pdf = ffmax(0.001f, h_pdf);
 
   float a = AbsCosTheta(pdf.origin) / PI_F;
   float b = h_pdf / (4.f * dot(pdf.direction, half_vector));
@@ -98,7 +102,7 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 
   // FIXME: it's returning NaN
 
-  return lerp(a, b, t);
+  return ffmax(0.001f, lerp(a, b, t));
 }
 
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
@@ -123,7 +127,8 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float3 half_vector = unit_vector(pdf.origin + pdf.direction);
 
   // specular component
-  float IoH = dot(pdf.origin, half_vector);
+  float IoH = dot(pdf.origin, unit_vector(half_vector));
+  printf("%f\n", IoH);
   float3 specular_component = schlick(specular_color, IoH);
   specular_component *= Blinn_Density(half_vector, nu, nv);
   specular_component /= 4.f * IoH * ffmax(nk1, nk2);
