@@ -1,20 +1,18 @@
 
 #include "material.cuh"
+#include "microfacets.cuh"
 
-// Paper & Tech Report
+////////////////////////////////////////////////////////////
+// --- Ashikhmin-Shirley Anisotropic Phong BRDF Model --- //
+////////////////////////////////////////////////////////////
+
+// Original Paper & Tech Report - "An Anisotropic Phong Light Reflection Model"
 // https://www.cs.utah.edu/~shirley/papers/jgtbrdf.pdf
 // https://www.cs.utah.edu/docs/techreports/2000/pdf/UUCS-00-014.pdf
 
-// reference:
+// Other references:
 // https://github.com/JerryCao1985/SORT/blob/master/src/bsdf/ashikhmanshirley.cpp
 // https://github.com/JerryCao1985/SORT/blob/master/src/bsdf/ashikhmanshirley.h
-
-// origin -> k1
-// direction -> k2
-// N -> normal
-// Rd -> diffuse color(of the 'substrate' under the specular coating)
-// Rs -> specular color
-// nu, nv -> phong parameters
 
 // OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
@@ -29,39 +27,41 @@ rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
 rtDeclareVariable(float, nu, , );
 rtDeclareVariable(float, nv, , );
 
-// Material Programs
+///////////////////////////
+// --- BRDF Programs --- //
+///////////////////////////
+
+// Assigns material and hit parameters to PRD
 RT_PROGRAM void closest_hit() {
   prd.matType = Anisotropic_Material;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 
+  // Get hit params
   prd.origin = hit_rec.p;
   prd.geometric_normal = hit_rec.geometric_normal;
   prd.shading_normal = hit_rec.shading_normal;
 
-  // Get Material Colors
+  // Get material colors
   int index = hit_rec.index;
   float3 diffuse = diffuse_color(hit_rec.u, hit_rec.v, hit_rec.p, index);
   float3 specular = specular_color(hit_rec.u, hit_rec.v, hit_rec.p, index);
 
-  // Assign material parameters to PRD, to be used in the BRDF programs
-  MaterialParameters params;
-  params.u = hit_rec.u;
-  params.v = hit_rec.v;
-  params.anisotropic.nu = nu;
-  params.anisotropic.nv = nv;
-  params.anisotropic.diffuse_color = diffuse;
-  params.anisotropic.specular_color = specular;
-  prd.matParams = params;
+  // Assign material parameters to PRD, to be used in the sampling programs
+  prd.matParams.anisotropic.diffuse_color = diffuse;
+  prd.matParams.anisotropic.specular_color = specular;
+  prd.matParams.anisotropic.nu = nu;
+  prd.matParams.anisotropic.nv = nv;
 }
 
+// Samples BRDF, generating outgoing direction(Wo)
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   // Get material params from input variable
-  MaterialParameters param = pdf.matParams;
-  float nu = param.anisotropic.nu;
-  float nv = param.anisotropic.nv;
-  float u = param.u;
-  float v = param.v;
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
+
+  float u = rnd(seed);
+  float v = rnd(seed);
 
   float3 direction;
   if (u < 0.5f) {
@@ -80,13 +80,13 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   return pdf.direction;
 }
 
-// TODO: check blinn functions, they are most likely returning the NaNs
-
+// Gets BRDF PDF value
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
+  if (dot(pdf.direction, pdf.normal) <= 0.f) return 0.f;
+
   // Get material params from input variable
-  MaterialParameters param = pdf.matParams;
-  float nu = param.anisotropic.nu;
-  float nv = param.anisotropic.nv;
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
 
   // half vector = (v1 + v2) / |v1 + v2|
   float3 half_vector = unit_vector(pdf.origin + pdf.direction);
@@ -96,18 +96,19 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
   float b = h_pdf / (4.f * dot(pdf.direction, half_vector));
   float t = 0.5f;
 
-  // FIXME: it's returning NaN
-
   return lerp(a, b, t);
 }
 
+// Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
+  if (dot(pdf.direction, pdf.normal) <= 0.f) return make_float3(0.f);
+
   // Get material params from input variable
-  MaterialParameters param = pdf.matParams;
-  float3 diffuse_color = param.anisotropic.diffuse_color;
-  float3 specular_color = param.anisotropic.specular_color;
-  float nu = param.anisotropic.nu;
-  float nv = param.anisotropic.nv;
+  float3 diffuse_color, specular_color;
+  diffuse_color = pdf.matParams.anisotropic.diffuse_color;
+  specular_color = pdf.matParams.anisotropic.specular_color;
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
 
   float nk1 = AbsCosTheta(pdf.origin);     // cos_theta_i
   float nk2 = AbsCosTheta(pdf.direction);  // cos_theta_o
@@ -127,8 +128,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float3 specular_component = schlick(specular_color, IoH);
   specular_component *= Blinn_Density(half_vector, nu, nv);
   specular_component /= 4.f * IoH * ffmax(nk1, nk2);
-
-  // FIXME: Specular is returning NaN
 
   return (diffuse_component + specular_component) * nk1;
 }
