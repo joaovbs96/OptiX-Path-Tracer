@@ -76,26 +76,21 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
     }
   }
 
-  Texture* tx0 = new Constant_Texture(0.4f, 0.2f, 0.1f);
-  Host_Material* mt0 = new Lambertian(tx0);
-  list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt0));
-  txt.push(tx0);
-
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(rnd(), rnd(), rnd());
   Host_Material* mt1 = new Dielectric(tx1, tx2, 1.5, 0.f);
-  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt1));
+  list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
   txt.push(tx1);
   txt.push(tx2);
 
-  Texture* tx3 = new Constant_Texture(0.7f, 0.6f, 0.5f);
-  Host_Material* mt2 = new Metal(tx3, 0.f);
+  Texture* tx3 = new Constant_Texture(rnd(), rnd(), rnd());
+  Host_Material* mt0 = new Lambertian(tx3);
+  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
+
+  Texture* tx4 = new Constant_Texture(rnd(), rnd(), rnd());
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 100.f, 100.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
-
-  // assign texture programs to a context-wide sample_texture buffer
-  Buffer texBuffer = txt.createBuffer(g_context);
-  g_context["sample_texture"]->setBuffer(texBuffer);
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
@@ -201,9 +196,6 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   Host_Material* lmt = new Diffuse_Light(txt[ltx]);
   list.push(new AARect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Z_AXIS, lmt));
 
-  // assign texture programs to a context-wide sample_texture buffer
-  g_context["sample_texture"]->setBuffer(txt.createBuffer(g_context));
-
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
   g_context["world"]->set(group);
@@ -272,8 +264,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int glassMt =
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
-  int aniso = mats.push(
-      new Anisotropic(textures[redTx], textures[greenTx], 10.f, 10.f));
+  int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
 
   // create geometries/hitables
   Hitable_List list;
@@ -290,7 +281,11 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
   list.push(
-      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mats[aniso]));
+      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
+  list.push(
+      new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
+  list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
+                       mats[whiteMt]));
   /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
                        mats[testMt]));*/
 
@@ -438,9 +433,6 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   spheres.translate(make_float3(-100.f, 270.f, 395.f));
   spheres.rotate(15.f, Y_AXIS);
   spheres.addList(group, g_context);
-
-  // assign texture programs to a context-wide sample_texture buffer
-  g_context["sample_texture"]->setBuffer(txt.createBuffer(g_context));
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
@@ -591,10 +583,6 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.translate(make_float3(300.f, 5.f, -400.f));
     model.addToScene(group, g_context);
   }
-
-  // assign texture programs to a context-wide sample_texture buffer
-  Buffer texBuffer = txts.createBuffer(g_context);
-  g_context["sample_texture"]->setBuffer(texBuffer);
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);

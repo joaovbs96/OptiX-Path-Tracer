@@ -31,3 +31,17 @@ struct Light_Sampler {
   std::vector<Program> sample, pdf;
   std::vector<float3> emissions;
 };
+
+// returns smallest integer not less than a scalar or each vector component
+float saturate(float x) { return ffmax(0.f, ffmin(1.f, x)); }
+
+float Sign(float x) {
+  if (x < 0.0f)
+    return -1.0f;
+
+  else if (x > 0.0f)
+    return 1.0f;
+
+  else
+    return 0.0f;
+}

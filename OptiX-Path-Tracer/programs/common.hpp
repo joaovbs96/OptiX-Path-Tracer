@@ -30,10 +30,11 @@ typedef enum {
   Dielectric_Material,
   Isotropic_Material,
   Normal_Material,
-  Anisotropic_Material
+  Anisotropic_Material,
+  Oren_Nayar_Material
 } MaterialType;
 
-#define NUMBER_OF_MATERIALS 7
+#define NUMBER_OF_MATERIALS 8
 
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;

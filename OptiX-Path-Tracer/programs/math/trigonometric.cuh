@@ -1,33 +1,14 @@
-#include "vec.hpp"
+#pragma once
 
-RT_FUNCTION float Saturate(float x) {
-  if (x < 0.f)
-    return 0.f;
-  else if (x > 1.f)
-    return 1.f;
-
-  return x;
-}
-
-RT_FUNCTION float Sign(float x) {
-  if (x < 0.0f) {
-    return -1.0f;
-  } else if (x > 0.0f) {
-    return 1.0f;
-  }
-
-  return 0.0f;
-}
+#include "../vec.hpp"
 
 RT_FUNCTION float3 MatrixMultiply(const float3& vec, const Matrix3x3& mat) {
-  float3 result =
-      make_float3(vec.x * mat.getRow(0).x + vec.y * mat.getRow(1).x +
-                      vec.z * mat.getRow(2).x,
-                  vec.x * mat.getRow(0).y + vec.y * mat.getRow(1).y +
-                      vec.z * mat.getRow(2).y,
-                  vec.x * mat.getRow(0).z + vec.y * mat.getRow(1).z +
-                      vec.z * mat.getRow(2).z);
-  return result;
+  return make_float3(vec.x * mat.getRow(0).x + vec.y * mat.getRow(1).x +
+                         vec.z * mat.getRow(2).x,
+                     vec.x * mat.getRow(0).y + vec.y * mat.getRow(1).y +
+                         vec.z * mat.getRow(2).y,
+                     vec.x * mat.getRow(0).z + vec.y * mat.getRow(1).z +
+                         vec.z * mat.getRow(2).z);
 }
 
 RT_FUNCTION float CosTheta(const float3& w) { return w.y; }

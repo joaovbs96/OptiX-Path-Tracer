@@ -70,6 +70,9 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   // return black if there's no light
   if (numLights == 0) return make_float3(0.f);
 
+  // return black if ray missed
+  if (prd.scatterEvent == rayMissed) return make_float3(0.f);
+
   // ramdomly pick one light and multiply the result by the number of lights
   // it's the same as dividing by the PDF if they have the same probability
   int index = ((int)(rnd(prd.seed) * numLights)) % numLights;

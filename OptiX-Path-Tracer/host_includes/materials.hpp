@@ -15,6 +15,7 @@ extern "C" const char light_programs[];
 extern "C" const char isotropic_programs[];
 extern "C" const char normal_programs[];
 extern "C" const char anisotropic_programs[];
+extern "C" const char oren_nayar_programs[];
 extern "C" const char hit_program[];
 
 //////////////////////////////////
@@ -56,6 +57,9 @@ struct Host_Material {
 
       case Anisotropic_Material:
         return createProgram(anisotropic_programs, name, g_context);
+
+      case Oren_Nayar_Material:
+        return createProgram(oren_nayar_programs, name, g_context);
 
       default:
         throw "Invalid Material";
@@ -220,6 +224,32 @@ struct Anisotropic : public Host_Material {
   const Texture *specular_tex;
   const Texture *diffuse_tex;
   const float nu, nv;
+};
+
+// Creates Oren-Nayar material
+struct Oren_Nayar : public Host_Material {
+  Oren_Nayar(const Texture *t, const float R)
+      : texture(t), Host_Material(Oren_Nayar_Material) {
+    // converts roughness to internal parameters
+    float sigma = saturate(R);  // [0, 1]
+    float div = 1.f / (PI_F + ((3.f * PI_F - 4.f) / 6.f) * sigma);
+    rA = 1.0f * div;
+    rB = sigma * div;
+  }
+
+  // Assign host side Oren-Nayar material to device Material object
+  virtual Material assignTo(Context &g_context) const override {
+    // Creates closest hit programs and assigns variables and textures
+    Program hit = createProgram(oren_nayar_programs, "closest_hit", g_context);
+    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    hit["rA"]->setFloat(rA);  // roughness parameters
+    hit["rB"]->setFloat(rB);
+
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  const Texture *texture;
+  float rA, rB;
 };
 
 // List of Host_Materials

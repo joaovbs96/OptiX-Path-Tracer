@@ -46,6 +46,7 @@ cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
 cuda_compile_and_embed( geom_tri_programs programs/hitables/geometry_triangles.cu )
 cuda_compile_and_embed( normal_programs programs/materials/normal_shader.cu )
 cuda_compile_and_embed( anisotropic_programs programs/materials/anisotropic_phong.cu )
+cuda_compile_and_embed( oren_nayar_programs programs/materials/oren_nayar.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -104,6 +105,7 @@ add_executable(OptiX_Path_Tracer
   ${geom_tri_programs}
   ${normal_programs}
   ${anisotropic_programs}
+  ${oren_nayar_programs}
   )
 
 target_link_libraries(OptiX_Path_Tracer ImGuiLibs)

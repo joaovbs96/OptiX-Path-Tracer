@@ -44,7 +44,7 @@ struct GUIState {
         model(0),
         frequency(1),
         currentSample(0),
-        showProgress(false),
+        showProgress(true),
         done(false),
         start(false),
         fileType(0),

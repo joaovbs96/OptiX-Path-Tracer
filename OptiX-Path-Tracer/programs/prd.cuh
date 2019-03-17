@@ -27,12 +27,18 @@ struct MaterialParameters {
   float u, v;
   float3 attenuation;
 
-  // anisotropic material specific parameters
+  // sub-structs to hold material specific params
+  // anisotropic material
   struct {
     float3 diffuse_color;
     float3 specular_color;
     float nu, nv;
   } anisotropic;
+
+  // oren-nayar material
+  struct {
+    float rA, rB;
+  } orenNayar;
 };
 
 typedef enum {
