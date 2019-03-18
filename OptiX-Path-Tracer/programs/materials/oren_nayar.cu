@@ -1,5 +1,4 @@
 #include "material.cuh"
-#include "microfacets.cuh"
 
 //////////////////////////////////////////
 // --- Oren-Nayar Reflectance Model --- //
@@ -12,8 +11,7 @@
 // Yasuhiro Fujii’s "A tiny improvement of Oren-Nayar reflectance model" variant
 // http://mimosa-pudica.net/improved-oren-nayar.html
 
-// Other references:
-// https://caffeineviking.net/papers/mcrt.pdf#subsubsection.2.3.2
+// Reference Implementation:
 // https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_oren_nayar.h
 
 // OptiX Context objects

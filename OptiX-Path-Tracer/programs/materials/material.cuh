@@ -49,7 +49,7 @@ RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
 }
 
 RT_FUNCTION bool SameHemisphere(const float3 a, const float3 b) {
-  return a.y * b.y > 0.f;
+  return a.z * b.z > 0.f;
 }
 
 RT_FUNCTION bool Transmit(float3 wm, float3 wi, float n, float3& wo) {

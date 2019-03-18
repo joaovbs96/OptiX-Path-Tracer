@@ -3,54 +3,65 @@
 #include "../math/trigonometric.cuh"
 #include "../pdfs/pdf.cuh"
 
-RT_FUNCTION bool PointingUp(const float3& v) {
-  return dot(v, make_float3(0.f, 1.f, 0.f)) > 0.0f;
+// Beckmann Microfacet Distribution functions from PBRT
+// https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.cpp
+// https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.h
+
+RT_FUNCTION float Beckmann_Roughness(float roughness) {
+  roughness = max(roughness, 0.001f);
+  float x = log(roughness);
+
+  return 1.62142f + 0.819955f * x + 0.1734f * x * x + 0.0171201f * x * x * x +
+         0.000640711f * x * x * x * x;
 }
 
-RT_FUNCTION bool SameHemiSphere(const float3& wi, const float3& wo) {
-  return !(PointingUp(wi) ^ PointingUp(wo));
-}
+// TODO: adapt
+RT_FUNCTION float3 Beckmann_Sample(float3 origin, float u, float v) {
+  /*// Sample full distribution of normals for Beckmann distribution
 
-// Blinn Functions - reference:
-// https://github.com/JerryCao1985/SORT/blob/547286d552dc0e555d8144fd28bfae58535ad0d8/src/bsdf/microfacet.cpp
-// https://github.com/JerryCao1985/SORT/blob/547286d552dc0e555d8144fd28bfae58535ad0d8/src/bsdf/microfacet.h
-
-RT_FUNCTION float3 Blinn_Sample(float u, float v, float nu, float nv) {
-  float expU = convert_exp(nu);
-  float expV = convert_exp(nv);
-  float expUV = sqrt((expU + 2.0f) / (expV + 2.0f));
-
-  float phi = 2.f * PI_F * v;
-  if (expU != expV) {
-    int offset[5] = {0, 1, 1, 2, 2};
-    int i = v == 0.25 ? 0 : (int)(v * 4.f);
-    phi = std::atan(expUV * std::tan(phi)) + offset[i] * PI_F;
+  // Compute $\tan^2 \theta$ and $\phi$ for Beckmann distribution sample
+  Float tan2Theta, phi;
+  if (alphax == alphay) {
+    Float logSample = std::log(1 - u[0]);
+    DCHECK(!std::isinf(logSample));
+    tan2Theta = -alphax * alphax * logSample;
+    phi = u[1] * 2 * Pi;
+  } else {
+    // Compute _tan2Theta_ and _phi_ for anisotropic Beckmann
+    // distribution
+    Float logSample = std::log(1 - u[0]);
+    DCHECK(!std::isinf(logSample));
+    phi = std::atan(alphay / alphax * std::tan(2 * Pi * u[1] + 0.5f * Pi));
+    if (u[1] > 0.5f) phi += Pi;
+    Float sinPhi = std::sin(phi), cosPhi = std::cos(phi);
+    Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
+    tan2Theta =
+        -logSample / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
   }
 
-  float sin_phi_h = sin(phi);
-  float sin_phi_h_sq = sin_phi_h * sin_phi_h;
-  float alpha = expU * (1.f - sin_phi_h_sq) + expV * sin_phi_h_sq;
-  float cos_theta = pow(u, 1.f / (alpha + 2.f));
-  float sin_theta = sqrt(ffmax(0.f, 1.f - cos_theta * cos_theta));
-
-  return Spherical_Vector(sin_theta, cos_theta, phi);
+  // Map sampled Beckmann angles to normal direction _wh_
+  Float cosTheta = 1 / std::sqrt(1 + tan2Theta);
+  Float sinTheta = std::sqrt(std::max((Float)0, 1 - cosTheta * cosTheta));
+  Vector3f wh = SphericalDirection(sinTheta, cosTheta, phi);
+  if (!SameHemisphere(wo, wh)) wh = -wh;
+  return wh;*/
 }
 
-// "Returns probability of facet with given normal"
-RT_FUNCTION float Blinn_Density(float3& normal, float nu, float nv) {
-  float expU = convert_exp(nu);
-  float expV = convert_exp(nv);
-  float expUV = sqrt((expU + 2.0f) * (expV + 2.0f));
+RT_FUNCTION float Beckmann_D(const float3& wh, float nu, float nv) {
+  float tan2Theta = Tan2Theta(wh);
+  if (isinf(tan2Theta)) return 0.f;
 
-  float NoH = AbsCosTheta(normal);
+  float cos4Theta = Cos2Theta(wh) * Cos2Theta(wh);
 
-  float exponent = (1 - Sin2Phi(normal)) * expU;
-  exponent += Sin2Phi(normal) * expV;
-
-  return expUV * pow(NoH, exponent) / (1.f / 2 * PI_F);
+  return expf(-tan2Theta *
+              (Cos2Phi(wh) / (nu * nu) + Sin2Phi(wh) / (nv * nv))) /
+         (PI_F * nu * nv * cos4Theta);
 }
 
-// "PDF of sampling a specific normal direction"
-RT_FUNCTION float Blinn_PDF(float3& normal, float nu, float nv) {
-  return Blinn_Density(normal, nu, nv) * AbsCosTheta(normal);
+RT_FUNCTION float Beckmann_PDF(const float3& wh, float nu, float nv) const {
+  /*const float3& wo
+  if (sampleVisibleArea)
+    return D(wh) * G1(wo) * AbsDot(wo, wh) / AbsCosTheta(wo);
+  else*/
+  return Beckmann_D(wh, nu, nv) * AbsCosTheta(wh);
 }

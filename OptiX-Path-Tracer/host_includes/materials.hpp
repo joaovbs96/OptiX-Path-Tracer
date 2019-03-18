@@ -215,8 +215,8 @@ struct Anisotropic : public Host_Material {
     Program hit = createProgram(anisotropic_programs, "closest_hit", g_context);
     hit["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
     hit["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
-    hit["nu"]->setFloat(nu);
-    hit["nv"]->setFloat(nv);
+    hit["nu"]->setFloat(clamp(nu, 0.001f, 1.f));
+    hit["nv"]->setFloat(clamp(nv, 0.001f, 1.f));
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }

@@ -70,3 +70,11 @@ RT_FUNCTION float3 random_cosine_direction(uint &seed) {
 
   return make_float3(x, y, z);
 }
+
+/* return an orthogonal tangent and bitangent given a normal and tangent that
+ * may not be exactly orthogonal */
+RT_FUNCTION void make_orthonormals_tangent(const float3 N, const float3 T,
+                                           float3 &a, float3 &b) {
+  b = normalize(cross(N, T));
+  a = cross(b, N);
+}

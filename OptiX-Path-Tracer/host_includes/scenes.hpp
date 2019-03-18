@@ -77,18 +77,18 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   }
 
   Texture* tx1 = new Constant_Texture(1.f);
-  Texture* tx2 = new Constant_Texture(rnd(), rnd(), rnd());
+  Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Host_Material* mt1 = new Dielectric(tx1, tx2, 1.5, 0.f);
   list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
   txt.push(tx1);
   txt.push(tx2);
 
-  Texture* tx3 = new Constant_Texture(rnd(), rnd(), rnd());
+  Texture* tx3 = new Constant_Texture(1.f, 1.f, rnd());
   Host_Material* mt0 = new Lambertian(tx3);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
   Texture* tx4 = new Constant_Texture(rnd(), rnd(), rnd());
-  Host_Material* mt2 = new Anisotropic(tx3, tx4, 100.f, 100.f);
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 0.0f, 0.0f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
