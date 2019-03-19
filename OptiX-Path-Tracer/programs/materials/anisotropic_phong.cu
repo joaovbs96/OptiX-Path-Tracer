@@ -63,25 +63,24 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float nv = Beckmann_Roughness(pdf.matParams.anisotropic.nv);
 
   // random variables
-  float u = rnd(seed);
-  float v = rnd(seed);
+  float2 random = make_float2(rnd(seed), rnd(seed));
 
   float3 direction;
-  if (u < 0.5) {
-    u = ffmin(2 * u, 1.f - 0.001f);
+  if (random.x < 0.5) {
+    random.x = ffmin(2 * random.x, 1.f - 0.001f);
 
     // Cosine-sample the hemisphere, flipping the direction if necessary
-    cosine_sample_hemisphere(u, v, direction);
+    cosine_sample_hemisphere(random.x, random.y, direction);
 
     Onb uvw(pdf.normal);
     uvw.inverse_transform(direction);
     if (pdf.origin.z < 0.f) direction.z *= -1.f;
 
   } else {
-    u = ffmin(2 * (u - 0.5f), 1.f - 0.001f);
+    random.x = ffmin(2 * (random.x - 0.5f), 1.f - 0.001f);
 
     // Sample microfacet orientation(H) and reflected direction(origin)
-    float3 H = Beckmann_Sample(pdf.origin, u, v);
+    float3 H = Beckmann_Sample(pdf.origin, random, nu, nv);
     direction = reflect(pdf.origin, H);  // on PBRT, wi is direction
 
     if (!SameHemisphere(pdf.origin, direction)) direction = make_float3(0.f);

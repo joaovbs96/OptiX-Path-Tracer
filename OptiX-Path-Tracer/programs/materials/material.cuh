@@ -22,11 +22,11 @@
 RT_FUNCTION float schlick(float cosine, float ref_idx) {
   float r0 = (1.f - ref_idx) / (1.f + ref_idx);
   r0 = r0 * r0;
-  return r0 + (1.f - r0) * pow((1.f - cosine), 5.f);
+  return r0 + (1.f - r0) * powf((1.f - cosine), 5.f);
 }
 
-RT_FUNCTION float3 schlick(float3 r0, float cos) {
-  float exponential = powf(1.f - cos, 5.f);
+RT_FUNCTION float3 schlick(float3 r0, float cosine) {
+  float exponential = powf(1.f - cosine, 5.f);
   return r0 + (make_float3(1.f) - r0) * exponential;
 }
 
@@ -37,12 +37,12 @@ RT_FUNCTION float SchlickR0FromRelativeIOR(float eta) {
 
 RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
                          float3& refracted) {
-  float3 uv = unit_vector(v);
+  float3 uv = normalize(v);
   float dt = dot(uv, n);
   float discriminant = 1.f - ni_over_nt * ni_over_nt * (1.f - dt * dt);
 
   if (discriminant > 0.f) {
-    refracted = ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+    refracted = ni_over_nt * (uv - n * dt) - n * sqrtf(discriminant);
     return true;
   } else
     return false;
@@ -62,21 +62,6 @@ RT_FUNCTION bool Transmit(float3 wm, float3 wi, float n, float3& wo) {
   float root = 1.f - n * n * (1.f - c * c);
   if (root <= 0.f) return false;
 
-  wo = (n * c - sqrt(root)) * wm - n * wi;
+  wo = (n * c - sqrtf(root)) * wm - n * wi;
   return true;
-}
-
-RT_FUNCTION float convert_alpha(float roughness) {
-  return pow(max(0.01f, roughness), 4.f);
-}
-
-RT_FUNCTION float convert_exp(float roughness) {
-  return 2.0f / convert_alpha(roughness) - 2.0f;
-}
-
-RT_FUNCTION float3 Spherical_Vector(float sintheta, float costheta, float phi) {
-  float x = sintheta * cos(phi);
-  float y = costheta;
-  float z = sintheta * sin(phi);
-  return make_float3(x, y, z);
 }

@@ -88,7 +88,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
   Texture* tx4 = new Constant_Texture(rnd(), rnd(), rnd());
-  Host_Material* mt2 = new Anisotropic(tx3, tx4, 0.0f, 0.0f);
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1000.f, 100.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
