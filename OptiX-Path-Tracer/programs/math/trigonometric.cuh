@@ -48,11 +48,11 @@ RT_FUNCTION float CosDPhi(const float3& wa, const float3& wb) {
                -1.f, 1.f);
 }
 
-RT_FUNCTION float Spherical_Theta(const float3 &v) {
+RT_FUNCTION float Spherical_Theta(const float3& v) {
   return acosf(clamp(v.y, -1.f, 1.f));
 }
 
-RT_FUNCTION float Spherical_Phi(const float3 &v) {
+RT_FUNCTION float Spherical_Phi(const float3& v) {
   float p = atan2f(v.z, v.x);
   return (p < 0.f) ? p + 2.f * PI_F : p;
 }
@@ -65,4 +65,8 @@ RT_FUNCTION float3 Tangent(const float3& P) {
 
 RT_FUNCTION float3 Spherical_Vector(float sintheta, float costheta, float phi) {
   return make_float3(sintheta * cosf(phi), costheta, sintheta * sinf(phi));
+}
+
+RT_FUNCTION float3 Spherical_Vector(float theta, float phi) {
+  return make_float3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi));
 }

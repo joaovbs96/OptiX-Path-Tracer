@@ -50,7 +50,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   Host_Material* ground = new Lambertian(txt[groundTx]);
   list.push(new Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, ground));
 
-  for (int a = -11; a < 11; a++) {
+  /*for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
       float choose_mat = rnd();
       float3 center = make_float3(a + rnd(), 0.2f, b + rnd());
@@ -74,21 +74,21 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
         txt.push(tx2);
       }
     }
-  }
+  }*/
 
-  Texture* tx1 = new Constant_Texture(1.f);
+  /*Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Host_Material* mt1 = new Dielectric(tx1, tx2, 1.5, 0.f);
   list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
   txt.push(tx1);
-  txt.push(tx2);
+  txt.push(tx2);*/
 
-  Texture* tx3 = new Constant_Texture(1.f, 1.f, rnd());
-  Host_Material* mt0 = new Lambertian(tx3);
-  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
+  Texture* tx3 = new Constant_Texture(1.f, 0.f, 0.f);
+  // Host_Material* mt0 = new Lambertian(tx3);
+  // list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Texture* tx4 = new Constant_Texture(rnd(), rnd(), rnd());
-  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1000.f, 100.f);
+  Texture* tx4 = new Constant_Texture(0.f, 0.f, 1.f);
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1.0f, 0.5f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 

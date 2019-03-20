@@ -9,13 +9,13 @@
 
 RT_FUNCTION float Beckmann_Roughness(float roughness) {
   roughness = max(roughness, 0.001f);
-  float x = logf(roughness);
 
-  return 1.62142f + 0.819955f * x + 0.1734f * x * x + 0.0171201f * x * x * x +
-         0.000640711f * x * x * x * x;
+  return roughness * roughness;
 }
 
-RT_FUNCTION float3 Beckmann_Sample(float3 origin, float2 random, float nu, float nv) {
+// TODO: issue when NU is high
+RT_FUNCTION float3 Beckmann_Sample(float3 origin, float2 random, float nu,
+                                   float nv) {
   // Sample full distribution of normals for Beckmann distribution
 
   float logSample = logf(1.f - random.x);
@@ -30,11 +30,11 @@ RT_FUNCTION float3 Beckmann_Sample(float3 origin, float2 random, float nu, float
     // Compute tan2Theta and phi for anisotropic Beckmann distribution
     phi = atanf(nv / nu * tanf(2.f * PI_F * random.y + 0.5f * PI_F));
     if (random.y > 0.5f) phi += PI_F;
-    
+
     float sinPhi = sinf(phi), cosPhi = cosf(phi);
-    
+
     tan2Theta = -logSample;
-    tan2Theta /= (cosPhi * cosPhi / (nu * nu) + sinPhi * sinPhi / (nv * nv));
+    tan2Theta /= cosPhi * cosPhi / nu * nu + sinPhi * sinPhi / nv * nv;
   }
 
   // Map sampled Beckmann angles to normal direction _wh_
@@ -53,7 +53,7 @@ RT_FUNCTION float Beckmann_D(const float3& H, float nu, float nv) {
   float cos2Theta = Cos2Theta(H);
   float expo = -tan2Theta * (Cos2Phi(H) / (nu * nu) + Sin2Phi(H) / (nv * nv));
 
-  return  expf(expo) / (PI_F * nu * nv * cos2Theta * cos2Theta);
+  return expf(expo) / (PI_F * nu * nv * cos2Theta * cos2Theta);
 }
 
 RT_FUNCTION float Beckmann_PDF(const float3& H, float nu, float nv) {

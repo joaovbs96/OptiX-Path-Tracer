@@ -28,6 +28,8 @@ struct Host_Material {
 
   virtual Material assignTo(Context &g_context) const = 0;
 
+  virtual void assignParams(Program &program, Context &g_context) const = 0;
+
   virtual MaterialType type() const { return matType; }
 
   virtual Program getAnyHitProgram(Context &g_context) const {
@@ -88,9 +90,15 @@ struct Lambertian : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(lambertian_programs, "closest_hit", g_context);
-    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Lambertian programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
   }
 
   const Texture *texture;
@@ -105,10 +113,16 @@ struct Metal : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(metal_programs, "closest_hit", g_context);
-    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
-    hit["fuzz"]->setFloat(fuzz);
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Metal programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    program["fuzz"]->setFloat(fuzz);
   }
 
   const Texture *texture;
@@ -129,12 +143,18 @@ struct Dielectric : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(dielectric_programs, "closest_hit", g_context);
-    hit["base_texture"]->setProgramId(baseTex->assignTo(g_context));
-    hit["volume_texture"]->setProgramId(volTex->assignTo(g_context));
-    hit["ref_idx"]->setFloat(ref_idx);
-    hit["density"]->setFloat(density);
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Dielectric programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["base_texture"]->setProgramId(baseTex->assignTo(g_context));
+    program["volume_texture"]->setProgramId(volTex->assignTo(g_context));
+    program["ref_idx"]->setFloat(ref_idx);
+    program["density"]->setFloat(density);
   }
 
   const Texture *baseTex, *volTex;
@@ -151,7 +171,7 @@ struct Diffuse_Light : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(light_programs, "closest_hit", g_context);
-    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
   }
@@ -161,6 +181,12 @@ struct Diffuse_Light : public Host_Material {
     Program any = createProgram(hit_program, "any_hit", g_context);
     any["is_light"]->setInt(true);
     return any;
+  }
+
+  // Assigns variables to Diffuse Light programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
   }
 
   const Texture *texture;
@@ -174,9 +200,15 @@ struct Isotropic : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(isotropic_programs, "closest_hit", g_context);
-    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Isotropic programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
   }
 
   const Texture *texture;
@@ -191,9 +223,15 @@ struct Normal_Shader : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables
     Program hit = createProgram(normal_programs, "closest_hit", g_context);
-    hit["useShadingNormal"]->setInt(useShadingNormal);
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Normal Shader programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["useShadingNormal"]->setInt(useShadingNormal);
   }
 
   const bool useShadingNormal;
@@ -213,12 +251,18 @@ struct Anisotropic : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(anisotropic_programs, "closest_hit", g_context);
-    hit["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
-    hit["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
-    hit["nu"]->setFloat(clamp(nu, 0.001f, 1.f));
-    hit["nv"]->setFloat(clamp(nv, 0.001f, 1.f));
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Anisotropic-Phong programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
+    program["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
+    program["nu"]->setFloat(clamp(nu, 1e-4f, 1.f));
+    program["nv"]->setFloat(clamp(nv, 1e-4f, 1.f));
   }
 
   const Texture *specular_tex;
@@ -241,11 +285,17 @@ struct Oren_Nayar : public Host_Material {
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(oren_nayar_programs, "closest_hit", g_context);
-    hit["sample_texture"]->setProgramId(texture->assignTo(g_context));
-    hit["rA"]->setFloat(rA);  // roughness parameters
-    hit["rB"]->setFloat(rB);
+    assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Anisotropic-Phong programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    program["rA"]->setFloat(rA);  // roughness parameters
+    program["rB"]->setFloat(rB);
   }
 
   const Texture *texture;

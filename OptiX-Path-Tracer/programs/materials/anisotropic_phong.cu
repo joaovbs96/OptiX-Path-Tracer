@@ -52,36 +52,37 @@ RT_PROGRAM void closest_hit() {
   // Assign material parameters to PRD, to be used in the sampling programs
   prd.matParams.anisotropic.diffuse_color = diffuse;
   prd.matParams.anisotropic.specular_color = specular;
-  prd.matParams.anisotropic.nu = nu;
-  prd.matParams.anisotropic.nv = nv;
+  prd.matParams.anisotropic.nu = Beckmann_Roughness(nu);
+  prd.matParams.anisotropic.nv = Beckmann_Roughness(nv);
 }
 
 // Samples BRDF, generating outgoing direction(Wo)
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   // Get material params from input variable
-  float nu = Beckmann_Roughness(pdf.matParams.anisotropic.nu);
-  float nv = Beckmann_Roughness(pdf.matParams.anisotropic.nv);
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
 
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
 
   float3 direction;
   if (random.x < 0.5) {
-    random.x = ffmin(2 * random.x, 1.f - 0.001f);
+    random.x = min(2 * random.x, 1.f - 1e-6f);
 
     // Cosine-sample the hemisphere, flipping the direction if necessary
     cosine_sample_hemisphere(random.x, random.y, direction);
 
     Onb uvw(pdf.normal);
     uvw.inverse_transform(direction);
-    if (pdf.origin.z < 0.f) direction.z *= -1.f;
+
+    if (!SameHemisphere(pdf.origin, direction)) direction *= -1.f;
 
   } else {
-    random.x = ffmin(2 * (random.x - 0.5f), 1.f - 0.001f);
+    random.x = min(2 * (random.x - 0.5f), 1.f - 1e-6f);
 
     // Sample microfacet orientation(H) and reflected direction(origin)
     float3 H = Beckmann_Sample(pdf.origin, random, nu, nv);
-    direction = reflect(pdf.origin, H);  // on PBRT, wi is direction
+    direction = -reflect(pdf.origin, H);  // TODO: or -reflect
 
     if (!SameHemisphere(pdf.origin, direction)) direction = make_float3(0.f);
   }
@@ -96,8 +97,8 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
   if (!SameHemisphere(pdf.origin, pdf.direction)) return 0.f;
 
   // Get material params from input variable
-  float nu = Beckmann_Roughness(pdf.matParams.anisotropic.nu);
-  float nv = Beckmann_Roughness(pdf.matParams.anisotropic.nv);
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
 
   // half vector = (v1 + v2) / |v1 + v2|
   float3 H = normalize(pdf.direction + pdf.origin);
@@ -112,21 +113,20 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   // Get material params from input variable
-  float3 diffuse_color, specular_color;
-  diffuse_color = pdf.matParams.anisotropic.diffuse_color;
-  specular_color = pdf.matParams.anisotropic.specular_color;
-  float nu = Beckmann_Roughness(pdf.matParams.anisotropic.nu);
-  float nv = Beckmann_Roughness(pdf.matParams.anisotropic.nv);
+  float3 Rd, Rs;
+  Rd = pdf.matParams.anisotropic.diffuse_color;
+  Rs = pdf.matParams.anisotropic.specular_color;
+  float nu = pdf.matParams.anisotropic.nu;
+  float nv = pdf.matParams.anisotropic.nv;
 
-  float nk1 = AbsCosTheta(pdf.origin);     // wi
-  float nk2 = AbsCosTheta(pdf.direction);  // wo
+  float nk1 = AbsCosTheta(pdf.origin);     // wo - origin
+  float nk2 = AbsCosTheta(pdf.direction);  // wi - direction
 
   // diffuse component
-  float3 diffuse_component = diffuse_color;
-  diffuse_component *= (28.f / (23.f * PI_F));
-  diffuse_component *= (make_float3(1.f) - specular_color);
-  diffuse_component *= (1.f - fresnel_schlick(nk1 * 0.5f));
-  diffuse_component *= (1.f - fresnel_schlick(nk2 * 0.5f));
+  float3 diffuse_component = Rd * (28.f / (23.f * PI_F));
+  diffuse_component *= (make_float3(1.f) - Rs);
+  diffuse_component *= (1.f - powf(1.f - nk1 * 0.5f, 5.f));
+  diffuse_component *= (1.f - powf(1.f - nk2 * 0.5f, 5.f));
 
   // half vector = (v1 + v2) / |v1 + v2|
   float3 H = normalize(pdf.direction + pdf.origin);
@@ -134,9 +134,9 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float HdotO = dot(H, pdf.direction);
 
   // specular component
-  float3 specular_component = schlick(specular_color, HdotO);
-  specular_component *= Beckmann_D(H, nu, nv);
+  float3 specular_component = schlick(Rs, HdotO);  // fresnel reflectance
+  specular_component *= Beckmann_D(H, nu, nv);  // microfacet distribution term
   specular_component /= (4.f * abs(HdotO) * ffmax(nk1, nk2));
 
-  return diffuse_component + specular_component;
+  return (diffuse_component + specular_component) * nk2;
 }
