@@ -10,7 +10,7 @@
 RT_FUNCTION float Beckmann_Roughness(float roughness) {
   roughness = max(roughness, 0.001f);
 
-  return roughness * roughness;
+  return roughness * roughness;  // TODO: check other ways to convert roughness
 }
 
 // TODO: issue when NU is high
