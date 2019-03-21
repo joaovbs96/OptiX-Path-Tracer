@@ -8,9 +8,8 @@
 // https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.h
 
 RT_FUNCTION float Beckmann_Roughness(float roughness) {
-  roughness = max(roughness, 0.001f);
-
-  return roughness * roughness;  // TODO: check other ways to convert roughness
+  float x = logf(roughness);
+  return 1.62142f + 0.819955f * x + 0.1734f * x * x + 0.0171201f * x * x * x + 0.000640711f * x * x * x * x;// TODO: check other ways to convert roughness
 }
 
 // TODO: issue when NU is high

@@ -200,7 +200,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
 
         // TODO: bad bounce, test
-        // if (matPDF == 0.f || isNull(matValue)) return radiance;
+        if (matPDF == 0.f || isNull(matValue)) return radiance;
 
         // Accumulate color
         prd.throughput *= matValue / matPDF;

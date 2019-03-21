@@ -36,10 +36,10 @@ static void glfw_error_callback(int error, const char *description) {
 // Struct used to keep GUI state
 struct GUIState {
   GUIState()
-      : w(0),
-        h(0),
+      : w(500),
+        h(500),
         pW(1),
-        samples(0),
+        samples(500),
         scene(0),
         model(0),
         frequency(1),

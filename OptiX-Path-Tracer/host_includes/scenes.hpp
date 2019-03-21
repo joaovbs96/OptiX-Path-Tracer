@@ -87,8 +87,8 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   // Host_Material* mt0 = new Lambertian(tx3);
   // list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Texture* tx4 = new Constant_Texture(0.f, 0.f, 1.f);
-  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1.0f, 0.5f);
+  Texture* tx4 = new Constant_Texture(0.f, 1.f, 0.f);
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 0.5f, 0.5f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
@@ -97,7 +97,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 26.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
@@ -266,6 +266,10 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
 
+  Texture* tx3 = new Constant_Texture(1.f, 0.f, 0.f);
+  Texture* tx4 = new Constant_Texture(0.f, 0.f, 1.f);
+  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1.f, 1.0f);
+
   // create geometries/hitables
   Hitable_List list;
   list.push(
@@ -281,11 +285,11 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
   list.push(
-      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
-  list.push(
+      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mt2));
+  /*list.push(
       new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
-                       mats[whiteMt]));
+                       mats[whiteMt]));*/
   /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
                        mats[testMt]));*/
 
@@ -301,10 +305,6 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
-
-  // assign texture programs to a context-wide sample_texture buffer
-  Buffer texBuffer = textures.createBuffer(g_context);
-  g_context["sample_texture"]->setBuffer(texBuffer);
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
