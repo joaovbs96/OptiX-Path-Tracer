@@ -97,7 +97,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 26.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
@@ -305,10 +305,6 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);
-
-  // assign texture programs to a context-wide sample_texture buffer
-  Buffer texBuffer = textures.createBuffer(g_context);
-  g_context["sample_texture"]->setBuffer(texBuffer);
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
