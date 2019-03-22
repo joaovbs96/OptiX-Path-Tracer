@@ -8,12 +8,23 @@
 // https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.h
 
 RT_FUNCTION float Beckmann_Roughness(float roughness) {
-  roughness = max(roughness, 0.001f);
-
-  return roughness * roughness;  // TODO: check other ways to convert roughness
+  return roughness;
 }
 
-// TODO: issue when NU is high
+RT_FUNCTION void Sample_Quadrant(float nu, float nv, float ru, float rv,
+                                 float& phi, float& cos_theta) {
+  phi = atanf(sqrtf((nu + 1.f) / (nv + 1.f)) * tanf(2.f * PI_F * ru));
+
+  float cos_phi_2 = cosf(phi);
+  cos_phi_2 *= cos_phi_2;
+
+  float sin_phi_2 = sinf(phi);
+  sin_phi_2 *= sin_phi_2;
+
+  cos_theta = powf(rv, 1.f / (nu * cos_phi_2 + nv * sin_phi_2 + 1.f));
+}
+
+// FIXME: issue when NU is high
 RT_FUNCTION float3 Beckmann_Sample(float3 origin, float2 random, float nu,
                                    float nv) {
   // Sample full distribution of normals for Beckmann distribution
@@ -39,9 +50,9 @@ RT_FUNCTION float3 Beckmann_Sample(float3 origin, float2 random, float nu,
 
   // Map sampled Beckmann angles to normal direction _wh_
   float cosTheta = 1.f / sqrtf(1.f + tan2Theta);
-  float sinTheta = sqrtf(max(0.f, 1.f - cosTheta * cosTheta));
+  float sinTheta = sqrtf(fmaxf(0.f, 1.f - cosTheta * cosTheta));
   float3 H = Spherical_Vector(sinTheta, cosTheta, phi);
-  if (!SameHemisphere(origin, H)) H = -H;
+  if (!Same_Hemisphere(origin, H)) H = -H;
 
   return H;
 }

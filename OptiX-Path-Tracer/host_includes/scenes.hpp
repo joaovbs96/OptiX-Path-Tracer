@@ -50,7 +50,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   Host_Material* ground = new Lambertian(txt[groundTx]);
   list.push(new Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, ground));
 
-  /*for (int a = -11; a < 11; a++) {
+  for (int a = -11; a < 11; a++) {
     for (int b = -11; b < 11; b++) {
       float choose_mat = rnd();
       float3 center = make_float3(a + rnd(), 0.2f, b + rnd());
@@ -74,21 +74,21 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
         txt.push(tx2);
       }
     }
-  }*/
+  }
 
-  /*Texture* tx1 = new Constant_Texture(1.f);
+  Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Host_Material* mt1 = new Dielectric(tx1, tx2, 1.5, 0.f);
   list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
   txt.push(tx1);
-  txt.push(tx2);*/
+  txt.push(tx2);
 
-  Texture* tx3 = new Constant_Texture(1.f, 0.f, 0.f);
-  // Host_Material* mt0 = new Lambertian(tx3);
-  // list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
+  Texture* tx4 = new Constant_Texture(1.f);
+  Host_Material* mt0 = new Lambertian(tx4);
+  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Texture* tx4 = new Constant_Texture(0.f, 0.f, 1.f);
-  Host_Material* mt2 = new Anisotropic(tx3, tx4, 1.0f, 0.5f);
+  Texture* tx3 = new Constant_Texture(0.f);
+  Host_Material* mt2 = new Anisotropic(tx4, tx3, 10000.f, 10000.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
@@ -266,6 +266,10 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
 
+  Texture* tx3 = new Constant_Texture(1.f);
+  Texture* tx4 = new Constant_Texture(0.f);
+  int aniso = mats.push(new Anisotropic(tx3, tx4, 10000.f, 10000.f));
+
   // create geometries/hitables
   Hitable_List list;
   list.push(
@@ -280,17 +284,17 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  list.push(
-      new Sphere(make_float3(555 / 2.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
-  list.push(
+  list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f,
+                       mats[aniso]));
+  /*list.push(
       new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
-                       mats[whiteMt]));
+                       mats[whiteMt]));*/
   /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
                        mats[testMt]));*/
 
   // Aluminium box
-  /*Box box =
+  Box box =
       Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
   box.translate(make_float3(265.f, 0.f, 295.f));
   box.rotate(15.f, Y_AXIS);
@@ -300,7 +304,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);*/
+  list.push(&box2);
 
   // assign texture programs to a context-wide sample_texture buffer
   Buffer texBuffer = textures.createBuffer(g_context);

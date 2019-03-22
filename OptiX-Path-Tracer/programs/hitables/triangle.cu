@@ -76,14 +76,14 @@ RT_PROGRAM void get_bounds(int pid, float result[6]) {
 
   // find min and max iterating through vertices
   // min(minX, minY, minZ)
-  float minX = ffmin(ffmin(a.x, b.x), c.x);
-  float minY = ffmin(ffmin(a.y, b.y), c.y);
-  float minZ = ffmin(ffmin(a.z, b.z), c.z);
+  float minX = fminf(fminf(a.x, b.x), c.x);
+  float minY = fminf(fminf(a.y, b.y), c.y);
+  float minZ = fminf(fminf(a.z, b.z), c.z);
 
   // max(maxX, maxY, maxZ)
-  float maxX = ffmax(ffmax(a.x, b.x), c.x);
-  float maxY = ffmax(ffmax(a.y, b.y), c.y);
-  float maxZ = ffmax(ffmax(a.z, b.z), c.z);
+  float maxX = fmaxf(fmaxf(a.x, b.x), c.x);
+  float maxY = fmaxf(fmaxf(a.y, b.y), c.y);
+  float maxZ = fmaxf(fmaxf(a.z, b.z), c.z);
 
   aabb->m_min = make_float3(minX - 0.0001f, minY - 0.0001f, minZ - 0.0001f);
   aabb->m_max = make_float3(maxX + 0.0001f, maxY + 0.0001f, maxZ + 0.0001f);

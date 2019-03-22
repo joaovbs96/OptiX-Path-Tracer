@@ -77,11 +77,11 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   if (dot(pdf.direction, pdf.normal) <= 0.f) return make_float3(0.f);
 
-  float nl = max(dot(unit_vector(pdf.direction), unit_vector(pdf.normal)), 0.f);
-  float nv = max(dot(unit_vector(pdf.origin), unit_vector(pdf.normal)), 0.f);
-  float t = dot(unit_vector(pdf.direction), unit_vector(pdf.origin)) - nl * nv;
+  float nl = fmaxf(dot(normalize(pdf.direction), normalize(pdf.normal)), 0.f);
+  float nv = fmaxf(dot(normalize(pdf.origin), normalize(pdf.normal)), 0.f);
+  float t = dot(normalize(pdf.direction), normalize(pdf.origin)) - nl * nv;
 
-  if (t > 0.f) t /= max(nl, nv) + 0.001f;
+  if (t > 0.f) t /= fmaxf(nl, nv) + 0.001f;
 
   float rA = pdf.matParams.orenNayar.rA;
   float rB = pdf.matParams.orenNayar.rB;

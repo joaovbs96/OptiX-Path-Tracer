@@ -261,8 +261,8 @@ struct Anisotropic : public Host_Material {
                             Context &g_context) const override {
     program["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
     program["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
-    program["nu"]->setFloat(clamp(nu, 1e-4f, 1.f));
-    program["nv"]->setFloat(clamp(nv, 1e-4f, 1.f));
+    program["nu"]->setFloat(clamp(nu, 1.f, 1000000000.f));
+    program["nv"]->setFloat(clamp(nv, 1.f, 1000000000.f));
   }
 
   const Texture *specular_tex;
