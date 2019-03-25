@@ -108,6 +108,10 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   if (!Same_Hemisphere(origin, H)) H = -H;
 
   return H;
+
+  // TODO: try the approach from this article:
+  // https://hal.archives-ouvertes.fr/hal-01509746/document
+
   /*bool flip = origin.y < 0;
 
   // 1. stretch the view so we are sampling as though roughness==1
