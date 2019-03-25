@@ -19,7 +19,7 @@ RT_PROGRAM void closest_hit() {
   int texIndex = hit_rec.index;
 
   // assign material params to prd
-  prd.matType = Diffuse_Light_Material;
+  prd.matType = Diffuse_Light_BRDF;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotCancelled;
 

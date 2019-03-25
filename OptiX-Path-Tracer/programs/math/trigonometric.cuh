@@ -85,6 +85,12 @@ RT_FUNCTION void Make_Orthonormals_Tangent(const float3 N, const float3 T,
   a = cross(b, N);
 }
 
+// Convert vector from world space to local/tangent space
+RT_FUNCTION float3 World_To_Tangent(const Onb& uvw, const float3& P) {
+  return make_float3(dot(uvw.m_tangent, P), dot(uvw.m_binormal, P),
+                     dot(uvw.m_normal, P));
+}
+
 RT_FUNCTION float3 Spherical_Vector(float sintheta, float costheta, float phi) {
   return make_float3(sintheta * cosf(phi), costheta, sintheta * sinf(phi));
 }

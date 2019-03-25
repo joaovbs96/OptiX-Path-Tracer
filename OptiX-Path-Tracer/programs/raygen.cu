@@ -78,7 +78,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   int index = ((int)(rnd(prd.seed) * numLights)) % numLights;
 
   // return black if there's just one light and we just hit it
-  if (prd.matType == Diffuse_Light_Material) {
+  if (prd.matType == Diffuse_Light_BRDF) {
     if (numLights == 1) return make_float3(0.f);
   }
 
@@ -148,6 +148,33 @@ struct Camera {
   }
 };
 
+// Check if we should take emissions into account, in the next light hit
+RT_FUNCTION bool Emission_Next(BRDFType type) {
+  switch (type) {
+    case Metal_BRDF:
+    case Dielectric_BRDF:
+    case Isotropic_BRDF:
+    case Anisotropic_BRDF:
+    case Torrance_Sparrow_BRDF:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Check if current BRDF should directly sample light
+RT_FUNCTION bool Do_Direct_Sampling(BRDFType type) {
+  switch (type) {
+    case Metal_BRDF:
+    case Dielectric_BRDF:
+    case Anisotropic_BRDF:
+    case Torrance_Sparrow_BRDF:
+      return false;
+    default:
+      return true;
+  }
+}
+
 RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   PerRayData prd;
   prd.seed = seed;
@@ -164,10 +191,11 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     rtTrace(world, ray, prd);  // Trace a new ray
 
     // if the material is the normal shader, return its color
-    if (prd.matType == Normal_Material) return prd.attenuation;
+    if (prd.matType == Normal_BRDF) return prd.attenuation;
 
     // Only sample direct light if last bounce wasn't specular
-    if (!prd.isSpecular) radiance += prd.throughput * Direct_Light(prd);
+    if (Do_Direct_Sampling(prd.matType))
+      radiance += prd.throughput * Direct_Light(prd);
 
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
@@ -193,25 +221,24 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
       // otherwise, do importance sample
       else {
         // Sample BRDF
-        // TODO: rename type to SampleParams
+        // TODO: use PRD
         PDFParams pdfParams(prd);
         BRDF_Sample[prd.matType](pdfParams, seed);
         float matPDF = BRDF_PDF[prd.matType](pdfParams);
         float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
 
-        // TODO: bad bounce, test
-        if (matPDF == 0.f || isNull(matValue)) return radiance;
+        if (matPDF == 0.f) return make_float3(0.f);
 
         // Accumulate color
-        prd.throughput *= matValue / matPDF;
+        prd.throughput *= clamp(matValue / matPDF, 0.f, 1.f);
 
         // Update ray origin and direction
         prd.origin = pdfParams.origin;
         prd.direction = pdfParams.direction;
       }
 
-      // update variable with current ray hit
-      previousHitSpecular = prd.isSpecular;
+      // check if emissions should be taken into account if we hit a light
+      previousHitSpecular = Emission_Next(prd.matType);
 
       // generate a new ray
       ray = make_Ray(/* origin   : */ prd.origin,

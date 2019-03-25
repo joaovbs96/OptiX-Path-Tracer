@@ -40,7 +40,7 @@ struct GUIState {
         h(500),
         pW(1),
         samples(500),
-        scene(0),
+        scene(2),
         model(0),
         frequency(1),
         currentSample(0),

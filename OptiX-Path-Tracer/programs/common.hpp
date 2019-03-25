@@ -24,17 +24,18 @@ using namespace optix;
 
 // Material defines
 typedef enum {
-  Lambertian_Material,
-  Diffuse_Light_Material,
-  Metal_Material,
-  Dielectric_Material,
-  Isotropic_Material,
-  Normal_Material,
-  Anisotropic_Material,
-  Oren_Nayar_Material
-} MaterialType;
+  Lambertian_BRDF,
+  Diffuse_Light_BRDF,
+  Metal_BRDF,
+  Dielectric_BRDF,
+  Isotropic_BRDF,
+  Normal_BRDF,
+  Anisotropic_BRDF,
+  Oren_Nayar_BRDF,
+  Torrance_Sparrow_BRDF
+} BRDFType;
 
-#define NUMBER_OF_MATERIALS 8
+#define NUMBER_OF_MATERIALS 9
 
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;

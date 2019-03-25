@@ -43,6 +43,8 @@ rtBuffer<int> material_buffer;
 RT_PROGRAM void attributes() {
   const int3 v_idx = index_buffer[rtGetPrimitiveIndex()];
 
+  hit_rec.view_direction = normalize(-ray.direction);
+
   // Get triangle vertex
   float3 a = vertex_buffer[v_idx.x];
   float3 b = vertex_buffer[v_idx.y];

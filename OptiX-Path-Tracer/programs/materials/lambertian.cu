@@ -36,7 +36,7 @@ RT_PROGRAM void closest_hit() {
   int texIndex = hit_rec.index;
 
   // assign material params to prd
-  prd.matType = Lambertian_Material;
+  prd.matType = Lambertian_BRDF;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 

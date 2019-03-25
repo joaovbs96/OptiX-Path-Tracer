@@ -41,7 +41,7 @@ rtDeclareVariable(float, ref_idx, , );
 rtDeclareVariable(float, density, , );
 
 RT_PROGRAM void closest_hit() {
-  prd.matType = Dielectric_Material;
+  prd.matType = Dielectric_BRDF;
   prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
 

@@ -71,6 +71,8 @@ RT_PROGRAM void hit_sphere(int pid) {
     if (rtPotentialIntersection(temp)) {
       hit_rec.distance = temp;
 
+      hit_rec.view_direction = normalize(-ray.direction);
+
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
@@ -93,6 +95,8 @@ RT_PROGRAM void hit_sphere(int pid) {
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
       hit_rec.distance = temp;
+
+      hit_rec.view_direction = normalize(-ray.direction);
 
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);

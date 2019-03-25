@@ -24,9 +24,9 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   // add BRDF programs
   BRDF_Sampler brdf;
   for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
   }
 
   // add light parameters and programs
@@ -83,12 +83,14 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   txt.push(tx1);
   txt.push(tx2);
 
+  Texture* tx3 = new Constant_Texture(0.f, 1.f, 0.f);
   Texture* tx4 = new Constant_Texture(1.f);
-  Host_Material* mt0 = new Lambertian(tx4);
+
+  Host_Material* mt0 = new Lambertian(tx3);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Texture* tx3 = new Constant_Texture(0.f);
-  Host_Material* mt2 = new Anisotropic(tx4, tx3, 10000.f, 10000.f);
+  // Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.f, 0.0f);
+  Host_Material* mt2 = new Anisotropic(tx4, tx3, 0.5f, 1.0f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
@@ -97,7 +99,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 26.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 5.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
@@ -118,9 +120,9 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   // add BRDF programs
   BRDF_Sampler brdf;
   for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
   }
 
   // add light parameters and programs
@@ -222,9 +224,9 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   // configure materials
   BRDF_Sampler brdf;
   for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
   }
 
   // add light parameters and programs
@@ -233,6 +235,11 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   lights.pdf.push_back(rect_pdf.createPDF(g_context));
   lights.sample.push_back(rect_pdf.createSample(g_context));
   lights.emissions.push_back(make_float3(7.f));
+
+  /*Sphere_PDF sph_pdf(make_float3(555.f - 100.f, 100.f, 100.f), 40.f);
+  lights.pdf.push_back(sph_pdf.createPDF(g_context));
+  lights.sample.push_back(sph_pdf.createSample(g_context));
+  lights.emissions.push_back(make_float3(7.f));*/
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
@@ -266,9 +273,10 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
 
-  Texture* tx3 = new Constant_Texture(1.f);
-  Texture* tx4 = new Constant_Texture(0.f);
-  int aniso = mats.push(new Anisotropic(tx3, tx4, 10000.f, 10000.f));
+  Texture* tx3 = new Constant_Texture(252.f, 201.f, 88.f);
+  Texture* tx4 = new Constant_Texture(1.f, 0.f, 1.f);
+  int torr = mats.push(new Torrance_Sparrow(tx3, 0.1f, 1.f));
+  int aniso = mats.push(new Anisotropic(tx4, tx3, 0.1f, 0.1f));
 
   // create geometries/hitables
   Hitable_List list;
@@ -284,7 +292,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f,
+  list.push(new Sphere(make_float3(555.f - 100.f, 90.f, 555.f - 100.f), 90.f,
                        mats[aniso]));
   /*list.push(
       new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
@@ -294,17 +302,18 @@ void Cornell(Context& g_context, int Nx, int Ny) {
                        mats[testMt]));*/
 
   // Aluminium box
-  Box box =
-      Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
-  box.translate(make_float3(265.f, 0.f, 295.f));
-  box.rotate(15.f, Y_AXIS);
-  list.push(&box);
+  /*Box box = Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f),
+  mats[torr]); box.translate(make_float3(265.f, 0.f, 295.f)); box.rotate(15.f,
+  Y_AXIS); list.push(&box);*/
 
-  Box box2 =
+  /*list.push(new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
+                       mats[lightMt]));*/
+
+  /*Box box2 =
       Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);
+  list.push(&box2);*/
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
@@ -332,9 +341,9 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   // add BRDF programs
   BRDF_Sampler brdf;
   for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
   }
 
   // TODO: find a way to add these automatically once we create a diffuse light
@@ -460,9 +469,9 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   // configure BRDF programs
   BRDF_Sampler brdf;
   for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(MaterialType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(MaterialType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(MaterialType(i), g_context));
+    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
+    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
+    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
   }
 
   // add light parameters and programs

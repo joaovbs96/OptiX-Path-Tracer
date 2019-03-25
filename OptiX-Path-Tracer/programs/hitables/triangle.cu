@@ -50,6 +50,8 @@ RT_PROGRAM void hit_triangle(int pid) {
     if (rtPotentialIntersection(t)) {
       hit_rec.distance = t;
 
+      hit_rec.view_direction = normalize(-ray.direction);
+
       float3 hit_point = ray.origin + t * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;

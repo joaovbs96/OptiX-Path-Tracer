@@ -20,7 +20,7 @@ RT_PROGRAM void closest_hit() {
   int texIndex = hit_rec.index;
 
   // assign material params to prd
-  prd.matType = Isotropic_Material;
+  prd.matType = Isotropic_BRDF;
   prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
   prd.direction = random_on_unit_sphere(prd.seed);

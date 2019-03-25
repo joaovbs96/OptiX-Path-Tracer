@@ -40,6 +40,8 @@ RT_PROGRAM void hit_box(int pid) {
     if (rtPotentialIntersection(tmin)) {
       hit_rec.distance = tmin;
 
+      hit_rec.view_direction = normalize(-ray.direction);
+
       float3 hit_point = ray.origin + tmin * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
       hit_rec.p = hit_point;
@@ -60,6 +62,8 @@ RT_PROGRAM void hit_box(int pid) {
     if (check_second) {
       if (rtPotentialIntersection(tmax)) {
         hit_rec.distance = tmax;
+
+        hit_rec.view_direction = normalize(-ray.direction);
 
         float3 hit_point = ray.origin + tmax * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);

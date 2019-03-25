@@ -37,7 +37,7 @@ RT_PROGRAM void closest_hit() {
   int texIndex = hit_rec.index;
 
   // assign material params to prd
-  prd.matType = Metal_Material;
+  prd.matType = Metal_BRDF;
   prd.isSpecular = true;
   prd.scatterEvent = rayGotBounced;
 

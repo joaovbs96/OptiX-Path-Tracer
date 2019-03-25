@@ -16,6 +16,7 @@ extern "C" const char isotropic_programs[];
 extern "C" const char normal_programs[];
 extern "C" const char anisotropic_programs[];
 extern "C" const char oren_nayar_programs[];
+extern "C" const char torrance_sparrow_programs[];
 extern "C" const char hit_program[];
 
 //////////////////////////////////
@@ -24,44 +25,47 @@ extern "C" const char hit_program[];
 
 // Creates base Host Material class
 struct Host_Material {
-  Host_Material(MaterialType matType) : matType(matType) {}
+  Host_Material(BRDFType matType) : matType(matType) {}
 
   virtual Material assignTo(Context &g_context) const = 0;
 
   virtual void assignParams(Program &program, Context &g_context) const = 0;
 
-  virtual MaterialType type() const { return matType; }
+  virtual BRDFType type() const { return matType; }
 
   virtual Program getAnyHitProgram(Context &g_context) const {
     return createProgram(hit_program, "any_hit", g_context);
   }
 
-  static Program getBRDFProgram(Context &g_context, const MaterialType matType,
+  static Program getBRDFProgram(Context &g_context, const BRDFType matType,
                                 const std::string name) {
     switch (matType) {
-      case Lambertian_Material:
+      case Lambertian_BRDF:
         return createProgram(lambertian_programs, name, g_context);
 
-      case Metal_Material:
+      case Metal_BRDF:
         return createProgram(metal_programs, name, g_context);
 
-      case Diffuse_Light_Material:
+      case Diffuse_Light_BRDF:
         return createProgram(light_programs, name, g_context);
 
-      case Isotropic_Material:
+      case Isotropic_BRDF:
         return createProgram(isotropic_programs, name, g_context);
 
-      case Dielectric_Material:
+      case Dielectric_BRDF:
         return createProgram(dielectric_programs, name, g_context);
 
-      case Normal_Material:
+      case Normal_BRDF:
         return createProgram(normal_programs, name, g_context);
 
-      case Anisotropic_Material:
+      case Anisotropic_BRDF:
         return createProgram(anisotropic_programs, name, g_context);
 
-      case Oren_Nayar_Material:
+      case Oren_Nayar_BRDF:
         return createProgram(oren_nayar_programs, name, g_context);
+
+      case Torrance_Sparrow_BRDF:
+        return createProgram(torrance_sparrow_programs, name, g_context);
 
       default:
         throw "Invalid Material";
@@ -78,13 +82,12 @@ struct Host_Material {
     return mat;
   }
 
-  const MaterialType matType;
+  const BRDFType matType;
 };
 
 // Create Lambertian material
 struct Lambertian : public Host_Material {
-  Lambertian(const Texture *t)
-      : texture(t), Host_Material(Lambertian_Material) {}
+  Lambertian(const Texture *t) : texture(t), Host_Material(Lambertian_BRDF) {}
 
   // Assign host side Lambertian material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -107,7 +110,7 @@ struct Lambertian : public Host_Material {
 // Create Metal material
 struct Metal : public Host_Material {
   Metal(const Texture *t, const float fuzz)
-      : texture(t), fuzz(fuzz), Host_Material(Metal_Material) {}
+      : texture(t), fuzz(fuzz), Host_Material(Metal_BRDF) {}
 
   // Assign host side Metal material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -137,7 +140,7 @@ struct Dielectric : public Host_Material {
         volTex(volTex),
         ref_idx(ref_idx),
         density(density),
-        Host_Material(Dielectric_Material) {}
+        Host_Material(Dielectric_BRDF) {}
 
   // Assign host side Dielectric material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -165,7 +168,7 @@ struct Dielectric : public Host_Material {
 // Create Diffuse Light material
 struct Diffuse_Light : public Host_Material {
   Diffuse_Light(const Texture *t)
-      : texture(t), Host_Material(Diffuse_Light_Material) {}
+      : texture(t), Host_Material(Diffuse_Light_BRDF) {}
 
   // Assign host side Diffuse Light material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -194,7 +197,7 @@ struct Diffuse_Light : public Host_Material {
 
 // Creates Isotropic material
 struct Isotropic : public Host_Material {
-  Isotropic(const Texture *t) : texture(t), Host_Material(Isotropic_Material) {}
+  Isotropic(const Texture *t) : texture(t), Host_Material(Isotropic_BRDF) {}
 
   // Assign host side Isotropic material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -217,7 +220,7 @@ struct Isotropic : public Host_Material {
 // Creates Normal Shader material
 struct Normal_Shader : public Host_Material {
   Normal_Shader(const bool useShadingNormal = false)
-      : useShadingNormal(useShadingNormal), Host_Material(Normal_Material) {}
+      : useShadingNormal(useShadingNormal), Host_Material(Normal_BRDF) {}
 
   // Assign host side Normal Shader material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -245,7 +248,7 @@ struct Anisotropic : public Host_Material {
         specular_tex(specular_tex),
         nu(nu),
         nv(nv),
-        Host_Material(Anisotropic_Material) {}
+        Host_Material(Anisotropic_BRDF) {}
 
   // Assign host side Anisotropic material to device Material object
   virtual Material assignTo(Context &g_context) const override {
@@ -261,8 +264,13 @@ struct Anisotropic : public Host_Material {
                             Context &g_context) const override {
     program["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
     program["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
-    program["nu"]->setFloat(clamp(nu, 1.f, 1000000000.f));
-    program["nv"]->setFloat(clamp(nv, 1.f, 1000000000.f));
+    program["nu"]->setFloat(roughnessToAlpha(nu));
+    program["nv"]->setFloat(roughnessToAlpha(nv));
+  }
+
+  float roughnessToAlpha(float roughness) const {
+    float R = fmaxf(roughness, 1e-3f);
+    return R * R;
   }
 
   const Texture *specular_tex;
@@ -273,7 +281,7 @@ struct Anisotropic : public Host_Material {
 // Creates Oren-Nayar material
 struct Oren_Nayar : public Host_Material {
   Oren_Nayar(const Texture *t, const float R)
-      : texture(t), Host_Material(Oren_Nayar_Material) {
+      : texture(t), Host_Material(Oren_Nayar_BRDF) {
     // converts roughness to internal parameters
     float sigma = saturate(R);  // [0, 1]
     float div = 1.f / (PI_F + ((3.f * PI_F - 4.f) / 6.f) * sigma);
@@ -302,6 +310,41 @@ struct Oren_Nayar : public Host_Material {
   float rA, rB;
 };
 
+// Creates Torrance-Sparrow material
+struct Torrance_Sparrow : public Host_Material {
+  Torrance_Sparrow(const Texture *texture, const float nu, const float nv)
+      : texture(texture),
+        nu(nu),
+        nv(nv),
+        Host_Material(Torrance_Sparrow_BRDF) {}
+
+  // Assign host side Torrance-Sparrow material to device Material object
+  virtual Material assignTo(Context &g_context) const override {
+    // Creates closest hit programs and assigns variables and textures
+    Program hit =
+        createProgram(torrance_sparrow_programs, "closest_hit", g_context);
+    assignParams(hit, g_context);
+
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Torrance-Sparrow programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    program["nu"]->setFloat(roughnessToAlpha(nu));
+    program["nv"]->setFloat(roughnessToAlpha(nv));
+  }
+
+  float roughnessToAlpha(float roughness) const {
+    float R = fmaxf(roughness, 1e-3f);
+    return R * R;
+  }
+
+  const Texture *texture;
+  const float nu, nv;
+};
+
 // List of Host_Materials
 struct Material_List {
   Material_List() {}
@@ -326,17 +369,17 @@ struct Material_List {
 ///////////////////////////////////////
 
 // Returns a BRDF_Sample program object of the given material type
-Program getSampleProgram(MaterialType type, Context &g_context) {
+Program getSampleProgram(BRDFType type, Context &g_context) {
   return Host_Material::getBRDFProgram(g_context, type, "BRDF_Sample");
 }
 
 // Returns a BRDF_PDF program object of the given material type
-Program getPDFProgram(MaterialType type, Context &g_context) {
+Program getPDFProgram(BRDFType type, Context &g_context) {
   return Host_Material::getBRDFProgram(g_context, type, "BRDF_PDF");
 }
 
 // Returns a BRDF_Evaluate program object of the given material type
-Program getEvaluateProgram(MaterialType type, Context &g_context) {
+Program getEvaluateProgram(BRDFType type, Context &g_context) {
   return Host_Material::getBRDFProgram(g_context, type, "BRDF_Evaluate");
 }
 

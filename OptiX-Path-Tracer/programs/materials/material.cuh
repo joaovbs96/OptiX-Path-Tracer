@@ -19,6 +19,9 @@
 #include "../math/trigonometric.cuh"
 #include "../pdfs/pdf.cuh"
 
+// returns smallest integer not less than a scalar or each vector component
+// RT_FUNCTION float saturate(float x) { return fmaxf(0.f, fminf(1.f, x)); }
+
 RT_FUNCTION float schlick(float cosine, float ref_idx) {
   float r0 = (1.f - ref_idx) / (1.f + ref_idx);
   r0 = r0 * r0;
@@ -28,6 +31,10 @@ RT_FUNCTION float schlick(float cosine, float ref_idx) {
 RT_FUNCTION float3 schlick(float3 r0, float cosine) {
   float exponential = powf(1.f - cosine, 5.f);
   return r0 + (make_float3(1.f) - r0) * exponential;
+}
+
+RT_FUNCTION float SchlickWeight(float cos) {
+  return powf(saturate(1.0f - cos), 5.0f);
 }
 
 RT_FUNCTION float SchlickR0FromRelativeIOR(float eta) {

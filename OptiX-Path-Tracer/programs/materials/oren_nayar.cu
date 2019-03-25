@@ -31,7 +31,7 @@ rtDeclareVariable(float, rB, , );
 
 // Assigns material and hit parameters to PRD
 RT_PROGRAM void closest_hit() {
-  prd.matType = Oren_Nayar_Material;
+  prd.matType = Oren_Nayar_BRDF;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 

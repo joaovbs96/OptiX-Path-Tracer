@@ -15,7 +15,7 @@ rtDeclareVariable(int, useShadingNormal, , );
 
 RT_PROGRAM void closest_hit() {
   // assign material params to prd
-  prd.matType = Normal_Material;
+  prd.matType = Normal_BRDF;
 
   // check if we should use geometric or shading normals
   if (useShadingNormal) {

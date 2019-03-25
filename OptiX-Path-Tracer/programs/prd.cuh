@@ -21,8 +21,8 @@
 
 // TODO: clean up material parameters
 // Parameters used in some BRDF callable programs
-struct MaterialParameters {
-  MaterialType type;
+struct BRDFParameters {
+  BRDFType type;
   int index;
   float u, v;
   float3 attenuation;
@@ -58,6 +58,7 @@ struct HitRecord {
   float3 geometric_normal;
   float3 shading_normal;
   float3 p;
+  float3 view_direction;
 };
 
 /*! "per ray data" (PRD) for our sample's rays. In the simple example, there is
@@ -69,6 +70,7 @@ struct PerRayData {
   uint seed;
   float time;
   ScatterEvent scatterEvent;
+  float3 view_direction;
   float3 origin;
   float3 direction;
   float3 geometric_normal;
@@ -77,8 +79,8 @@ struct PerRayData {
   float3 attenuation;
   float3 throughput;
   bool isSpecular;
-  MaterialType matType;
-  MaterialParameters matParams;
+  BRDFType matType;
+  BRDFParameters matParams;
 };
 
 struct PerRayData_Shadow {
