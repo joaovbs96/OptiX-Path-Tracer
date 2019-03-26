@@ -48,7 +48,7 @@ find_program(BIN2C bin2c
 #    'output_var', which can then be added to cmake targets.
 macro(cuda_compile_and_embed output_var cuda_file)
   set(c_var_name ${output_var})
-  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --gpu-architecture=compute_61;--relocatable-device-code=true;--use_fast_math;)
+  cuda_compile_ptx(ptx_files ${cuda_file} OPTIONS --gpu-architecture=compute_50;--relocatable-device-code=true;--use_fast_math;)
   list(GET ptx_files 0 ptx_file)
   set(embedded_file ${ptx_file}_embedded.c)
 #  message("adding rule to compile and embed ${cuda_file} to \"const char ${var_name}[];\"")

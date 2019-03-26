@@ -83,14 +83,14 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   txt.push(tx1);
   txt.push(tx2);
 
-  Texture* tx3 = new Constant_Texture(0.f, 1.f, 0.f);
   Texture* tx4 = new Constant_Texture(1.f);
+  Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
 
   Host_Material* mt0 = new Lambertian(tx3);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
   // Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.f, 0.0f);
-  Host_Material* mt2 = new Anisotropic(tx4, tx3, 0.5f, 1.0f);
+  Host_Material* mt2 = new Anisotropic(tx4, tx3, 1000.f, 10.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
@@ -99,7 +99,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 5.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);

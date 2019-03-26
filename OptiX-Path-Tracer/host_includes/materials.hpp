@@ -269,8 +269,7 @@ struct Anisotropic : public Host_Material {
   }
 
   float roughnessToAlpha(float roughness) const {
-    float R = fmaxf(roughness, 1e-3f);
-    return R * R;
+    return roughness > 10.f ? roughness : 10.f;
   }
 
   const Texture *specular_tex;

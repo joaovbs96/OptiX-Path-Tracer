@@ -3,6 +3,18 @@
 #include "../math/trigonometric.cuh"
 #include "../pdfs/pdf.cuh"
 
+// Sampling Ashikhmin-Shirley Quadrant - From Blender's implementation
+// https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_ashikhmin_shirley.h
+
+RT_FUNCTION void Sample_Quadrant(float nu, float nv, float randX, float randY, float &phi, float &theta){
+  phi = atanf(sqrtf((nu + 1.f) / (nv + 1.f)) * tanf(2.f * PI_F * randX));
+  
+  float cos_phi = cosf(phi);
+  float sin_phi = sinf(phi);
+  
+  theta = powf(randY, 1.0f / (nu * cos_phi * cos_phi + nv * sin_phi * sin_phi + 1.f));
+}
+
 // Beckmann Microfacet Distribution functions from PBRT
 // https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.cpp
 // https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/microfacet.h
@@ -85,6 +97,27 @@ RT_FUNCTION float GGX_D(const float3& H, float nu, float nv) {
 // Sampling a normal respect to the NDF(PBRT 8.4.3)
 RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
                               float nv) {
+  /*// stretch view
+  float3 V = normalize(make_float3(nu * origin.x, origin.y, nv * origin.z));
+
+  // orthonormal basis 
+  float3 T1 = (V.y < 0.9999f) ? normalize(cross(V, make_float3(0.f, 1.f, 0.f))) : make_float3(1.f, 0.f, 0.f);
+  float3 T2 = cross(T1, V);
+
+  // sample point with polar coordinates (r, phi)
+  float a = 1.f / (1.f + V.y);
+  float r = sqrtf(nu);
+  float phi = (nv < a) ? (nv / a) * PI_F : PI_F + (nv - a) / (1.f - a) * PI_F;
+  float p1 = r * cosf(phi);
+  float p2 = r * sinf(phi) * ((nv < a) ? 1.f : random.y);
+
+  // calculate the normal in this stretched tangent space
+  float3 N = p1 * T1 + p2 * T2 + sqrtf(fmaxf(0.f, 1.f - (p1 * p1) - (p2 * p2))) * V;
+
+  // unstretch and normalize the normal
+  return normalize(make_float3(nu * N.x, N.y, nv * N.z));*/
+
+
   float theta, phi;
   if (nu == nv) {
     // isotropic sampling
@@ -105,7 +138,7 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   }
 
   float3 H = Spherical_Vector(theta, phi);
-  if (!Same_Hemisphere(origin, H)) H = -H;
+  //if (!Same_Hemisphere(origin, H)) H = -H;
 
   return H;
 

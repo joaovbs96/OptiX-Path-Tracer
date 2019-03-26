@@ -52,14 +52,27 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
+  float3 normal = pdf.geometric_normal;
+  float3 hit_point = pdf.origin;
+  float3 origin = pdf.view_direction;
+
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
   pdf.matParams.u = random.x;
   pdf.matParams.v = random.y;
 
-  // reflect I/origin on H to get omega_in/direction
-  float3 H = GGX_Sample(pdf.view_direction, random, nu, nv);
-  pdf.direction = reflect(pdf.view_direction, H);
+  // Get X & Y from normal basis
+  float3 X, Y;
+  if(nu == nv)
+    Make_Orthonormals(normal, X, Y);
+  else
+    Make_Orthonormals_Tangent(normal, Tangent(hit_point), X, Y);
+
+  // get half vector and rotate it to world space
+  float3 H = GGX_Sample(origin, random, nu, nv);
+  H = H.x * X + H.y * normal + H.z * Y;
+  
+  pdf.direction = reflect(origin, H);
 
   return pdf.direction;
 }
