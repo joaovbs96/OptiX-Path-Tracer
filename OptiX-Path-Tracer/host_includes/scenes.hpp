@@ -90,7 +90,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
   // Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.f, 0.0f);
-  Host_Material* mt2 = new Anisotropic(tx4, tx3, 1000.f, 10.f);
+  Host_Material* mt2 = new Anisotropic(tx4, tx3, 0.002f, 0.001f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 

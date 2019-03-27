@@ -96,54 +96,46 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
     // Get X & Y from normal basis
     float3 X, Y;
-    if(nu == nv)
+    if (nu == nv) {
       Make_Orthonormals(normal, X, Y);
-    else
+    } else
       Make_Orthonormals_Tangent(normal, Tangent(hit_point), X, Y);
-    
-    /*// get half vector and rotate it to world space
-    float3 H = GGX_Sample(origin, random, nu, nv);
-    H = H.x * X + H.y * normal + H.z * Y;
-    float HdotI = dot(H, origin);
-    if(HdotI < 0.0f) H = -H;
 
-    // reflect I/origin on H to get omega_in/direction
-    direction = reflect(origin, H);*/
-
-    float phi, theta;
-    if(nu == nv){
+    float phi, cos_theta;
+    if (nu == nv) {
       // sample isotropic
       phi = 2.f * PI_F * random.x;
-      theta = powf(random.y, 1.f / (nu + 1.f));
+      cos_theta = powf(random.y, 1.f / (nu + 1.f));
     } else {
       // sample anisotropic
-      if(random.x < 0.25f) { // 1st Quadrant
+      if (random.x < 0.25f) {  // 1st Quadrant
         float remappedRX = 4.f * random.x;
-        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, theta);
-      } else if(random.x < 0.5f) { // 2nd Quadrant
+        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
+      } else if (random.x < 0.5f) {  // 2nd Quadrant
         float remappedRX = 4.f * (0.5f - random.x);
-        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, theta);
+        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
         phi = PI_F - phi;
-      } else if(random.x < 0.75f) { // 3rd Quadrant
+      } else if (random.x < 0.75f) {  // 3rd Quadrant
         float remappedRX = 4.f * (random.x - 0.5f);
-        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, theta);
+        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
         phi = PI_F + phi;
-      } else { // 4th Quadrant
+      } else {  // 4th Quadrant
         float remappedRX = 4.f * random.x;
-        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, theta);
+        Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
         phi = 2.f * PI_F - phi;
       }
     }
 
+    float sin_theta = sqrtf(fmaxf(0.f, 1.f - cos_theta * cos_theta));
+
     // get half vector
-    float3 H = Spherical_Vector(theta, phi); //TODO check the other method
-    H = H.x * X + H.y * normal + H.z * Y;
+    float3 H = Spherical_Vector(sin_theta, cos_theta, phi);
+    H = H.x * X + H.y * Y + H.z * normal;
     float HdotI = dot(H, origin);
-    if(HdotI < 0.0f) H = -H;
+    if (HdotI < 0.0f) H = -H;
 
     // reflect half-vector on incident ray
     direction = reflect(origin, H);
-
   }
 
   pdf.direction = direction;
@@ -219,7 +211,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float pump = 1.f / fmaxf(1e-6f, (HdotI * fmaxf(nk1, nk2)));
 
   float out, specular_PDF;
-  if(nu == nv) {
+  if (nu == nv) {
     float e = nu;
     float lobe = powf(HdotN, e);
     float norm = (nu + 1.f) / (8.f * PI_F);
@@ -229,27 +221,28 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   } else {
     // Get X & Y from normal basis
     float3 X, Y;
-    if(nu == nv)
+    if (nu == nv)
       Make_Orthonormals(normal, X, Y);
     else
       Make_Orthonormals_Tangent(normal, Tangent(pdf.origin), X, Y);
 
-      float HdotX = dot(H, X), HdotY = dot(H, Y);
-      float lobe;
-      if(HdotN < 1.f) {
-        float e = (nu * HdotX * HdotX + nv * HdotY * HdotY) / (1.f - HdotN * HdotN);
-        lobe = powf(HdotN, e);
-      } else {
-        lobe = 1.f;
-      }
-      float norm = sqrtf((nu + 1.f) * (nv + 1.f)) / (8.f * PI_F);
+    float HdotX = dot(H, X), HdotY = dot(H, Y);
+    float lobe;
+    if (HdotN < 1.f) {
+      float e =
+          (nu * HdotX * HdotX + nv * HdotY * HdotY) / (1.f - HdotN * HdotN);
+      lobe = powf(HdotN, e);
+    } else {
+      lobe = 1.f;
+    }
+    float norm = sqrtf((nu + 1.f) * (nv + 1.f)) / (8.f * PI_F);
 
-      out = nk1 * norm * lobe * pump;
-      specular_PDF = norm * lobe / HdotI;
+    out = nk1 * norm * lobe * pump;
+    specular_PDF = norm * lobe / HdotI;
   }
 
   float3 specular_component = F * out * Rs;
 
-  return (diffuse_component + specular_component) / (0.5f * (diffuse_PDF + specular_PDF));
-  
+  return (diffuse_component + specular_component) /
+         (0.5f * (diffuse_PDF + specular_PDF));
 }
