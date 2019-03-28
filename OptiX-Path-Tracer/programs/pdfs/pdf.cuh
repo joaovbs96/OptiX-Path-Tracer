@@ -24,5 +24,6 @@ struct PDFParams {
   const float3 normal;
   const float3 geometric_normal;
   float3 direction;
+  float3 localDirection;
   BRDFParameters matParams;
 };

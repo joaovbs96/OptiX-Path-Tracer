@@ -34,7 +34,9 @@ RT_PROGRAM void closest_hit() {
   prd.origin = hit_rec.p;
   prd.geometric_normal = hit_rec.geometric_normal;
   prd.shading_normal = hit_rec.shading_normal;
-  prd.view_direction = hit_rec.view_direction;
+
+  Onb uvw(prd.geometric_normal);
+  prd.view_direction = normalize(WorldToLocal(uvw, hit_rec.view_direction));
 
   // Get material color
   int index = hit_rec.index;
@@ -53,7 +55,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float nv = pdf.matParams.anisotropic.nv;
 
   float3 normal = pdf.geometric_normal;
-  float3 hit_point = pdf.origin;
   float3 origin = pdf.view_direction;
 
   // random variables
@@ -61,32 +62,26 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   pdf.matParams.u = random.x;
   pdf.matParams.v = random.y;
 
-  // Get X & Y from normal basis
-  float3 X, Y;
-  if(nu == nv)
-    Make_Orthonormals(normal, X, Y);
-  else
-    Make_Orthonormals_Tangent(normal, Tangent(hit_point), X, Y);
-
   // get half vector and rotate it to world space
   float3 H = GGX_Sample(origin, random, nu, nv);
-  H = H.x * X + H.y * normal + H.z * Y;
-  
-  pdf.direction = reflect(origin, H);
+  pdf.localDirection = normalize(reflect(origin, H));
+
+  Onb uvw(normal);
+  pdf.direction = normalize(LocalToWorld(uvw, pdf.localDirection));
 
   return pdf.direction;
 }
 
 // Gets BRDF PDF value
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  if (!Same_Hemisphere(pdf.direction, pdf.view_direction)) return 0.0f;
+  if (!Same_Hemisphere(pdf.localDirection, pdf.view_direction)) return 0.0f;
 
   // Get material params from input variable
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
   // Handles degenerate cases for microfacet reflection
-  float3 H = normalize(pdf.view_direction + pdf.direction);
+  float3 H = normalize(pdf.view_direction + pdf.localDirection);
 
   return GGX_PDF(H, pdf.view_direction, nu, nv) /
          (4.f * dot(pdf.view_direction, H));
@@ -100,7 +95,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float nv = pdf.matParams.anisotropic.nv;
 
   float3 origin = pdf.view_direction;
-  float3 direction = normalize(pdf.direction);
+  float3 direction = pdf.localDirection;
 
   float cosThetaI = AbsCosTheta(origin);
   float cosThetaO = AbsCosTheta(direction);
