@@ -87,14 +87,38 @@ RT_FUNCTION void Make_Orthonormals_Tangent(const float3 N, const float3 T,
 
 // transform vector from world coordinate to shading coordinate
 RT_FUNCTION float3 WorldToLocal(const Onb& uvw, const float3& P) {
-  return make_float3( dot(uvw.m_tangent, P), dot(uvw.m_normal, P), dot(uvw.m_binormal, P) );
+  return make_float3(dot(uvw.m_tangent, P), dot(uvw.m_normal, P),
+                     dot(uvw.m_binormal, P));
+}
+
+// transform vector from world coordinate to shading coordinate
+// Mathematics for 3D Game Programming and Computer Graphics, 3rd Edition, pg186
+RT_FUNCTION float3 WorldToLocal(const float3& P) {
+  const float3 T = make_float3(1.f, 0.f, 0.f);  // tangent
+  const float3 N = make_float3(0.f, 1.f, 0.f);  // normal
+  const float3 B = normalize(cross(N, T));      // binormal
+
+  return make_float3(dot(T, P), dot(N, P), dot(B, P));
 }
 
 // transform vector from shading coordinate to world coordinate
 RT_FUNCTION float3 LocalToWorld(const Onb& uvw, const float3& P) {
-  return make_float3( 	P.x * uvw.m_tangent.x + P.y * uvw.m_normal.x + P.z * uvw.m_binormal.x ,
-                        P.x * uvw.m_tangent.y + P.y * uvw.m_normal.y + P.z * uvw.m_binormal.y ,
-                        P.x * uvw.m_tangent.z + P.y * uvw.m_normal.z + P.z * uvw.m_binormal.z );
+  return make_float3(
+      P.x * uvw.m_tangent.x + P.y * uvw.m_normal.x + P.z * uvw.m_binormal.x,
+      P.x * uvw.m_tangent.y + P.y * uvw.m_normal.y + P.z * uvw.m_binormal.y,
+      P.x * uvw.m_tangent.z + P.y * uvw.m_normal.z + P.z * uvw.m_binormal.z);
+}
+
+// transform vector from shading coordinate to world coordinate
+// Mathematics for 3D Game Programming and Computer Graphics, 3rd Edition, pg186
+RT_FUNCTION float3 LocalToWorld(const float3& P) {
+  const float3 T = make_float3(1.f, 0.f, 0.f);  // tangent
+  const float3 N = make_float3(0.f, 1.f, 0.f);  // normal
+  const float3 B = normalize(cross(N, T));      // binormal
+
+  return make_float3(P.x * T.x + P.y * N.x + P.z * B.x,
+                     P.x * T.y + P.y * N.y + P.z * B.y,
+                     P.x * T.z + P.y * N.z + P.z * B.z);
 }
 
 RT_FUNCTION float3 Spherical_Vector(float sintheta, float costheta, float phi) {

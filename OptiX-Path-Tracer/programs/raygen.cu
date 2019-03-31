@@ -228,6 +228,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
 
         if (matPDF == 0.f) return make_float3(0.f);
+        if (matValue.x < 0.f || matValue.y < 0.f || matValue.z < 0.f) return make_float3(0.f);
 
         // Accumulate color
         prd.throughput *= clamp(matValue / matPDF, 0.f, 1.f);

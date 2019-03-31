@@ -6,13 +6,14 @@
 // Sampling Ashikhmin-Shirley Quadrant - From Blender's implementation
 // https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_ashikhmin_shirley.h
 
-RT_FUNCTION void Sample_Quadrant(float nu, float nv, float randX, float randY, float &phi, float &theta){
+RT_FUNCTION void Sample_Quadrant(float nu, float nv, float randX, float randY,
+                                 float& phi, float& theta) {
   phi = atanf(sqrtf((nu + 1.f) / (nv + 1.f)) * tanf(2.f * PI_F * randX));
-  
+
   float cos_phi = cosf(phi);
   float sin_phi = sinf(phi);
-  
-  theta = powf(randY, 1.0f / (nu * cos_phi * cos_phi + nv * sin_phi * sin_phi + 1.f));
+
+  theta = powf(randY, 1.f / (nu * cos_phi * cos_phi + nv * sin_phi * sin_phi + 1.f));
 }
 
 // Beckmann Microfacet Distribution functions from PBRT
@@ -100,9 +101,9 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   /*// stretch view
   float3 V = normalize(make_float3(nu * origin.x, origin.y, nv * origin.z));
 
-  // orthonormal basis 
-  float3 T1 = (V.y < 0.9999f) ? normalize(cross(V, make_float3(0.f, 1.f, 0.f))) : make_float3(1.f, 0.f, 0.f);
-  float3 T2 = cross(T1, V);
+  // orthonormal basis
+  float3 T1 = (V.y < 0.9999f) ? normalize(cross(V, make_float3(0.f, 1.f, 0.f)))
+  : make_float3(1.f, 0.f, 0.f); float3 T2 = cross(T1, V);
 
   // sample point with polar coordinates (r, phi)
   float a = 1.f / (1.f + V.y);
@@ -112,11 +113,11 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   float p2 = r * sinf(phi) * ((nv < a) ? 1.f : random.y);
 
   // calculate the normal in this stretched tangent space
-  float3 N = p1 * T1 + p2 * T2 + sqrtf(fmaxf(0.f, 1.f - (p1 * p1) - (p2 * p2))) * V;
+  float3 N = p1 * T1 + p2 * T2 + sqrtf(fmaxf(0.f, 1.f - (p1 * p1) - (p2 * p2)))
+  * V;
 
   // unstretch and normalize the normal
   return normalize(make_float3(nu * N.x, N.y, nv * N.z));*/
-
 
   float theta, phi;
   if (nu == nv) {
@@ -138,7 +139,7 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   }
 
   float3 H = Spherical_Vector(theta, phi);
-  //if (!Same_Hemisphere(origin, H)) H = -H;
+  if (!Same_Hemisphere(origin, H)) H = -H;
 
   return H;
 
@@ -211,25 +212,30 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   return H;*/
 }
 
-// Smith’s masking-shadowing function(PBRT 8.4.3)
-RT_FUNCTION float GGX_G1(const float HdotV, const float alpha) {
-  if (isinf(HdotV)) return 0.f;
+RT_FUNCTION float GGX_Lambda(const float3& V, float nu, float nv) {
+  float absTanTheta = fabsf(TanTheta(V));
+  if (isinf(absTanTheta)) return 0.f;
 
-  const float beta = alpha + (1 - alpha * alpha) * HdotV * HdotV;
-  return (2.f * HdotV) / (HdotV + sqrtf(beta));
+  // Compute _alpha_ for direction _w_
+  float alpha = sqrtf(Cos2Phi(V) * nu * nu + Sin2Phi(V) * nv * nv);
+  float alpha2Tan2Theta = (alpha * absTanTheta) * (alpha * absTanTheta);
+  return (-1.f + sqrtf(1.f + alpha2Tan2Theta)) / 2.f;
 }
 
-// also called Smith_GGX
-// Visibility term of microfacet model, Smith shadow-masking function
-RT_FUNCTION float GGX_G(const float3& origin, const float3& direction,
-                        const float3& H, float nu, float nv) {
-  return GGX_G1(dot(origin, H), nv / nu) * GGX_G1(dot(direction, H), nv / nu);
+// Smith’s masking-shadowing function(PBRT 8.4.3)
+RT_FUNCTION float GGX_G1(const float3& V, float nu, float nv) {
+  return 1.f / (1.f + GGX_Lambda(V, nu, nv));
+}
+
+RT_FUNCTION float GGX_G(const float3& Wo, const float3& Wi, float nu,
+                        float nv) {
+  return 1.f / (1.f + GGX_Lambda(Wo, nu, nv) + GGX_Lambda(Wi, nu, nv));
 }
 
 // PDF of sampling a specific normal direction
 RT_FUNCTION float GGX_PDF(const float3& H, const float3& origin, float nu,
                           float nv) {
   return GGX_D(H, nu, nv) * AbsCosTheta(H);
-  /*return GGX_D(H, nu, nv) * GGX_G1(dot(origin, H), nv / nu) *
+  /*return GGX_D(H, nu, nv) * GGX_G1(origin, H, nu, nv) *
          fabsf(dot(origin, H)) / AbsCosTheta(origin);*/
 }

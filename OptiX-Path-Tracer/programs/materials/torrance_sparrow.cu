@@ -32,11 +32,9 @@ RT_PROGRAM void closest_hit() {
 
   // Get hit params
   prd.origin = hit_rec.p;
-  prd.geometric_normal = hit_rec.geometric_normal;
-  prd.shading_normal = hit_rec.shading_normal;
-
-  Onb uvw(prd.geometric_normal);
-  prd.view_direction = normalize(WorldToLocal(uvw, hit_rec.view_direction));
+  prd.geometric_normal = normalize(hit_rec.geometric_normal);
+  prd.shading_normal = normalize(hit_rec.shading_normal);
+  prd.view_direction = normalize(hit_rec.view_direction);
 
   // Get material color
   int index = hit_rec.index;
@@ -54,8 +52,12 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
-  float3 normal = pdf.geometric_normal;
-  float3 origin = pdf.view_direction;
+  float3 Wo = pdf.view_direction;  // outgoing, to camera
+
+  // create basis
+  float3 N = normalize(pdf.geometric_normal);
+  float3 T = normalize(cross(N, make_float3(0.f, 1.f, 0.f)));
+  float3 B = cross(T, N);
 
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
@@ -63,54 +65,60 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   pdf.matParams.v = random.y;
 
   // get half vector and rotate it to world space
-  float3 H = GGX_Sample(origin, random, nu, nv);
-  pdf.localDirection = normalize(reflect(origin, H));
+  float3 H = normalize(GGX_Sample(Wo, random, nu, nv));
+  H = H.x * B + H.y * N + H.z * T; 
 
-  Onb uvw(normal);
-  pdf.direction = normalize(LocalToWorld(uvw, pdf.localDirection));
+  float HdotI = dot(H, Wo);
+  if(HdotI < 0.f) H = -H;
+
+  float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
+
+  pdf.direction = Wi;
 
   return pdf.direction;
 }
 
 // Gets BRDF PDF value
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  if (!Same_Hemisphere(pdf.localDirection, pdf.view_direction)) return 0.0f;
+  float3 Wo = pdf.view_direction;
+  float3 Wi = pdf.localDirection;
 
   // Get material params from input variable
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
   // Handles degenerate cases for microfacet reflection
-  float3 H = normalize(pdf.view_direction + pdf.localDirection);
+  float3 H = normalize(Wi + Wo);
 
-  return GGX_PDF(H, pdf.view_direction, nu, nv) /
-         (4.f * dot(pdf.view_direction, H));
+  return GGX_PDF(H, Wo, nu, nv) / (4.f * dot(Wo, H));
 }
 
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
+  float3 Wo = pdf.view_direction, Wi = pdf.direction;
+
   // Get material params from input variable
   float3 Rs = pdf.matParams.attenuation;
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
-  float3 origin = pdf.view_direction;
-  float3 direction = pdf.localDirection;
+  // create basis
+  float3 Up = make_float3(0.f, 1.f, 0.f);
+  float3 N = normalize(pdf.geometric_normal);
+  float3 T = normalize(cross(N, Up));
+  float3 B = cross(T, N);
 
-  float cosThetaI = AbsCosTheta(origin);
-  float cosThetaO = AbsCosTheta(direction);
-  if (cosThetaI == 0 || cosThetaO == 0) return make_float3(0.f);
+  float NdotI = fmaxf(dot(Up, Wi), 1e-6f), NdotO = fmaxf(dot(Up, Wo), 1e-6f);
 
-  float3 H = origin + direction;
+  // half vector = (v1 + v2) / |v1 + v2|
+  float3 H = Wo + Wi;
   if (isNull(H)) return make_float3(0.f);
-
   H = normalize(H);
-  float HdotI = dot(H, origin);  // origin or direction here
+  float HdotI = abs(dot(H, Wi));  // origin or direction here
 
-  float3 F = schlick(Rs, HdotI);  // Fresnel Reflectance
-  float G = GGX_G(origin, direction, pdf.geometric_normal, nu,
-                  nv);         // Geometric Shadowing
-  float D = GGX_D(H, nu, nv);  // Normal Distribution Function(NDF)
+  float3 F = schlick(Rs, HdotI);    // Fresnel Reflectance
+  float G = GGX_G(Wo, Wi, nu, nv);  // Geometric Shadowing
+  float D = GGX_D(H, nu, nv);       // Normal Distribution Function(NDF)
 
-  return Rs * D * G * F / (4.f * cosThetaI * cosThetaO);
+  return Rs * D * G * F / (4.f * NdotI * NdotO);
 }

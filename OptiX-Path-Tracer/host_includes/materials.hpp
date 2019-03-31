@@ -264,8 +264,8 @@ struct Anisotropic : public Host_Material {
                             Context &g_context) const override {
     program["diffuse_color"]->setProgramId(diffuse_tex->assignTo(g_context));
     program["specular_color"]->setProgramId(specular_tex->assignTo(g_context));
-    program["nu"]->setFloat(roughnessToAlpha(clamp(nu, 1e-4f, 1.0f)));
-    program["nv"]->setFloat(roughnessToAlpha(clamp(nv, 1e-4f, 1.0f)));
+    program["nu"]->setFloat(fmaxf(1.f, nu));
+    program["nv"]->setFloat(fmaxf(1.f, nv));
   }
 
   float roughnessToAlpha(float roughness) const {

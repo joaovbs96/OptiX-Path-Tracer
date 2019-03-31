@@ -83,14 +83,14 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   txt.push(tx1);
   txt.push(tx2);
 
-  Texture* tx4 = new Constant_Texture(1.f);
-  Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
+  Texture* tx4 = new Constant_Texture(0.f);
+  Texture* tx3 = new Constant_Texture(make_float3(1.f) - make_float3(255.f / 255.f, 215.f / 255.f, 0.f));
 
   Host_Material* mt0 = new Lambertian(tx3);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.f, 0.0f);
-  //Host_Material* mt2 = new Anisotropic(tx4, tx3, 0.002f, 0.001f);
+  //Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.1f, 0.1f);
+  Host_Material* mt2 = new Anisotropic(tx1, tx3, 1000, 1000);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt2));
   txt.push(tx3);
 
@@ -99,7 +99,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 5.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
@@ -273,44 +273,34 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
 
-  Texture* tx3 = new Constant_Texture(252.f, 201.f, 88.f);
-  Texture* tx4 = new Constant_Texture(1.f, 0.f, 1.f);
-  int torr = mats.push(new Torrance_Sparrow(tx3, 0.1f, 1.f));
-  int aniso = mats.push(new Anisotropic(tx4, tx3, 0.1f, 0.1f));
+  Texture* tx1 = new Constant_Texture(1.f);
+  Texture* tx2 = new Constant_Texture(make_float3(1.f) - make_float3(255.f / 255.f, 215.f / 255.f, 0.f));
+
+  Host_Material* mt1 = new Torrance_Sparrow(tx1, 0.1f, 0.1f);
+  Host_Material* mt2 = new Anisotropic(tx1, tx2, 10, 10000);
 
   // create geometries/hitables
   Hitable_List list;
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, mats[redMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, mats[greenMt]));
-  list.push(new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS,
-                       mats[lightMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, mats[whiteMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  list.push(new Sphere(make_float3(555.f - 100.f, 90.f, 555.f - 100.f), 90.f,
-                       mats[aniso]));
-  /*list.push(
-      new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
-  list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
-                       mats[whiteMt]));*/
-  /*list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS,
-                       mats[testMt]));*/
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, mats[redMt]));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, mats[greenMt]));
+  list.push(new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, mats[lightMt]));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, mats[whiteMt]));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
+  list.push(new Sphere(make_float3(555.f/2.f, 90.f, 555.f/2.f), 90.f, mt2));
+  //list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[oren]));
+  //list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f, mats[whiteMt]));
+  //list.push(new AARect(-1000.f, 1000.f, -1000.f, 1000.f, 0.f, false, Y_AXIS, mats[testMt]));
 
   // Aluminium box
-  /*Box box = Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f),
-  mats[torr]); box.translate(make_float3(265.f, 0.f, 295.f)); box.rotate(15.f,
-  Y_AXIS); list.push(&box);*/
+  /*Box box = Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[torr]); 
+  box.translate(make_float3(265.f, 0.f, 295.f)); 
+  box.rotate(15.f, Y_AXIS);
+  list.push(&box);*/
 
-  /*list.push(new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
-                       mats[lightMt]));*/
+  //list.push(new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f, mats[lightMt]));
 
-  /*Box box2 =
-      Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
+  /*Box box2 = Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
@@ -479,7 +469,10 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, brdf, lights);
-  setMissProgram(g_context, HDR, "../../../assets/hdr/fireplace.hdr");
+  //setMissProgram(g_context, HDR, "../../../assets/hdr/fireplace.hdr");
+    setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+                 make_float3(1.f),               // white
+                 make_float3(0.5f, 0.7f, 1.f));  // light blue
   setExceptionProgram(g_context);
 
   // create scene group
@@ -521,22 +514,30 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   if (modelID == 0) {
     Mesh_List meshList;
 
-    Mesh model1 = Mesh("nam.obj", "../../../assets/nam/", mats[shadingMt]);
-    model1.scale(make_float3(1400.f));
+    list.push(new Cylinder(make_float3(50.f), make_float3(350.f, -300.f, 10.f), 100.f, mats[whiteIso]));
+
+    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, mats[whiteIso]));
+
+    Texture* tx4 = new Constant_Texture(1.f);
+    Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
+    Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
+    Host_Material* mt3 = new Anisotropic(tx3, tx4, 1000, 1000);
+
+    /*Mesh model1 = Mesh("meetmat.obj", "../../../assets/", mats[whiteMt]);
+    model1.scale(make_float3(40.f));
     model1.rotate(180.f, Y_AXIS);
     model1.translate(make_float3(-300.f, -600.f, 0.f));
     meshList.push(&model1);
 
-    Mesh model2 = Mesh("nam.obj", "../../../assets/nam/", mats[normalMt]);
-    model2.scale(make_float3(1400.f));
+    Mesh model2 = Mesh("meetmat.obj", "../../../assets/", mats[whiteMt]);
+    model2.scale(make_float3(40.f));
     model2.rotate(180.f, Y_AXIS);
     model2.translate(make_float3(300.f, -600.f, 0.f));
     meshList.push(&model2);
 
-    meshList.addChildren(group, g_context);
+    meshList.addChildren(group, g_context);*/
 
-    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[normalMt]));
+    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS, mt3));
   }
 
   // lucy

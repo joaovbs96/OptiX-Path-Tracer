@@ -37,6 +37,12 @@ inline __host__ __device__ float3 sqrt(const float3 &v) {
   return make_float3(sqrt(v.x), sqrt(v.y), sqrt(v.z));
 }
 
+/*! return sqr value of each component */
+inline __host__ __device__ float3 sqr(const float3 &v) {
+  return make_float3(v.x * v.x, v.y * v.y, v.z * v.z);
+}
+
+
 /* return unit vector */
 inline __host__ __device__ float3 unit_vector(const float3 &v) {
   return v / length(v);

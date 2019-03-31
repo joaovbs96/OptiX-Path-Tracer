@@ -15,6 +15,7 @@ extern "C" const char aarect_programs[];
 extern "C" const char box_programs[];
 extern "C" const char volume_box_programs[];
 extern "C" const char triangle_programs[];
+extern "C" const char cylinder_programs[];
 
 // Base geometry primitve class
 class Hitable {
@@ -397,6 +398,43 @@ class Triangle : public Hitable {
  protected:
   const float3 a, b, c;           // vertex coordinates
   const float2 a_uv, b_uv, c_uv;  // vertex texture coordinates
+};
+
+// FIXME: not working
+// Creates a Sphere
+class Cylinder : public Hitable {
+ public:
+  Cylinder(const float3 &p0, const float3 &p1, const float r, Host_Material *material)
+      : p0(p0), p1(p1), radius(r), Hitable(material) {}
+
+  // Creates a GeometryInstance object of a sphere primitive
+  virtual GeometryInstance getGeometryInstance(Context &g_context) override {
+    // Create Geometry variable
+    geometry = g_context->createGeometry();
+    geometry->setPrimitiveCount(1);
+
+    // Set bounding box program
+    Program bb = createProgram(cylinder_programs, "get_bounds", g_context);
+    geometry->setBoundingBoxProgram(bb);
+
+    // Set intersection program
+    Program hit = createProgram(cylinder_programs, "intersection", g_context);
+    geometry->setIntersectionProgram(hit);
+
+    // Basic Parameters
+    geometry["p0"]->setFloat(p0.x, p0.y, p0.z);
+    geometry["p1"]->setFloat(p1.x, p1.y, p1.z);
+    geometry["radius"]->setFloat(radius);
+    geometry["index"]->setInt(0);
+
+    // returns new GeometryInstance
+    return createGeometryInstance(g_context);
+  }
+
+ protected:
+  const float3 p0;  // origin of the cylinder
+  const float3 p1;  // destination of the cylinder
+  const float radius;   // radius of the cylinder
 };
 
 // List of Hitable objects

@@ -45,9 +45,9 @@ RT_PROGRAM void closest_hit() {
 
   // Get hit params
   prd.origin = hit_rec.p;
-  prd.geometric_normal = hit_rec.geometric_normal;
-  prd.shading_normal = hit_rec.shading_normal;
-  prd.view_direction = hit_rec.view_direction;
+  prd.geometric_normal = normalize(hit_rec.geometric_normal);
+  prd.shading_normal = normalize(hit_rec.shading_normal);
+  prd.view_direction = normalize(hit_rec.view_direction);
 
   // Get material colors
   int index = hit_rec.index;
@@ -67,10 +67,13 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
-  float3 normal = pdf.geometric_normal;
-  float3 hit_point = pdf.origin;
-  float3 origin = pdf.view_direction;
-  float3 direction;
+  float3 Wo = pdf.view_direction;  // outgoing, to camera
+  float3 Wi;
+
+  // create basis
+  float3 N = normalize(pdf.geometric_normal);
+  float3 T = normalize(cross(N, make_float3(0.f, 1.f, 0.f)));
+  float3 B = cross(T, N);
 
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
@@ -82,24 +85,16 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
     random.x = fminf(2 * random.x, 1.f - 1e-6f);
 
     // Cosine-sample the hemisphere
-    cosine_sample_hemisphere(random.x, random.y, direction);
+    cosine_sample_hemisphere(random.x, random.y, Wi);
 
-    Onb uvw(normalize(normal));
-    uvw.inverse_transform(direction);
+    Onb uvw(N);
+    uvw.inverse_transform(Wi);
 
-    // flip the direction if necessary
-    if (!Same_Hemisphere(direction, origin)) direction *= -1;
+    pdf.direction = Wi;
 
   } else {
     // sample specular term
     random.x = fminf(2 * (random.x - 0.5f), 1.f - 1e-6f);
-
-    // Get X & Y from normal basis
-    float3 X, Y;
-    if (nu == nv) {
-      Make_Orthonormals(normal, X, Y);
-    } else
-      Make_Orthonormals_Tangent(normal, Tangent(hit_point), X, Y);
 
     float phi, cos_theta;
     if (nu == nv) {
@@ -120,7 +115,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
         Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
         phi = PI_F + phi;
       } else {  // 4th Quadrant
-        float remappedRX = 4.f * random.x;
+        float remappedRX = 4.f * (1.f - random.x);
         Sample_Quadrant(nu, nv, remappedRX, random.y, phi, cos_theta);
         phi = 2.f * PI_F - phi;
       }
@@ -129,50 +124,29 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
     float sin_theta = sqrtf(fmaxf(0.f, 1.f - cos_theta * cos_theta));
 
     // get half vector
-    float3 H = Spherical_Vector(sin_theta, cos_theta, phi);
-    H = H.x * X + H.y * Y + H.z * normal;
-    float HdotI = dot(H, origin);
-    if (HdotI < 0.0f) H = -H;
+    float3 H = normalize(Spherical_Vector(sin_theta, cos_theta, phi));
+    H = H.x * B + H.y * N + H.z * T; 
+    
+    float HdotI = dot(H, Wo);
+    if(HdotI < 0.f) H = -H;
+    
+    float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
 
-    // reflect half-vector on incident ray
-    direction = reflect(origin, H);
+    pdf.direction = Wi;
   }
-
-  pdf.direction = direction;
 
   return pdf.direction;
 }
 
 // Gets BRDF PDF value
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  if (!Same_Hemisphere(pdf.direction, pdf.view_direction)) return 0.0f;
   return 1.f;
-  // Get material params from input variable
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
-
-  float3 origin = pdf.view_direction;
-  float3 direction = normalize(pdf.direction);
-
-  // PDF Diffuse Term
-  float diffuse_PDF = dot(direction, normalize(pdf.normal));
-  if (diffuse_PDF < 0.f) diffuse_PDF = 0.f;
-
-  // PDF Specular Term
-  const float3 H = normalize(origin + direction);
-  const float specular_PDF =
-      GGX_PDF(H, origin, nu, nv) / (4.f * dot(origin, H));
-
-  return (diffuse_PDF + specular_PDF) / 2.f;
 }
 
-// TODO: attempt to implement the Blender one once again
-// https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_ashikhmin_shirley.h;f403fe5d73b6eaae955df89191b452b424215a6b?as=source&blame=off
 
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  if (!Same_Hemisphere(pdf.direction, pdf.view_direction))
-    return make_float3(0.f);
+  float3 Wo = pdf.view_direction, Wi = pdf.direction;
 
   // Get material params from input variable
   float3 Rd = pdf.matParams.anisotropic.diffuse_color;
@@ -180,69 +154,50 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
 
-  float3 origin = pdf.view_direction;
-  float3 direction = normalize(pdf.direction);
-  float3 normal = normalize(pdf.geometric_normal);
+  // create basis
+  float3 Up = make_float3(0.f, 1.f, 0.f);
+  float3 N = normalize(pdf.geometric_normal);
+  float3 T = normalize(cross(N, Up));
+  float3 B = cross(T, N);
 
-  float nk1 = AbsCosTheta(direction);
-  float nk2 = AbsCosTheta(origin);
-  if (nk1 == 0 || nk2 == 0) return make_float3(0.f);
-
-  // half vector = (v1 + v2) / |v1 + v2|
-  float3 H = origin + direction;
-  if (isNull(H)) return make_float3(0.f);
+  float NdotI = abs(dot(Up, Wi)), NdotO = abs(dot(Up, Wo));
 
   // diffuse component
   float3 diffuse_component = Rd * (28.f / (23.f * PI_F));
   diffuse_component *= (make_float3(1.f) - Rs);
-  diffuse_component *= (1.f - powf(1.f - nk1 * 0.5f, 5.f));
-  diffuse_component *= (1.f - powf(1.f - nk2 * 0.5f, 5.f));
+  diffuse_component *= (1.f - powf(1.f - NdotI * 0.5f, 5.f));
+  diffuse_component *= (1.f - powf(1.f - NdotO * 0.5f, 5.f));
 
   // PDF Diffuse component
-  float diffuse_PDF = dot(direction, normalize(pdf.normal));
-  if (diffuse_PDF < 0.f) diffuse_PDF = 0.f;
+  float diffuse_PDF = dot(Wi, N) / PI_F;
+  if (diffuse_PDF < 0.f) return make_float3(0.f);
 
+  // half vector = (v1 + v2) / |v1 + v2|
+  float3 H = Wo + Wi;
+  if (isNull(H)) return make_float3(0.f);
   H = normalize(H);
-  float HdotI = dot(H, origin);  // origin or direction here
-  float HdotN = dot(H, normal);
+  float HdotI = abs(dot(H, Wi));  // origin or direction here
+  float HdotN = abs(dot(H, N)),  HdotT = abs(dot(H, T)), HdotB = abs(dot(H, B));
 
-  // specular component
-  float3 F = schlick(Rs, HdotI);  // fresnel reflectance term
-  float pump = 1.f / fmaxf(1e-6f, (HdotI * fmaxf(nk1, nk2)));
-
-  float out, specular_PDF;
-  if (nu == nv) {
-    float e = nu;
-    float lobe = powf(HdotN, e);
-    float norm = (nu + 1.f) / (8.f * PI_F);
-
-    out = nk1 * norm * lobe * pump;
-    specular_PDF = norm * lobe / HdotI;
+  float norm, lobe;
+  if(nu == nv){
+    norm = (nu + 1.f) / (8.f * PI_F);
+    lobe = powf(HdotN, nu);
   } else {
-    // Get X & Y from normal basis
-    float3 X, Y;
-    if (nu == nv)
-      Make_Orthonormals(normal, X, Y);
-    else
-      Make_Orthonormals_Tangent(normal, Tangent(pdf.origin), X, Y);
-
-    float HdotX = dot(H, X), HdotY = dot(H, Y);
-    float lobe;
-    if (HdotN < 1.f) {
-      float e =
-          (nu * HdotX * HdotX + nv * HdotY * HdotY) / (1.f - HdotN * HdotN);
-      lobe = powf(HdotN, e);
-    } else {
+    norm = sqrtf((nu + 1.f) * (nv + 1.f)) / (8.f * PI_F);
+    
+    if(HdotN < 1.f)
+      lobe = powf(HdotN, (nu * HdotT * HdotT + nv * HdotB * HdotB) / (1.f - HdotN * HdotN));
+    else 
       lobe = 1.f;
-    }
-    float norm = sqrtf((nu + 1.f) * (nv + 1.f)) / (8.f * PI_F);
-
-    out = nk1 * norm * lobe * pump;
-    specular_PDF = norm * lobe / HdotI;
   }
 
-  float3 specular_component = F * out * Rs;
+  // specular component
+  float3 specular_component = schlick(Rs, HdotI);  // fresnel reflectance term
+  specular_component *= norm;
+  specular_component *= lobe / (HdotI * fmaxf(NdotI, NdotO));
 
-  return (diffuse_component + specular_component) /
-         (0.5f * (diffuse_PDF + specular_PDF));
+  float specular_PDF = HdotI / (norm * lobe);
+
+  return (diffuse_component / diffuse_PDF) + (specular_component / specular_PDF);
 }
