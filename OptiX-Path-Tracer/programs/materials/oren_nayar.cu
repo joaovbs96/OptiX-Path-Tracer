@@ -37,8 +37,9 @@ RT_PROGRAM void closest_hit() {
 
   // Get hit params
   prd.origin = hit_rec.p;
-  prd.geometric_normal = hit_rec.geometric_normal;
-  prd.shading_normal = hit_rec.shading_normal;
+  prd.geometric_normal = normalize(hit_rec.geometric_normal);
+  prd.shading_normal = normalize(hit_rec.shading_normal);
+  prd.view_direction = normalize(hit_rec.view_direction);
 
   // Get material color
   int index = hit_rec.index;
@@ -75,17 +76,33 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  if (dot(pdf.direction, pdf.normal) <= 0.f) return make_float3(0.f);
+  float3 Wo = pdf.view_direction, Wi = normalize(pdf.direction);
+  float3 N = pdf.geometric_normal;
 
-  float nl = fmaxf(dot(normalize(pdf.direction), normalize(pdf.normal)), 0.f);
-  float nv = fmaxf(dot(normalize(pdf.origin), normalize(pdf.normal)), 0.f);
-  float t = dot(normalize(pdf.direction), normalize(pdf.origin)) - nl * nv;
+  float sinThetaI = SinTheta(Wi);
+  float sinThetaO = SinTheta(Wo);
+  // Compute cosine term of Oren-Nayar model
+  float maxCos = 0;
+  if (sinThetaI > 1e-4 && sinThetaO > 1e-4) {
+      float sinPhiI = SinPhi(Wi), cosPhiI = CosPhi(Wi);
+      float sinPhiO = SinPhi(Wo), cosPhiO = CosPhi(Wo);
+      float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
+      maxCos = fmaxf(0.f, dCos);
+  }
 
-  if (t > 0.f) t /= fmaxf(nl, nv) + 0.001f;
+  // Compute sine and tangent terms of Oren-Nayar model
+  float sinAlpha, tanBeta;
+  if (AbsCosTheta(Wi) > AbsCosTheta(Wo)) {
+      sinAlpha = sinThetaO;
+      tanBeta = sinThetaI / AbsCosTheta(Wi);
+  } else {
+      sinAlpha = sinThetaI;
+      tanBeta = sinThetaO / AbsCosTheta(Wo);
+  }
 
   float rA = pdf.matParams.orenNayar.rA;
   float rB = pdf.matParams.orenNayar.rB;
   float3 color = pdf.matParams.attenuation;
 
-  return color * (nl * (rA + rB * t));
+  return color * (1.f / PI_F) * (rA + rB * maxCos * sinAlpha * tanBeta);
 }

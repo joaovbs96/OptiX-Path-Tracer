@@ -15,6 +15,8 @@ expanded with new features being added even after being done with the final book
 
 - NVIDIA's OptiX based GPU Path Tracer
 - Multiple Importance Sampling
+- BRDFs:
+- - Lambertian, Ideal Glass(Dielectric), Ideal Specular(Metal), Ashikhmin-Shirley, Torrance-Sparrow, Oren-Nayar, Normal Shader, Volumetric Material(WIP).
 - Russian Roulette Path Termination
 - Triangle Meshes, Spheres and Rectangles.
 - Pinhole Camera
@@ -22,8 +24,7 @@ expanded with new features being added even after being done with the final book
 
 ### TODO:
 - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
-- [Pixar's OpenSubDiv](https://github.com/PixarAnimationStudios/OpenSubdiv)
-- [Pixar's USD](https://github.com/PixarAnimationStudios/USD)
+- Bump Mapping
 - Spectral Rendering
 
 

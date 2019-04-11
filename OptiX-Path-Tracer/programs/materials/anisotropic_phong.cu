@@ -2,6 +2,8 @@
 #include "material.cuh"
 #include "microfacets.cuh"
 
+// TODO: rename file and material name to Ashikhmin-Shirley
+
 ////////////////////////////////////////////////////////////
 // --- Ashikhmin-Shirley Anisotropic Phong BRDF Model --- //
 ////////////////////////////////////////////////////////////
