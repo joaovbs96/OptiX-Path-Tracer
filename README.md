@@ -15,31 +15,31 @@ expanded with new features being added even after being done with the final book
 
 - Pinhole Camera
 - BRDFs:
-- - Lambertian
-- - Ideal Glass(Dielectric)
-- - Ideal Specular(Metal)
-- - Ashikhmin-Shirley
-- - Torrance-Sparrow
-- - Oren-Nayar
-- - Normal Shader
-- - Volumetric Material(WIP)
+  - Lambertian
+  - Ideal Dielectric(Glass)
+  - Ideal Metal
+  - Ashikhmin-Shirley
+  - Torrance-Sparrow
+  - Oren-Nayar
+  - Normal Shader
+  - Volumetric Material(WIP)
 - Surfaces:
-- - Triangle Meshes
-- - Spheres
-- - Rectangles
-- - Boxes
+  - Triangle Meshes
+  - Spheres
+  - Rectangles
+  - Boxes
 - Russian Roulette Path Termination
 - Multiple Importance Sampling
 - HDRi Environmental Mapping & Tone Mapping
 
 ### TODO:
 - BRDFs:
-- - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
+  - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
 - Surfaces:
-- - Torus
-- - Cone
-- - Cylinder
-- Motion Blur
+  - Torus
+  - Cone
+  - Cylinder
+- OptiX's Motion Blur
 - Bump Mapping
 - Spectral Rendering
 

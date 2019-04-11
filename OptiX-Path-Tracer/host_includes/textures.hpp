@@ -19,6 +19,7 @@ extern "C" const char checker_texture_programs[];
 extern "C" const char noise_texture_programs[];
 extern "C" const char image_texture_programs[];
 extern "C" const char vector_texture_programs[];
+extern "C" const char gradient_texture_programs[];
 
 struct Texture {
   virtual Program assignTo(Context &g_context) const = 0;
@@ -261,6 +262,27 @@ struct Vector_Texture : public Texture {
   }
 
   const std::vector<Texture *> texture_vector;
+};
+
+// Gradient Texture
+struct Gradient_Texture : public Texture {
+  Gradient_Texture(const float3 &cA, const float3 &cB, const float3 &cC) 
+  : colorA(cA), colorB(cB), colorC(cC) {}
+
+  virtual Program assignTo(Context &g_context) const override {
+    Program textProg =
+        createProgram(gradient_texture_programs, "sample_texture", g_context);
+
+    textProg["colorA"]->set3fv(&colorA.x);
+    textProg["colorB"]->set3fv(&colorB.x);
+    textProg["colorC"]->set3fv(&colorC.x);
+
+    return textProg;
+  }
+
+  const float3 colorA;
+  const float3 colorB;
+  const float3 colorC;
 };
 
 // Texture 'container'

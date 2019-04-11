@@ -11,8 +11,9 @@
 // Yasuhiro Fujii’s "A tiny improvement of Oren-Nayar reflectance model" variant
 // http://mimosa-pudica.net/improved-oren-nayar.html
 
-// Reference Implementation:
+// Reference Implementations:
 // https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_oren_nayar.h
+// https://github.com/mmp/pbrt-v3/blob/f7653953b2f9cc5d6a53b46acb5ce03317fd3e8b/src/core/reflection.cpp#L197-L224
 
 // OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
@@ -20,8 +21,7 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
 // Material Parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>, sample_texture, , );
 rtDeclareVariable(float, rA, , );
 rtDeclareVariable(float, rB, , );
 
