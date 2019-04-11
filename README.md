@@ -4,7 +4,7 @@
 
 ## Overview
 
-Project forked from Ingo Wald's OptiX version of Peter Shirley's "Ray Tracing" series. The project is still being 
+NVIDIA's OptiX based GPU Path Tracer. Project originally forked from Ingo Wald's OptiX version of Peter Shirley's "Ray Tracing" series, still being 
 expanded with new features being added even after being done with the final book, "The Rest of Your Life". Accompanying blog posts describing the implemention are available in the following links:
 
 - ["Ray Tracing: The Next Week" In OptiX](https://joaovbs96.github.io/optix/2018/12/24/next-week.html)
@@ -13,17 +13,33 @@ expanded with new features being added even after being done with the final book
 
 ## Features
 
-- NVIDIA's OptiX based GPU Path Tracer
-- Multiple Importance Sampling
-- BRDFs:
-- - Lambertian, Ideal Glass(Dielectric), Ideal Specular(Metal), Ashikhmin-Shirley, Torrance-Sparrow, Oren-Nayar, Normal Shader, Volumetric Material(WIP).
-- Russian Roulette Path Termination
-- Triangle Meshes, Spheres and Rectangles.
 - Pinhole Camera
+- BRDFs:
+- - Lambertian
+- - Ideal Glass(Dielectric)
+- - Ideal Specular(Metal)
+- - Ashikhmin-Shirley
+- - Torrance-Sparrow
+- - Oren-Nayar
+- - Normal Shader
+- - Volumetric Material(WIP)
+- Surfaces:
+- - Triangle Meshes
+- - Spheres
+- - Rectangles
+- - Boxes
+- Russian Roulette Path Termination
+- Multiple Importance Sampling
 - HDRi Environmental Mapping & Tone Mapping
 
 ### TODO:
-- [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
+- BRDFs:
+- - [Disney's BSDF](https://schuttejoe.github.io/post/disneybsdf/)
+- Surfaces:
+- - Torus
+- - Cone
+- - Cylinder
+- Motion Blur
 - Bump Mapping
 - Spectral Rendering
 
