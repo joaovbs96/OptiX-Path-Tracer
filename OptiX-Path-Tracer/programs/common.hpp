@@ -40,5 +40,8 @@ typedef enum {
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;
 
+// TODO: implement a math.cuh or math.hpp file
+// Common math functon defines
 RT_FUNCTION __host__ float Radians(float deg) { return (PI_F / 180.f) * deg; }
 RT_FUNCTION __host__ float Degrees(float rad) { return (180.f / PI_F) * rad; }
+RT_FUNCTION __host__ float sqrf(float value) { return value * value; }
