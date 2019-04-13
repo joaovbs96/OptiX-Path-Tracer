@@ -21,7 +21,8 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
 // Material Parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>, sample_texture, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
 rtDeclareVariable(float, rA, , );
 rtDeclareVariable(float, rB, , );
 
@@ -84,25 +85,25 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   // Compute cosine term of Oren-Nayar model
   float maxCos = 0;
   if (sinThetaI > 1e-4 && sinThetaO > 1e-4) {
-      float sinPhiI = SinPhi(Wi), cosPhiI = CosPhi(Wi);
-      float sinPhiO = SinPhi(Wo), cosPhiO = CosPhi(Wo);
-      float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
-      maxCos = fmaxf(0.f, dCos);
+    float sinPhiI = SinPhi(Wi), cosPhiI = CosPhi(Wi);
+    float sinPhiO = SinPhi(Wo), cosPhiO = CosPhi(Wo);
+    float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
+    maxCos = fmaxf(0.f, dCos);
   }
 
   // Compute sine and tangent terms of Oren-Nayar model
   float sinAlpha, tanBeta;
   if (AbsCosTheta(Wi) > AbsCosTheta(Wo)) {
-      sinAlpha = sinThetaO;
-      tanBeta = sinThetaI / AbsCosTheta(Wi);
+    sinAlpha = sinThetaO;
+    tanBeta = sinThetaI / AbsCosTheta(Wi);
   } else {
-      sinAlpha = sinThetaI;
-      tanBeta = sinThetaO / AbsCosTheta(Wo);
+    sinAlpha = sinThetaI;
+    tanBeta = sinThetaO / AbsCosTheta(Wo);
   }
 
   float rA = pdf.matParams.orenNayar.rA;
   float rB = pdf.matParams.orenNayar.rB;
   float3 color = pdf.matParams.attenuation;
 
-  return color * (1.f / PI_F) * (rA + rB * maxCos * sinAlpha * tanBeta);
+  return color * INV_PI * (rA + rB * maxCos * sinAlpha * tanBeta);
 }

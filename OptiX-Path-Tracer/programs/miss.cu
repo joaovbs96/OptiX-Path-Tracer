@@ -75,7 +75,7 @@ RT_PROGRAM void environmental_mapping() {
     float lon = atan2(ray.direction.z, ray.direction.x);
     float lat = acos(ray.direction.y / r);
 
-    float2 rads = make_float2(1.f / (PI_F * 2.f), 1.f / PI_F);
+    float2 rads = make_float2(1.f / (PI_F * 2.f), INV_PI);
     u = lon * rads.x;
     v = lat * rads.y;
   }

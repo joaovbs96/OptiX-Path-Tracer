@@ -39,7 +39,37 @@ RT_FUNCTION float SchlickWeight(float cos) {
 
 RT_FUNCTION float SchlickR0FromRelativeIOR(float eta) {
   // https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
-  return ((eta - 1.f) * (eta - 1.f)) / ((eta + 1.f) * (eta + 1.f));
+  return Square(eta - 1.f) / Square(eta + 1.f);
+}
+
+RT_FUNCTION float Fresnel_Dielectric(float cosThetaI, float ni, float nt) {
+  // Copied from PBRT. This function calculates the full Fresnel term for a
+  // dielectric material. See Sebastion Legarde's link above for details.
+
+  cosThetaI = clamp(cosThetaI, -1.f, 1.f);
+
+  // Swap index of refraction if this is coming from inside the surface
+  if (cosThetaI < 0.f) {
+    float temp = ni;
+    ni = nt;
+    nt = temp;
+
+    cosThetaI = -cosThetaI;
+  }
+
+  float sinThetaI = sqrtf(fmaxf(0.f, 1.f - cosThetaI * cosThetaI));
+  float sinThetaT = ni / nt * sinThetaI;
+
+  // Check for total internal reflection
+  if (sinThetaT >= 1) return 1;
+
+  float cosThetaT = sqrtf(fmaxf(0.0f, 1.0f - sinThetaT * sinThetaT));
+
+  float rParallel = ((nt * cosThetaI) - (ni * cosThetaT)) /
+                    ((nt * cosThetaI) + (ni * cosThetaT));
+  float rPerpendicuar = ((ni * cosThetaI) - (nt * cosThetaT)) /
+                        ((ni * cosThetaI) + (nt * cosThetaT));
+  return (rParallel * rParallel + rPerpendicuar * rPerpendicuar) / 2;
 }
 
 RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,

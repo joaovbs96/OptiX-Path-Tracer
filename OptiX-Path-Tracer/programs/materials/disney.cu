@@ -16,7 +16,9 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
 // Material Parameters
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+                  BaseColor, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  TransmittanceColor, , );
 rtDeclareVariable(float, nu, , );
 rtDeclareVariable(float, nv, , );
 
@@ -66,12 +68,12 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
   // get half vector and rotate it to world space
   float3 H = normalize(GGX_Sample(Wo, random, nu, nv));
-  H = H.x * B + H.y * N + H.z * T; 
+  H = H.x * B + H.y * N + H.z * T;
 
   float HdotI = dot(H, Wo);
-  if(HdotI < 0.f) H = -H;
+  if (HdotI < 0.f) H = -H;
 
-  float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
+  float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H);  // reflect(Wo, H)
 
   pdf.direction = Wi;
 
@@ -96,29 +98,70 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float3 Wo = pdf.view_direction, Wi = pdf.direction;
+  // float3 wo = Normalize(MatrixMultiply(v, surface.worldToTangent));
+  // float3 wi = Normalize(MatrixMultiply(l, surface.worldToTangent));
+  float3 H = normalize(Wo + Wi);
 
   // Get material params from input variable
-  float3 Rs = pdf.matParams.attenuation;
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+  Disney_Parameters surface = pdf.matParams.disney;
 
-  // create basis
-  float3 Up = make_float3(0.f, 1.f, 0.f);
-  float3 N = normalize(pdf.geometric_normal);
-  float3 T = normalize(cross(N, Up));
-  float3 B = cross(T, N);
+  float dotNV = CosTheta(Wo);
+  float dotNL = CosTheta(Wi);
 
-  float NdotI = fmaxf(dot(Up, Wi), 1e-6f), NdotO = fmaxf(dot(Up, Wo), 1e-6f);
+  float3 reflectance = make_float3(0.f);
 
-  // half vector = (v1 + v2) / |v1 + v2|
-  float3 H = Wo + Wi;
-  if (isNull(H)) return make_float3(0.f);
-  H = normalize(H);
-  float HdotI = abs(dot(H, Wi));  // origin or direction here
+  // TODO: implement pdf functions
 
-  float3 F = schlick(Rs, HdotI);    // Fresnel Reflectance
-  float G = GGX_G(Wo, Wi, nu, nv);  // Geometric Shadowing
-  float D = GGX_D(H, nu, nv);       // Normal Distribution Function(NDF)
+  float3 baseColor = surface.baseColor;
+  float metallic = surface.metallic;
+  float specTrans = surface.specTrans;
+  float roughness = surface.roughness;
 
-  return Rs * D * G * F / (4.f * NdotI * NdotO);
+  // calculate all of the anisotropic params
+  float ax, ay;
+  Disney_Anisotropic_Params(surface.roughness, surface.anisotropic, ax, ay);
+
+  float diffuseWeight = (1.f - metallic) * (1.f - specTrans);
+  float transWeight = (1.f - metallic) * specTrans;
+
+  // Clearcoat
+  bool upperHemisphere = dotNL > 0.f && dotNV > 0.f;
+  if (upperHemisphere && surface.clearcoat > 0.f) {
+    float clearcoat = EvaluateDisneyClearcoat(surface, Wo, H, Wi);
+    reflectance += float3(clearcoat);
+  }
+
+  // Diffuse
+  if (diffuseWeight > 0.f) {
+    float diffuse = EvaluateDisneyDiffuse(surface, Wo, H, Wi, thin);
+    float3 sheen = EvaluateSheen(surface, Wo, H, Wi);
+
+    reflectance += diffuseWeight * (diffuse * surface.baseColor + sheen);
+  }
+
+  // Transmission
+  if (transWeight > 0.f) {
+    // Scale roughness based on IOR (Burley 2015, Figure 15).
+    float rscaled =
+        thin ? ThinTransmissionRoughness(surface.ior, surface.roughness)
+             : surface.roughness;
+    float tax, tay;
+    Disney_Anisotropic_Params(rscaled, surface.anisotropic, tax, tay);
+
+    float3 transmission =
+        EvaluateDisneySpecTransmission(surface, Wo, H, Wi, tax, tay, thin);
+    reflectance += transWeight * transmission;
+  }
+
+  // -- specular
+  if (upperHemisphere) {
+    float3 specular = EvaluateDisneyBRDF(
+        surface, wo, wm, wi, forwardMetallicPdfW, reverseMetallicPdfW);
+
+    reflectance += specular;
+  }
+
+  reflectance = reflectance * Absf(dotNL);
+
+  return reflectance;
 }

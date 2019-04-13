@@ -18,6 +18,10 @@ using namespace optix;
 #define PI_F 3.141592654f
 #endif
 
+#ifndef INV_PI
+#define INV_PI 0.318309886f
+#endif
+
 #ifndef PI_D
 #define PI_D 3.14159265358979323846264338327950288
 #endif
@@ -44,4 +48,4 @@ typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;
 // Common math functon defines
 RT_FUNCTION __host__ float Radians(float deg) { return (PI_F / 180.f) * deg; }
 RT_FUNCTION __host__ float Degrees(float rad) { return (180.f / PI_F) * rad; }
-RT_FUNCTION __host__ float sqrf(float value) { return value * value; }
+RT_FUNCTION __host__ float Square(float value) { return value * value; }

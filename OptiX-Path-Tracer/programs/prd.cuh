@@ -19,6 +19,27 @@
 #include "random.cuh"
 #include "vec.hpp"
 
+// disney principled material
+struct Disney_Parameters {
+  float3 baseColor;
+  float3 transmittanceColor;
+  float sheen;
+  float sheenTint;
+  float clearcoat;
+  float clearcoatGloss;
+  float metallic;
+  float specTrans;
+  float diffTrans;
+  float flatness;
+  float anisotropic;
+  float relativeIOR;
+  float specularTint;
+  float roughness;
+  float scatterDistance;
+
+  float ior;
+};
+
 // TODO: clean up material parameters
 // Parameters used in some BRDF callable programs
 struct BRDFParameters {
@@ -39,6 +60,8 @@ struct BRDFParameters {
   struct {
     float rA, rB;
   } orenNayar;
+
+  Disney_Parameters disney;
 };
 
 typedef enum {

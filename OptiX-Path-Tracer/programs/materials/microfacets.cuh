@@ -108,7 +108,6 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
   // 2. simulate P22_{wi}(slopeX, slopeY, 1, 1)
   float slopeX, slopeY;
   float cosTheta = CosTheta(stretchedOrigin);
-  // TrowbridgeReitzSample11(CosTheta(stretchedOrigin), random, slopeX, slopeY);
 
   // special case (normal incidence)
   if (cosTheta > 0.9999f) {
@@ -145,7 +144,7 @@ RT_FUNCTION float3 GGX_Sample(float3 origin, float2 random, float nu,
         (random.y * (random.y * (random.y * 0.27385f - 0.73369f) + 0.46341f)) /
         (random.y * (random.y * (random.y * 0.093073f + 0.309420f) - 1.f) +
          0.597999f);
-    slopeY = S * z * std::sqrt(1.f + slopeX * slopeX);
+    slopeY = S * z * sqrtf(1.f + slopeX * slopeX);
   }
 
   // 3. rotate
