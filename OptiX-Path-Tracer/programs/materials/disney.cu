@@ -1,5 +1,10 @@
 #include "disney.cuh"
 
+// TODO: merge PDf programs into the evaluate programs(prevents redoing work)
+// TODO: refactor the Eval and sample programs into functions
+// TODO: refactor the Light Sample program into a templated function with
+// material parameters
+
 ////////////////////////////////////
 // --- Disney Principled BSDF --- //
 ////////////////////////////////////
@@ -8,6 +13,10 @@
 // https://schuttejoe.github.io/post/disneybsdf/
 // https://github.com/schuttejoe/Selas/blob/dev/Source/Core/Shading/Disney.cpp
 // https://github.com/schuttejoe/Selas/blob/dev/Source/Core/Shading/Disney.h
+
+// Note that the microfacet functions used here are the variations implemented
+// in the disney.cuh file, rather than the microfacet.cuh header used by other
+// BRDF models.
 
 // OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
@@ -82,22 +91,14 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
 // Gets BRDF PDF value
 RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  float3 Wo = pdf.view_direction;
-  float3 Wi = pdf.localDirection;
-
-  // Get material params from input variable
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
-
-  // Handles degenerate cases for microfacet reflection
-  float3 H = normalize(Wi + Wo);
-
-  return GGX_PDF(H, Wo, nu, nv) / (4.f * dot(Wo, H));
+  // PDF is computed on evaluate function
+  return 1.f;
 }
 
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float3 Wo = pdf.view_direction, Wi = pdf.direction;
+  // TODO: check worldToTangent transform
   // float3 wo = Normalize(MatrixMultiply(v, surface.worldToTangent));
   // float3 wi = Normalize(MatrixMultiply(l, surface.worldToTangent));
   float3 H = normalize(Wo + Wi);
@@ -110,7 +111,9 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
 
   float3 reflectance = make_float3(0.f);
 
-  // TODO: implement pdf functions
+  float disneyPdf = 0.f;                          // 'final' PDF value
+  float pBRDF, pDiffuse, pClearcoat, pSpecTrans;  // PDF weights of each lobe
+  CalculateLobePdfs(surface, pBRDF, pDiffuse, pClearcoat, pSpecTrans);
 
   float3 baseColor = surface.baseColor;
   float metallic = surface.metallic;
@@ -119,7 +122,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
 
   // calculate all of the anisotropic params
   float ax, ay;
-  Disney_Anisotropic_Params(surface.roughness, surface.anisotropic, ax, ay);
+  Anisotropic_Params(surface.roughness, surface.anisotropic, ax, ay);
 
   float diffuseWeight = (1.f - metallic) * (1.f - specTrans);
   float transWeight = (1.f - metallic) * specTrans;
@@ -127,41 +130,57 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   // Clearcoat
   bool upperHemisphere = dotNL > 0.f && dotNV > 0.f;
   if (upperHemisphere && surface.clearcoat > 0.f) {
-    float clearcoat = EvaluateDisneyClearcoat(surface, Wo, H, Wi);
-    reflectance += float3(clearcoat);
+    float clearcoatPdf;
+    float clearcoat = Evaluate_Clearcoat(surface, Wo, H, Wi, clearcoatPdf);
+
+    reflectance += make_float3(clearcoat);
+    disneyPdf += pClearcoat * clearcoatPdf;
   }
 
   // Diffuse
   if (diffuseWeight > 0.f) {
-    float diffuse = EvaluateDisneyDiffuse(surface, Wo, H, Wi, thin);
-    float3 sheen = EvaluateSheen(surface, Wo, H, Wi);
+    float diffusePdf = AbsCosTheta(wi);
+    float diffuse = Evaluate_Diffuse(surface, Wo, H, Wi, thin);
+    float3 sheen = Evaluate_Sheen(surface, Wo, H, Wi);
 
     reflectance += diffuseWeight * (diffuse * surface.baseColor + sheen);
+    disneyPdf += pDiffuse * diffusePdf;
   }
 
-  // Transmission
+  // Transmission(Refraction)
   if (transWeight > 0.f) {
-    // Scale roughness based on IOR (Burley 2015, Figure 15).
-    float rscaled =
-        thin ? ThinTransmissionRoughness(surface.ior, surface.roughness)
-             : surface.roughness;
+    float rscaled;
+    if (thin)  // Scale roughness based on IOR (Burley 2015, Figure 15).
+      rscaled = Transmission_Roughness(surface.ior, surface.roughness);
+    else
+      rscaled = surface.roughness;
+
     float tax, tay;
-    Disney_Anisotropic_Params(rscaled, surface.anisotropic, tax, tay);
+    Anisotropic_Params(rscaled, surface.anisotropic, tax, tay);
+
+    // TODO: probably missing something here for refraction
+    // TODO: implement microfacet glass model
 
     float3 transmission =
-        EvaluateDisneySpecTransmission(surface, Wo, H, Wi, tax, tay, thin);
+        Evaluate_Transmission(surface, Wo, H, Wi, tax, tay, thin);
     reflectance += transWeight * transmission;
+
+    float transmissivePdf = GGX_PDF(Wi, H, Wo, tax, tay);
+
+    transmissivePdf /= Square(dot(H, Wi) + surface.relativeIOR * dot(H, Wo));
+    disneyPdf += pSpecTrans * transmissivePdf;
   }
 
   // -- specular
   if (upperHemisphere) {
-    float3 specular = EvaluateDisneyBRDF(
-        surface, wo, wm, wi, forwardMetallicPdfW, reverseMetallicPdfW);
+    float metallicPdf;
+    float3 specular = Evaluate_Specular(surface, Wo, H, Wi, metallicPdf);
 
     reflectance += specular;
+    disneyPdf += pBRDF * metallicPdf / (4 * fabsf(dot(Wo, H)));
   }
 
-  reflectance = reflectance * Absf(dotNL);
+  reflectance *= fabsf(dotNL);
 
-  return reflectance;
+  return reflectance / disneyPdf;
 }

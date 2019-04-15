@@ -93,17 +93,17 @@ struct PerRayData {
   uint seed;
   float time;
   ScatterEvent scatterEvent;
-  float3 view_direction;
-  float3 origin;
-  float3 direction;
-  float3 geometric_normal;
-  float3 shading_normal;
+  float3 view_direction;    // Wo, direction of the previous ray
+  float3 origin;            // P, hit point, origin of the next ray
+  float3 direction;         // Wi, direction of the next ray
+  float3 geometric_normal;  // Ng
+  float3 shading_normal;    // Ns
   float3 emitted;
   float3 attenuation;
   float3 throughput;
   bool isSpecular;
   BRDFType matType;
-  BRDFParameters matParams;
+  BRDFParameters matParams;  // TODO: remove this from here
 };
 
 struct PerRayData_Shadow {

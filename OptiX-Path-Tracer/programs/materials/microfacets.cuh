@@ -179,13 +179,6 @@ RT_FUNCTION float GGX_G1(const float3& V, float nu, float nv) {
   return 1.f / (1.f + GGX_Lambda(V, nu, nv));
 }
 
-RT_FUNCTION float GGX_G1(const float3& V, float a) {
-  float a2 = a * a;
-  float absDotNV = AbsCosTheta(V);
-
-  return 2.0f / (1.0f + sqrtf(a2 + (1 - a2) * absDotNV * absDotNV));
-}
-
 RT_FUNCTION float GGX_G(const float3& Wo, const float3& Wi, float nu,
                         float nv) {
   return 1.f / (1.f + GGX_Lambda(Wo, nu, nv) + GGX_Lambda(Wi, nu, nv));
