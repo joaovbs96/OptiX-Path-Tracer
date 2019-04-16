@@ -32,13 +32,15 @@ typedef enum {
   Normal_BRDF,
   Anisotropic_BRDF,
   Oren_Nayar_BRDF,
-  Torrance_Sparrow_BRDF
+  Torrance_Sparrow_BRDF,
+  Microfacet_Transmission_BRDF
 } BRDFType;
 
-#define NUMBER_OF_MATERIALS 9
+#define NUMBER_OF_MATERIALS 10
 
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;
 
 RT_FUNCTION __host__ float Radians(float deg) { return (PI_F / 180.f) * deg; }
 RT_FUNCTION __host__ float Degrees(float rad) { return (180.f / PI_F) * rad; }
+RT_FUNCTION __host__ float Square(float value) { return value * value; }

@@ -50,6 +50,7 @@ cuda_compile_and_embed( oren_nayar_programs programs/materials/oren_nayar.cu )
 cuda_compile_and_embed( torrance_sparrow_programs programs/materials/torrance_sparrow.cu )
 cuda_compile_and_embed( cylinder_programs programs/hitables/cylinder.cu )
 cuda_compile_and_embed( gradient_texture_programs programs/textures/gradient_texture.cu )
+cuda_compile_and_embed( microfacet_transmission_programs programs/materials/microfacet_transmission.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -112,6 +113,7 @@ add_executable(OptiX_Path_Tracer
   ${torrance_sparrow_programs}
   ${cylinder_programs}
   ${gradient_texture_programs}
+  ${microfacet_transmission_programs}
   )
 
 target_link_libraries(OptiX_Path_Tracer ImGuiLibs)

@@ -17,6 +17,7 @@ extern "C" const char normal_programs[];
 extern "C" const char anisotropic_programs[];
 extern "C" const char oren_nayar_programs[];
 extern "C" const char torrance_sparrow_programs[];
+extern "C" const char microfacet_transmission_programs[];
 extern "C" const char hit_program[];
 
 //////////////////////////////////
@@ -66,6 +67,9 @@ struct Host_Material {
 
       case Torrance_Sparrow_BRDF:
         return createProgram(torrance_sparrow_programs, name, g_context);
+
+      case Microfacet_Transmission_BRDF:
+        return createProgram(microfacet_transmission_programs, name, g_context);
 
       default:
         throw "Invalid Material";
@@ -322,6 +326,41 @@ struct Torrance_Sparrow : public Host_Material {
     // Creates closest hit programs and assigns variables and textures
     Program hit =
         createProgram(torrance_sparrow_programs, "closest_hit", g_context);
+    assignParams(hit, g_context);
+
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Torrance-Sparrow programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    program["nu"]->setFloat(roughnessToAlpha(nu));
+    program["nv"]->setFloat(roughnessToAlpha(nv));
+  }
+
+  float roughnessToAlpha(float roughness) const {
+    float R = fmaxf(roughness, 1e-3f);
+    return R * R;
+  }
+
+  const Texture *texture;
+  const float nu, nv;
+};
+
+// Creates Microfacet-Transmission material
+struct Microfacet_Transmission : public Host_Material {
+  Microfacet_Transmission(const Texture *texture, const float nu, const float nv)
+      : texture(texture),
+        nu(nu),
+        nv(nv),
+        Host_Material(Microfacet_Transmission_BRDF) {}
+
+  // Assign host side Torrance-Sparrow material to device Material object
+  virtual Material assignTo(Context &g_context) const override {
+    // Creates closest hit programs and assigns variables and textures
+    Program hit =
+        createProgram(microfacet_transmission_programs, "closest_hit", g_context);
     assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);

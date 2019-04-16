@@ -2,7 +2,7 @@
 #include "microfacets.cuh"
 
 ///////////////////////////////////////////////
-// --- Torrance–Sparrow Reflaction Model --- //
+// --- Torrance–Sparrow Refraction Model --- //
 ///////////////////////////////////////////////
 
 // Based on PBRT code & theory
@@ -26,7 +26,7 @@ rtDeclareVariable(float, nv, , );
 
 // Assigns material and hit parameters to PRD
 RT_PROGRAM void closest_hit() {
-  prd.matType = Torrance_Sparrow_BRDF;
+  prd.matType = Microfacet_Transmission_BRDF;
   prd.isSpecular = false;
   prd.scatterEvent = rayGotBounced;
 
@@ -45,6 +45,8 @@ RT_PROGRAM void closest_hit() {
   prd.matParams.anisotropic.nu = nu;
   prd.matParams.anisotropic.nv = nv;
 }
+
+// TODO: change Sample return to bool(returns false when invalid)
 
 // Samples BRDF, generating outgoing direction(Wo)
 RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
@@ -71,9 +73,13 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
   float HdotI = dot(H, Wo);
   if(HdotI < 0.f) H = -H;
 
-  float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
+  float3 Wi;
+  float eta = CosTheta(Wo) > 0 ? (nu / nv) : (nv / nu);
 
-  pdf.direction = Wi;
+	if (!refract(Wo, H, eta, Wi)) 
+		pdf.direction = make_float3(0.f);
+	else
+  	pdf.direction = Wi;
 
   return pdf.direction;
 }
@@ -84,40 +90,44 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 
   // Get material params from input variable
   float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+	float nv = pdf.matParams.anisotropic.nv;
+	
+	float eta = CosTheta(Wo) > 0 ? (nv / nu) : (nu / nv);
+	float3 H = normalize(Wo + Wi * eta);
 
-  // Handles degenerate cases for microfacet reflection
-  float3 H = normalize(Wi + Wo);
+	// Compute change of variables _dwh\_dwi_ for microfacet transmission
+	float denom = Square(dot(Wo, H) + eta * dot(Wi, H));
+	float dwh_dwi = fabsf((eta * eta * dot(Wi, H)) / denom);
 
-  return GGX_PDF(H, Wo, nu, nv) / (4.f * dot(Wo, H));
+  return GGX_PDF(H, Wo, nu, nv) * dwh_dwi;
 }
 
 // Evaluates BRDF, returning its reflectance
 RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   float3 Wo = pdf.view_direction, Wi = pdf.direction;
-
-  // Get material params from input variable
   float3 Rs = pdf.matParams.attenuation;
   float nu = pdf.matParams.anisotropic.nu;
   float nv = pdf.matParams.anisotropic.nv;
+  
+  float cosThetaI = CosTheta(Wi), cosThetaO = CosTheta(Wo);
+  if (cosThetaI == 0.f || cosThetaO == 0.f) return make_float3(0.f);
 
-  // create basis
-  float3 Up = make_float3(0.f, 1.f, 0.f);
-  float3 N = normalize(pdf.geometric_normal);
-  float3 T = normalize(cross(N, Up));
-  float3 B = cross(T, N);
+  float eta = CosTheta(Wo) > 0 ? (nv / nu) : (nu / nv);
+  float3 H = normalize(Wo + Wi * eta);
+  if(H.y < 0) H *= -1;
 
-  float NdotI = fmaxf(dot(Up, Wi), 1e-6f), NdotO = fmaxf(dot(Up, Wo), 1e-6f);
+  // *Note that this is not a symetric BRDF. The PBRT implementation take both 
+  // directions into account. The code here works only on unidirectional PTs.
+  // https://github.com/mmp/pbrt-v3/blob/f7653953b2f9cc5d6a53b46acb5ce03317fd3e8b/src/core/reflection.cpp#L260
 
-  // half vector = (v1 + v2) / |v1 + v2|
-  float3 H = Wo + Wi;
-  if (isNull(H)) return make_float3(0.f);
-  H = normalize(H);
-  float HdotI = abs(dot(H, Wi));  // origin or direction here
+  float HdotO = dot(H, Wo), HdotI = dot(H, Wi);
+  float AHdotO = fabsf(HdotO), AHdotI = fabsf(HdotI);
+
+  float denom = Square(HdotO + eta * HdotI) * cosThetaI * cosThetaO;
 
   float3 F = schlick(Rs, HdotI);    // Fresnel Reflectance
   float G = GGX_G(Wo, Wi, nu, nv);  // Geometric Shadowing
   float D = GGX_D(H, nu, nv);       // Normal Distribution Function(NDF)
 
-  return Rs * D * G * F / (4.f * NdotI * NdotO);
+  return (Rs * (make_float3(1.f) - F) * D * G  * AHdotI * AHdotO) / denom;
 }

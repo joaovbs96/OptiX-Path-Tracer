@@ -156,6 +156,7 @@ RT_FUNCTION bool Emission_Next(BRDFType type) {
     case Isotropic_BRDF:
     case Anisotropic_BRDF:
     case Torrance_Sparrow_BRDF:
+    case Microfacet_Transmission_BRDF:
       return true;
     default:
       return false;
@@ -169,6 +170,7 @@ RT_FUNCTION bool Do_Direct_Sampling(BRDFType type) {
     case Dielectric_BRDF:
     case Anisotropic_BRDF:
     case Torrance_Sparrow_BRDF:
+    case Microfacet_Transmission_BRDF:
       return false;
     default:
       return true;

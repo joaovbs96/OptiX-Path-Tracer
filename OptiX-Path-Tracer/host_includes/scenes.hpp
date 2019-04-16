@@ -91,7 +91,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   Host_Material* mt0 = new Lambertian(tx1);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
-  Host_Material* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.9f);
+  Host_Material* mt5 = new Microfacet_Transmission(new Constant_Texture(rnd(), rnd(), rnd()), 0.01f, 0.02f);
   Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt5));
   txt.push(tx3);
