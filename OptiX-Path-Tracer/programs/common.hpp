@@ -36,10 +36,11 @@ typedef enum {
   Normal_BRDF,
   Anisotropic_BRDF,
   Oren_Nayar_BRDF,
-  Torrance_Sparrow_BRDF
+  Torrance_Sparrow_BRDF,
+  Disney_BRDF
 } BRDFType;
 
-#define NUMBER_OF_MATERIALS 9
+#define NUMBER_OF_MATERIALS 10
 
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;

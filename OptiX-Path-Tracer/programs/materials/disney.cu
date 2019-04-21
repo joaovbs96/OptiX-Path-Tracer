@@ -139,7 +139,7 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
 
   // Diffuse
   if (diffuseWeight > 0.f) {
-    float diffusePdf = AbsCosTheta(wi);
+    float diffusePdf = AbsCosTheta(Wi);
     float diffuse = Evaluate_Diffuse(surface, Wo, H, Wi, thin);
     float3 sheen = Evaluate_Sheen(surface, Wo, H, Wi);
 
@@ -166,8 +166,8 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
     reflectance += transWeight * transmission;
 
     float transmissivePdf = GGX_PDF(Wi, H, Wo, tax, tay);
-
     transmissivePdf /= Square(dot(H, Wi) + surface.relativeIOR * dot(H, Wo));
+    
     disneyPdf += pSpecTrans * transmissivePdf;
   }
 

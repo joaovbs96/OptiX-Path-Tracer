@@ -17,6 +17,7 @@ extern "C" const char normal_programs[];
 extern "C" const char anisotropic_programs[];
 extern "C" const char oren_nayar_programs[];
 extern "C" const char torrance_sparrow_programs[];
+extern "C" const char disney_programs[];
 extern "C" const char hit_program[];
 
 //////////////////////////////////
@@ -66,6 +67,9 @@ struct Host_Material {
 
       case Torrance_Sparrow_BRDF:
         return createProgram(torrance_sparrow_programs, name, g_context);
+
+      case Disney_BRDF:
+        return createProgram(disney_programs, name, g_context);
 
       default:
         throw "Invalid Material";
@@ -343,6 +347,41 @@ struct Torrance_Sparrow : public Host_Material {
   const Texture *texture;
   const float nu, nv;
 };
+
+/*// Creates Torrance-Sparrow material
+struct Disney : public Host_Material {
+  Disney(const Texture *texture, const float nu, const float nv)
+      : texture(texture),
+        nu(nu),
+        nv(nv),
+        Host_Material(Disney_BRDF) {}
+
+  // Assign host side Torrance-Sparrow material to device Material object
+  virtual Material assignTo(Context &g_context) const override {
+    // Creates closest hit programs and assigns variables and textures
+    Program hit =
+        createProgram(torrance_sparrow_programs, "closest_hit", g_context);
+    assignParams(hit, g_context);
+
+    return createMaterial(hit, getAnyHitProgram(g_context), g_context);
+  }
+
+  // Assigns variables to Torrance-Sparrow programs
+  virtual void assignParams(Program &program,
+                            Context &g_context) const override {
+    program["sample_texture"]->setProgramId(texture->assignTo(g_context));
+    program["nu"]->setFloat(roughnessToAlpha(nu));
+    program["nv"]->setFloat(roughnessToAlpha(nv));
+  }
+
+  float roughnessToAlpha(float roughness) const {
+    float R = fmaxf(roughness, 1e-3f);
+    return R * R;
+  }
+
+  const Texture *texture;
+  const float nu, nv;
+};*/
 
 // List of Host_Materials
 struct Material_List {
