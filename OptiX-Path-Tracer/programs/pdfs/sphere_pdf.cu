@@ -5,16 +5,16 @@ rtDeclareVariable(float3, center, , );
 rtDeclareVariable(float, radius, , );
 
 // Boundary intersection function
-RT_FUNCTION bool hit_boundary(PDFParams &in, const float tmin, const float tmax,
-                              PDFRecord &rec) {
-  const float3 oc = in.origin - center;
+RT_FUNCTION bool Intersect_Sphere(const float3 &P, const float3 &Wi,
+                                  const float tmin, const float tmax) {
+  const float3 oc = P - center;
 
   // if the ray hits the sphere, the following equation has two roots:
   // tdot(B, B) + 2tdot(B,A-C) + dot(A-C,A-C) - R = 0
 
   // Using Bhaskara's Formula, we have:
-  const float a = dot(in.direction, in.direction);
-  const float b = dot(oc, in.direction);
+  const float a = dot(Wi, Wi);
+  const float b = dot(oc, Wi);
   const float c = dot(oc, oc) - radius * radius;
   const float discriminant = b * b - a * c;
 
@@ -22,47 +22,42 @@ RT_FUNCTION bool hit_boundary(PDFParams &in, const float tmin, const float tmax,
   // solution and thus no hit
   if (discriminant < 0.f) return false;
 
-  // first root of the sphere equation:
-  float temp = (-b - sqrtf(discriminant)) / a;
-
-  // for a sphere, its normal is in (hitpoint - center)
-
   // if the first root was a hit,
-  if (temp < tmax && temp > tmin) {
-    rec.distance = temp;
-    rec.normal = ((in.origin + temp * in.direction) - center) / radius;
-    return true;
-  }
+  float temp = (-b - sqrtf(discriminant)) / a;
+  if (temp < tmax && temp > tmin) return true;
 
   // if the second root was a hit,
   temp = (-b + sqrtf(discriminant)) / a;
-  if (temp < tmax && temp > tmin) {
-    rec.distance = temp;
-    rec.normal = ((in.origin + temp * in.direction) - center) / radius;
-    return true;
-  }
+  if (temp < tmax && temp > tmin) return true;
 
   return false;
 }
 
 // Value program
-RT_CALLABLE_PROGRAM float value(PDFParams &in) {
-  PDFRecord rec;
+RT_CALLABLE_PROGRAM float PDF(const float3 &P,    // origin of next ray
+                              const float3 &Wo,   // direction of current ray
+                              const float3 &Wi,   // direction of next ray
+                              const float3 &N) {  // geometric normal
 
-  if (hit_boundary(in, 0.001f, FLT_MAX, rec)) {
-    float cos_theta_max =
-        sqrtf(1.f - radius * radius / squared_length(center - in.origin));
+  if (Intersect_Sphere(P, Wi, 0.001f, FLT_MAX)) {
+    float distance_squared = squared_length(center - P);
+    float cos_theta_max = sqrtf(1.f - radius * radius / distance_squared);
     float solid_angle = 2.f * PI_F * (1.f - cos_theta_max);
+
     return 1.f / solid_angle;
   } else
     return 0.f;
 }
 
-// Utility function: generate random directions towards the sphere
-RT_FUNCTION float3 random_to_sphere(float distance_squared, uint &seed) {
+// Sample direction relative to sphere
+RT_CALLABLE_PROGRAM float3 Sample(const float3 &P,   // next ray origin
+                                  const float3 &Wo,  // previous ray direction
+                                  const float3 &N,   // geometric normal
+                                  uint &seed) {
   float r1 = rnd(seed);
   float r2 = rnd(seed);
 
+  float distance_squared = squared_length(center - P);
   float z = 1.f + r2 * (sqrtf(1.f - radius * radius / distance_squared) - 1.f);
 
   float phi = 2.f * PI_F * r1;
@@ -70,20 +65,10 @@ RT_FUNCTION float3 random_to_sphere(float distance_squared, uint &seed) {
   float x = cosf(phi) * sqrtf(1.f - z * z);
   float y = sinf(phi) * sqrtf(1.f - z * z);
 
-  return make_float3(x, y, z);
-}
+  float3 Wi = make_float3(x, y, z);
 
-// Generate program: generate directions relative to the sphere
-RT_CALLABLE_PROGRAM float3 generate(PDFParams &in, uint &seed) {
-  float3 direction = center - in.origin;
-  float distance_squared = squared_length(direction);
+  Onb uvw(normalize(Wi));
+  uvw.inverse_transform(Wi);
 
-  // Onb doesn't normalize the input vector on its own
-  Onb uvw(unit_vector(direction));
-
-  float3 temp = random_to_sphere(distance_squared, seed);
-  uvw.inverse_transform(temp);
-  in.direction = temp;
-
-  return in.direction;
+  return Wi;
 }

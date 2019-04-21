@@ -274,7 +274,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
   int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
-  
+
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Texture* tx4 = new Constant_Texture(0.f);
@@ -297,22 +297,26 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  //list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, mt2));
-  list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5)); 
-  list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f, mt6));
+  // list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f,
+  // mt2)); list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f,
+  // mt5)); list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 /
+  // 2.f), 90.f, mt6));
 
   // Aluminium box
-  /*Box box = Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f),
-  mats[torr]); box.translate(make_float3(265.f, 0.f, 295.f)); box.rotate(15.f,
-  Y_AXIS); list.push(&box);*/
+  Box box =
+      Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
+  box.translate(make_float3(265.f, 0.f, 295.f));
+  box.rotate(15.f, Y_AXIS);
+  list.push(&box);
 
   // list.push(new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
   // mats[lightMt]));
 
-  /*Box box2 = Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f),
-  mats[whiteMt]); box2.translate(make_float3(130.f, 0.f, 65.f));
+  Box box2 =
+      Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
+  box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);*/
+  list.push(&box2);
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);

@@ -34,11 +34,8 @@ cuda_compile_and_embed( box_programs programs/hitables/box.cu )
 cuda_compile_and_embed( isotropic_programs programs/materials/isotropic.cu )
 cuda_compile_and_embed( volume_sphere_programs programs/hitables/volume_sphere.cu )
 cuda_compile_and_embed( volume_box_programs programs/hitables/volume_box.cu )
-cuda_compile_and_embed( cosine_pdf_programs programs/pdfs/cosine_pdf.cu )
 cuda_compile_and_embed( rect_pdf_programs programs/pdfs/rect_pdf.cu )
-cuda_compile_and_embed( mixture_pdf_programs programs/pdfs/mixture_pdf.cu )
 cuda_compile_and_embed( sphere_pdf_programs programs/pdfs/sphere_pdf.cu )
-cuda_compile_and_embed( buffer_pdf_programs programs/pdfs/buffer_pdf.cu )
 cuda_compile_and_embed( triangle_programs programs/hitables/triangle.cu )
 cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
 cuda_compile_and_embed( hit_program programs/hit.cu )
@@ -96,11 +93,8 @@ add_executable(OptiX_Path_Tracer
   ${isotropic_programs}
   ${volume_sphere_programs}
   ${volume_box_programs}
-  ${cosine_pdf_programs}
   ${rect_pdf_programs}
-  ${mixture_pdf_programs}
   ${sphere_pdf_programs}
-  ${buffer_pdf_programs}
   ${triangle_programs}
   ${plane_programs}
   ${hit_program}

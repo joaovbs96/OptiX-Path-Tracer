@@ -8,27 +8,10 @@
 will precompile (to ptx) and link to the generated executable */
 extern "C" const char rect_pdf_programs[];
 extern "C" const char sphere_pdf_programs[];
-extern "C" const char cosine_pdf_programs[];
-extern "C" const char mixture_pdf_programs[];
-extern "C" const char buffer_pdf_programs[];
 
 struct PDF {
   virtual Program createSample(Context &g_context) const = 0;
   virtual Program createPDF(Context &g_context) const = 0;
-};
-
-struct Cosine_PDF : public PDF {
-  Cosine_PDF() {}
-
-  // create PDF generate callable program
-  virtual Program createSample(Context &g_context) const override {
-    return createProgram(cosine_pdf_programs, "generate", g_context);
-  }
-
-  // create PDF value callable program
-  virtual Program createPDF(Context &g_context) const override {
-    return createProgram(cosine_pdf_programs, "value", g_context);
-  }
 };
 
 struct Rectangle_PDF : public PDF {
@@ -37,93 +20,63 @@ struct Rectangle_PDF : public PDF {
       : a0(aa0), a1(aa1), b0(bb0), b1(bb1), k(kk), ax(aax) {}
 
   virtual Program createSample(Context &g_context) const override {
-    Program generate;
+    Program sample;
 
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        generate = createProgram(rect_pdf_programs, "generate_x", g_context);
+        sample = createProgram(rect_pdf_programs, "Sample_X", g_context);
         break;
 
       case Y_AXIS:
-        generate = createProgram(rect_pdf_programs, "generate_y", g_context);
+        sample = createProgram(rect_pdf_programs, "Sample_Y", g_context);
         break;
 
       case Z_AXIS:
-        generate = createProgram(rect_pdf_programs, "generate_z", g_context);
+        sample = createProgram(rect_pdf_programs, "Sample_Z", g_context);
         break;
     }
 
     // Basic parameters
-    generate["a0"]->setFloat(a0);
-    generate["a1"]->setFloat(a1);
-    generate["b0"]->setFloat(b0);
-    generate["b1"]->setFloat(b1);
-    generate["k"]->setFloat(k);
+    sample["a0"]->setFloat(a0);
+    sample["a1"]->setFloat(a1);
+    sample["b0"]->setFloat(b0);
+    sample["b1"]->setFloat(b1);
+    sample["k"]->setFloat(k);
 
-    return generate;
+    return sample;
   }
 
   virtual Program createPDF(Context &g_context) const override {
-    Program value;
+    Program pdf;
 
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        value = createProgram(rect_pdf_programs, "value_x", g_context);
+        pdf = createProgram(rect_pdf_programs, "PDF_X", g_context);
         break;
 
       case Y_AXIS:
-        value = createProgram(rect_pdf_programs, "value_y", g_context);
+        pdf = createProgram(rect_pdf_programs, "PDF_Y", g_context);
         break;
 
       case Z_AXIS:
-        value = createProgram(rect_pdf_programs, "value_z", g_context);
+        pdf = createProgram(rect_pdf_programs, "PDF_Z", g_context);
         break;
     }
 
     // Basic parameters
-    value["a0"]->setFloat(a0);
-    value["a1"]->setFloat(a1);
-    value["b0"]->setFloat(b0);
-    value["b1"]->setFloat(b1);
-    value["k"]->setFloat(k);
+    pdf["a0"]->setFloat(a0);
+    pdf["a1"]->setFloat(a1);
+    pdf["b0"]->setFloat(b0);
+    pdf["b1"]->setFloat(b1);
+    pdf["k"]->setFloat(k);
 
-    return value;
+    return pdf;
   }
 
   float a0, a1, b0, b1, k;
   AXIS ax;
-};
-
-struct Mixture_PDF : public PDF {
-  Mixture_PDF(const PDF *p00, const PDF *p11) : p0(p00), p1(p11) {}
-
-  virtual Program createSample(Context &g_context) const override {
-    // create PDF generate callable program
-    Program generate =
-        createProgram(mixture_pdf_programs, "generate", g_context);
-
-    // assign children callable programs to mixture program
-    generate["p0_generate"]->setProgramId(p0->createSample(g_context));
-    generate["p1_generate"]->setProgramId(p1->createSample(g_context));
-
-    return generate;
-  }
-
-  virtual Program createPDF(Context &g_context) const override {
-    // create PDF value callable program
-    Program value = createProgram(mixture_pdf_programs, "value", g_context);
-
-    // assign children callable programs to mixture program
-    value["p0_value"]->setProgramId(p0->createPDF(g_context));
-    value["p1_value"]->setProgramId(p1->createPDF(g_context));
-
-    return value;
-  }
-
-  const PDF *p0;
-  const PDF *p1;
 };
 
 struct Sphere_PDF : public PDF {
@@ -131,66 +84,28 @@ struct Sphere_PDF : public PDF {
 
   virtual Program createSample(Context &g_context) const override {
     // create PDF generate callable program
-    Program generate =
-        createProgram(sphere_pdf_programs, "generate", g_context);
+    Program sample = createProgram(sphere_pdf_programs, "Sample", g_context);
 
     // Basic parameters
-    generate["center"]->setFloat(center.x, center.y, center.z);
-    generate["radius"]->setFloat(radius);
+    sample["center"]->setFloat(center.x, center.y, center.z);
+    sample["radius"]->setFloat(radius);
 
-    return generate;
+    return sample;
   }
 
   virtual Program createPDF(Context &g_context) const override {
     // create PDF value callable program
-    Program value = createProgram(sphere_pdf_programs, "value", g_context);
+    Program pdf = createProgram(sphere_pdf_programs, "PDF", g_context);
 
     // Basic parameters
-    value["center"]->setFloat(center.x, center.y, center.z);
-    value["radius"]->setFloat(radius);
+    pdf["center"]->setFloat(center.x, center.y, center.z);
+    pdf["radius"]->setFloat(radius);
 
-    return value;
+    return pdf;
   }
 
   float radius;
   float3 center;
-};
-
-struct Buffer_PDF : public PDF {
-  Buffer_PDF(const std::vector<PDF *> &b) : buffer_vector(b) {}
-
-  virtual Program createSample(Context &g_context) const override {
-    // create PDF generate callable program
-    Program generate =
-        createProgram(buffer_pdf_programs, "generate", g_context);
-
-    // create buffer of callable programs
-    std::vector<Program> buffer;
-    for (int i = 0; i < buffer_vector.size(); i++)
-      buffer.push_back(buffer_vector[i]->createSample(g_context));
-
-    generate["generators"]->setBuffer(createBuffer(buffer, g_context));
-    generate["size"]->setInt((int)buffer_vector.size());
-
-    return generate;
-  }
-
-  virtual Program createPDF(Context &g_context) const override {
-    // create PDF value callable program
-    Program value = createProgram(buffer_pdf_programs, "value", g_context);
-
-    // create buffer of callable programs
-    std::vector<Program> buffer;
-    for (int i = 0; i < buffer_vector.size(); i++)
-      buffer.push_back(buffer_vector[i]->createPDF(g_context));
-
-    value["values"]->setBuffer(createBuffer(buffer, g_context));
-    value["size"]->setInt((int)buffer_vector.size());
-
-    return value;
-  }
-
-  std::vector<PDF *> buffer_vector;
 };
 
 #endif

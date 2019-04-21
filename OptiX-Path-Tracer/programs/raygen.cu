@@ -48,8 +48,17 @@ rtDeclareVariable(float, time1, , );
 // Light sampling callable programs
 rtDeclareVariable(int, numLights, , );
 rtBuffer<float3> Light_Emissions;
-rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> Light_Sample;
-rtBuffer<rtCallableProgramId<float(PDFParams&)>> Light_PDF;
+rtBuffer<rtCallableProgramId<float3(const float3&,  // P
+                                    const float3&,  // Wo
+                                    const float3&,  // N
+                                    uint&)>>        // seed
+    Light_Sample;
+rtBuffer<rtCallableProgramId<float(const float3&,  // P
+                                   const float3&,  // Wo
+                                   const float3&,  // Wi
+                                   const float3&   // N
+                                   )>>
+    Light_PDF;
 
 // BRDF sampling callable programs
 rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> BRDF_Sample;
@@ -82,11 +91,15 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
     if (numLights == 1) return make_float3(0.f);
   }
 
+  float3 P = prd.origin;
+  float3 Wo = prd.view_direction;
+  float3 N = prd.shading_normal;
+
   // Sample Light
   float3 emission = Light_Emissions[index];
   PDFParams pdfParams(prd);
-  Light_Sample[index](pdfParams, prd.seed);
-  float lightPDF = Light_PDF[index](pdfParams);
+  pdfParams.direction = Light_Sample[index](P, Wo, N, prd.seed);
+  float lightPDF = Light_PDF[index](P, Wo, pdfParams.direction, N);
 
   // only sample if surface normal is in the light direction
   if (dot(pdfParams.direction, pdfParams.normal) < 0.f) return make_float3(0.f);
@@ -120,7 +133,7 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   float matPDF = BRDF_PDF[prd.matType](pdfParams);
   float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
   if (matPDF != 0.f && !isNull(matValue)) {
-    lightPDF = Light_PDF[index](pdfParams);
+    lightPDF = Light_PDF[index](P, Wo, pdfParams.direction, N);
 
     // we didn't hit anything, ignore BRDF sample
     if (!lightPDF || isNull(emission)) return directLight;
@@ -228,7 +241,8 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
 
         if (matPDF == 0.f) return make_float3(0.f);
-        if (matValue.x < 0.f || matValue.y < 0.f || matValue.z < 0.f) return make_float3(0.f);
+        if (matValue.x < 0.f || matValue.y < 0.f || matValue.z < 0.f)
+          return make_float3(0.f);
 
         // Accumulate color
         prd.throughput *= clamp(matValue / matPDF, 0.f, 1.f);
