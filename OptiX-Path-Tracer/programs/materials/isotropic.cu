@@ -34,13 +34,27 @@ RT_PROGRAM void closest_hit() {
   prd.shading_normal = hit_rec.shading_normal;
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
-  pdf.direction = random_on_unit_sphere(seed);
-  return pdf.direction;
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
+                                       const float3 &P,   // next ray origin
+                                       const float3 &Wo,  // prev ray direction
+                                       const float3 &N,   // shading normal
+                                       uint &seed) {
+  return random_on_unit_sphere(seed);
 }
 
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) { return 0.25 * PI_F; }
+RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
+                                   const float3 &P,    // next ray origin
+                                   const float3 &Wo,   // prev ray direction
+                                   const float3 &Wi,   // next ray direction
+                                   const float3 &N) {  // shading normal
+  return 0.25 * PI_F;
+}
 
-RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  return 0.25 * PI_F * pdf.matParams.attenuation;
+RT_CALLABLE_PROGRAM float3
+BRDF_Evaluate(const BRDFParameters &surface,
+              const float3 &P,    // next ray origin
+              const float3 &Wo,   // prev ray direction
+              const float3 &Wi,   // next ray direction
+              const float3 &N) {  // shading normal
+  return 0.25 * PI_F * surface.attenuation;
 }

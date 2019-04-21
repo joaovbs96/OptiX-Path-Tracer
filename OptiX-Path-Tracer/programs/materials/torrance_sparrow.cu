@@ -47,45 +47,42 @@ RT_PROGRAM void closest_hit() {
 }
 
 // Samples BRDF, generating outgoing direction(Wo)
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
+                                       const float3 &P,   // next ray origin
+                                       const float3 &Wo,  // prev ray direction
+                                       const float3 &N,   // shading normal
+                                       uint &seed) {
   // Get material params from input variable
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
-
-  float3 Wo = pdf.view_direction;  // outgoing, to camera
+  float nu = surface.anisotropic.nu;
+  float nv = surface.anisotropic.nv;
 
   // create basis
-  float3 N = normalize(pdf.geometric_normal);
-  float3 T = normalize(cross(N, make_float3(0.f, 1.f, 0.f)));
-  float3 B = cross(T, N);
+  float3 Nn = normalize(N);
+  float3 T = normalize(cross(Nn, make_float3(0.f, 1.f, 0.f)));
+  float3 B = cross(T, Nn);
 
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
-  pdf.matParams.u = random.x;
-  pdf.matParams.v = random.y;
 
   // get half vector and rotate it to world space
   float3 H = normalize(GGX_Sample(Wo, random, nu, nv));
-  H = H.x * B + H.y * N + H.z * T; 
+  H = H.x * B + H.y * Nn + H.z * T;
 
   float HdotI = dot(H, Wo);
-  if(HdotI < 0.f) H = -H;
+  if (HdotI < 0.f) H = -H;
 
-  float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
-
-  pdf.direction = Wi;
-
-  return pdf.direction;
+  return normalize(-Wo + 2.f * dot(Wo, H) * H);
 }
 
 // Gets BRDF PDF value
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  float3 Wo = pdf.view_direction;
-  float3 Wi = pdf.localDirection;
-
+RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
+                                   const float3 &P,    // next ray origin
+                                   const float3 &Wo,   // prev ray direction
+                                   const float3 &Wi,   // next ray direction
+                                   const float3 &N) {  // shading normal
   // Get material params from input variable
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+  float nu = surface.anisotropic.nu;
+  float nv = surface.anisotropic.nv;
 
   // Handles degenerate cases for microfacet reflection
   float3 H = normalize(Wi + Wo);
@@ -94,20 +91,19 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 }
 
 // Evaluates BRDF, returning its reflectance
-RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  float3 Wo = pdf.view_direction, Wi = pdf.direction;
-
+RT_CALLABLE_PROGRAM float3
+BRDF_Evaluate(const BRDFParameters &surface,
+              const float3 &P,    // next ray origin
+              const float3 &Wo,   // prev ray direction
+              const float3 &Wi,   // next ray direction
+              const float3 &N) {  // shading normal
   // Get material params from input variable
-  float3 Rs = pdf.matParams.attenuation;
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+  float3 Rs = surface.attenuation;
+  float nu = surface.anisotropic.nu;
+  float nv = surface.anisotropic.nv;
 
   // create basis
   float3 Up = make_float3(0.f, 1.f, 0.f);
-  float3 N = normalize(pdf.geometric_normal);
-  float3 T = normalize(cross(N, Up));
-  float3 B = cross(T, N);
-
   float NdotI = fmaxf(dot(Up, Wi), 1e-6f), NdotO = fmaxf(dot(Up, Wo), 1e-6f);
 
   // half vector = (v1 + v2) / |v1 + v2|

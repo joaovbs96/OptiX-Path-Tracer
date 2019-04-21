@@ -21,13 +21,18 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
 // Material Parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>, sample_texture, , );
+rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
+                  sample_texture, , );
 rtDeclareVariable(float, rA, , );
 rtDeclareVariable(float, rB, , );
 
 ///////////////////////////
 // --- BRDF Programs --- //
 ///////////////////////////
+
+// TODO: idea, the closest hit can get the surface parameters as normal and then
+// call a templated function, that then calls the sample and other functions as
+// normal
 
 // Assigns material and hit parameters to PRD
 RT_PROGRAM void closest_hit() {
@@ -51,22 +56,26 @@ RT_PROGRAM void closest_hit() {
   prd.matParams.attenuation = color;
 }
 
-// Samples BRDF, generating outgoing direction(Wo)
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
-  float3 temp;
-  cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
+                                       const float3 &P,   // next ray origin
+                                       const float3 &Wo,  // prev ray direction
+                                       const float3 &N,   // shading normal
+                                       uint &seed) {
+  float3 Wi;
+  cosine_sample_hemisphere(rnd(seed), rnd(seed), Wi);
 
-  Onb uvw(pdf.normal);
-  uvw.inverse_transform(temp);
+  Onb uvw(N);
+  uvw.inverse_transform(Wi);
 
-  pdf.direction = temp;
-
-  return pdf.direction;
+  return Wi;
 }
 
-// Gets BRDF PDF value
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
+RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
+                                   const float3 &P,    // next ray origin
+                                   const float3 &Wo,   // prev ray direction
+                                   const float3 &Wi,   // next ray direction
+                                   const float3 &N) {  // shading normal
+  float cosine = dot(normalize(Wi), normalize(N));
 
   if (cosine < 0.f)
     return 0.f;
@@ -75,34 +84,38 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
 }
 
 // Evaluates BRDF, returning its reflectance
-RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  float3 Wo = pdf.view_direction, Wi = normalize(pdf.direction);
-  float3 N = pdf.geometric_normal;
+RT_CALLABLE_PROGRAM float3
+BRDF_Evaluate(const BRDFParameters &surface,
+              const float3 &P,    // next ray origin
+              const float3 &Wo,   // prev ray direction
+              const float3 &Wi,   // next ray direction
+              const float3 &N) {  // shading normal
+  float3 WiN = normalize(Wi);
 
-  float sinThetaI = SinTheta(Wi);
+  float sinThetaI = SinTheta(WiN);
   float sinThetaO = SinTheta(Wo);
   // Compute cosine term of Oren-Nayar model
   float maxCos = 0;
   if (sinThetaI > 1e-4 && sinThetaO > 1e-4) {
-      float sinPhiI = SinPhi(Wi), cosPhiI = CosPhi(Wi);
-      float sinPhiO = SinPhi(Wo), cosPhiO = CosPhi(Wo);
-      float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
-      maxCos = fmaxf(0.f, dCos);
+    float sinPhiI = SinPhi(WiN), cosPhiI = CosPhi(WiN);
+    float sinPhiO = SinPhi(Wo), cosPhiO = CosPhi(Wo);
+    float dCos = cosPhiI * cosPhiO + sinPhiI * sinPhiO;
+    maxCos = fmaxf(0.f, dCos);
   }
 
   // Compute sine and tangent terms of Oren-Nayar model
   float sinAlpha, tanBeta;
-  if (AbsCosTheta(Wi) > AbsCosTheta(Wo)) {
-      sinAlpha = sinThetaO;
-      tanBeta = sinThetaI / AbsCosTheta(Wi);
+  if (AbsCosTheta(WiN) > AbsCosTheta(Wo)) {
+    sinAlpha = sinThetaO;
+    tanBeta = sinThetaI / AbsCosTheta(WiN);
   } else {
-      sinAlpha = sinThetaI;
-      tanBeta = sinThetaO / AbsCosTheta(Wo);
+    sinAlpha = sinThetaI;
+    tanBeta = sinThetaO / AbsCosTheta(Wo);
   }
 
-  float rA = pdf.matParams.orenNayar.rA;
-  float rB = pdf.matParams.orenNayar.rB;
-  float3 color = pdf.matParams.attenuation;
+  float rA = surface.orenNayar.rA;
+  float rB = surface.orenNayar.rB;
+  float3 color = surface.attenuation;
 
   return color * (1.f / PI_F) * (rA + rB * maxCos * sinAlpha * tanBeta);
 }

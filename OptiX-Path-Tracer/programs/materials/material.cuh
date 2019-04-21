@@ -17,7 +17,9 @@
 #pragma once
 
 #include "../math/trigonometric.cuh"
-#include "../pdfs/pdf.cuh"
+#include "../prd.cuh"
+#include "../sampling.cuh"
+#include "../vec.hpp"
 
 // returns smallest integer not less than a scalar or each vector component
 // RT_FUNCTION float saturate(float x) { return fmaxf(0.f, fminf(1.f, x)); }

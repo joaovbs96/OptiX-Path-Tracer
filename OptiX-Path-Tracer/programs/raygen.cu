@@ -14,8 +14,7 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "pdfs/pdf.cuh"
-#include "prd.cuh"
+#include "raygen.cuh"
 
 // launch index and frame dimensions
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
@@ -44,26 +43,6 @@ rtDeclareVariable(float3, camera_v, , );
 rtDeclareVariable(float, camera_lens_radius, , );
 rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
-
-// Light sampling callable programs
-rtDeclareVariable(int, numLights, , );
-rtBuffer<float3> Light_Emissions;
-rtBuffer<rtCallableProgramId<float3(const float3&,  // P
-                                    const float3&,  // Wo
-                                    const float3&,  // N
-                                    uint&)>>        // seed
-    Light_Sample;
-rtBuffer<rtCallableProgramId<float(const float3&,  // P
-                                   const float3&,  // Wo
-                                   const float3&,  // Wi
-                                   const float3&   // N
-                                   )>>
-    Light_PDF;
-
-// BRDF sampling callable programs
-rtBuffer<rtCallableProgramId<float3(PDFParams&, uint&)>> BRDF_Sample;
-rtBuffer<rtCallableProgramId<float(PDFParams&)>> BRDF_PDF;
-rtBuffer<rtCallableProgramId<float3(PDFParams&)>> BRDF_Evaluate;
 
 RT_FUNCTION float PowerHeuristic(unsigned int numf, float fPdf,
                                  unsigned int numg, float gPdf) {
@@ -97,17 +76,16 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample Light
   float3 emission = Light_Emissions[index];
-  PDFParams pdfParams(prd);
-  pdfParams.direction = Light_Sample[index](P, Wo, N, prd.seed);
-  float lightPDF = Light_PDF[index](P, Wo, pdfParams.direction, N);
+  float3 Wi = Light_Sample[index](P, Wo, N, prd.seed);
+  float lightPDF = Light_PDF[index](P, Wo, Wi, N);
 
   // only sample if surface normal is in the light direction
-  if (dot(pdfParams.direction, pdfParams.normal) < 0.f) return make_float3(0.f);
+  if (dot(Wi, N) < 0.f) return make_float3(0.f);
 
   // Check if light is occluded
   PerRayData_Shadow prdShadow;
-  Ray shadowRay = make_Ray(/* origin   : */ pdfParams.origin,
-                           /* direction: */ pdfParams.direction,
+  Ray shadowRay = make_Ray(/* origin   : */ P,
+                           /* direction: */ Wi,
                            /* ray type : */ 1,
                            /* tmin     : */ 1e-3f,
                            /* tmax     : */ RT_DEFAULT_MAX);
@@ -120,8 +98,8 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
 
   // Sample light
   if (lightPDF != 0.f && !isNull(emission)) {
-    float matPDF = BRDF_PDF[prd.matType](pdfParams);
-    float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
+    float matPDF = BRDF_PDF[prd.matType](prd.matParams, P, Wo, Wi, N);
+    float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, P, Wo, Wi, N);
     if (matPDF != 0.f && !isNull(matValue)) {
       float weight = PowerHeuristic(1, lightPDF, 1, matPDF);
       directLight += matValue * emission * weight / lightPDF;
@@ -129,11 +107,11 @@ RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
   }
 
   // Sample BRDF
-  BRDF_Sample[prd.matType](pdfParams, prd.seed);
-  float matPDF = BRDF_PDF[prd.matType](pdfParams);
-  float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
+  Wi = BRDF_Sample[prd.matType](prd.matParams, P, Wo, N, prd.seed);
+  float matPDF = BRDF_PDF[prd.matType](prd.matParams, P, Wo, Wi, N);
+  float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, P, Wo, Wi, N);
   if (matPDF != 0.f && !isNull(matValue)) {
-    lightPDF = Light_PDF[index](P, Wo, pdfParams.direction, N);
+    lightPDF = Light_PDF[index](P, Wo, Wi, N);
 
     // we didn't hit anything, ignore BRDF sample
     if (!lightPDF || isNull(emission)) return directLight;
@@ -234,11 +212,15 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
       // otherwise, do importance sample
       else {
         // Sample BRDF
-        // TODO: use PRD
-        PDFParams pdfParams(prd);
-        BRDF_Sample[prd.matType](pdfParams, seed);
-        float matPDF = BRDF_PDF[prd.matType](pdfParams);
-        float3 matValue = BRDF_Evaluate[prd.matType](pdfParams);
+        float3 Wi = BRDF_Sample[prd.matType](prd.matParams, prd.origin,
+                                             prd.view_direction,
+                                             prd.shading_normal, prd.seed);
+        float matPDF =
+            BRDF_PDF[prd.matType](prd.matParams, prd.origin, prd.view_direction,
+                                  Wi, prd.shading_normal);
+        float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, prd.origin,
+                                                     prd.view_direction, Wi,
+                                                     prd.shading_normal);
 
         if (matPDF == 0.f) return make_float3(0.f);
         if (matValue.x < 0.f || matValue.y < 0.f || matValue.z < 0.f)
@@ -248,8 +230,8 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
         prd.throughput *= clamp(matValue / matPDF, 0.f, 1.f);
 
         // Update ray origin and direction
-        prd.origin = pdfParams.origin;
-        prd.direction = pdfParams.direction;
+        prd.origin = prd.origin;
+        prd.direction = Wi;
       }
 
       // check if emissions should be taken into account if we hit a light

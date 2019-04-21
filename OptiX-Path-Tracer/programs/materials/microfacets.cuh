@@ -1,7 +1,9 @@
 #pragma once
 
 #include "../math/trigonometric.cuh"
-#include "../pdfs/pdf.cuh"
+#include "../prd.cuh"
+#include "../sampling.cuh"
+#include "../vec.hpp"
 
 // Sampling Ashikhmin-Shirley Quadrant - From Blender's implementation
 // https://developer.blender.org/diffusion/C/browse/master/src/kernel/closure/bsdf_ashikhmin_shirley.h

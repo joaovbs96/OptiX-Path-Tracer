@@ -64,23 +64,24 @@ RT_PROGRAM void closest_hit() {
 }
 
 // Samples BRDF, generating outgoing direction(Wo)
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
+                                       const float3 &P,   // next ray origin
+                                       const float3 &Wo,  // prev ray direction
+                                       const float3 &Ns,  // shading normal
+                                       uint &seed) {
   // Get material params from input variable
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+  float nu = surface.anisotropic.nu;
+  float nv = surface.anisotropic.nv;
 
-  float3 Wo = pdf.view_direction;  // outgoing, to camera
   float3 Wi;
 
   // create basis
-  float3 N = normalize(pdf.geometric_normal);
+  float3 N = normalize(Ns);
   float3 T = normalize(cross(N, make_float3(0.f, 1.f, 0.f)));
   float3 B = cross(T, N);
 
   // random variables
   float2 random = make_float2(rnd(seed), rnd(seed));
-  pdf.matParams.u = random.x;
-  pdf.matParams.v = random.y;
 
   if (random.x < 0.5) {
     // sample diffuse term
@@ -91,8 +92,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
     Onb uvw(N);
     uvw.inverse_transform(Wi);
-
-    pdf.direction = Wi;
 
   } else {
     // sample specular term
@@ -127,38 +126,42 @@ RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
 
     // get half vector
     float3 H = normalize(Spherical_Vector(sin_theta, cos_theta, phi));
-    H = H.x * B + H.y * N + H.z * T; 
-    
-    float HdotI = dot(H, Wo);
-    if(HdotI < 0.f) H = -H;
-    
-    float3 Wi = normalize(-Wo + 2.f * dot(Wo, H) * H); // reflect(Wo, H)
+    H = H.x * B + H.y * N + H.z * T;
 
-    pdf.direction = Wi;
+    float HdotI = dot(H, Wo);
+    if (HdotI < 0.f) H = -H;
+
+    Wi = normalize(-Wo + 2.f * dot(Wo, H) * H);  // reflect(Wo, H)
   }
 
-  return pdf.direction;
+  return Wi;
 }
 
 // Gets BRDF PDF value
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
+RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
+                                   const float3 &P,    // next ray origin
+                                   const float3 &Wo,   // prev ray direction
+                                   const float3 &Wi,   // next ray direction
+                                   const float3 &N) {  // shading normal
   return 1.f;
 }
 
-
 // Evaluates BRDF, returning its reflectance
-RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  float3 Wo = pdf.view_direction, Wi = pdf.direction;
-
+RT_CALLABLE_PROGRAM float3
+BRDF_Evaluate(const BRDFParameters &surface,
+              const float3 &P,     // next ray origin
+              const float3 &Wo,    // prev ray direction
+              const float3 &Wi,    // next ray direction
+              const float3 &Ns) {  // shading normal
   // Get material params from input variable
-  float3 Rd = pdf.matParams.anisotropic.diffuse_color;
-  float3 Rs = pdf.matParams.anisotropic.specular_color;
-  float nu = pdf.matParams.anisotropic.nu;
-  float nv = pdf.matParams.anisotropic.nv;
+  float3 Rd = surface.anisotropic.diffuse_color;
+  float3 Rs = surface.anisotropic.specular_color;
+  float nu = surface.anisotropic.nu;
+  float nv = surface.anisotropic.nv;
 
   // create basis
   float3 Up = make_float3(0.f, 1.f, 0.f);
-  float3 N = normalize(pdf.geometric_normal);
+  float3 N = normalize(Ns);
   float3 T = normalize(cross(N, Up));
   float3 B = cross(T, N);
 
@@ -179,18 +182,19 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
   if (isNull(H)) return make_float3(0.f);
   H = normalize(H);
   float HdotI = abs(dot(H, Wi));  // origin or direction here
-  float HdotN = abs(dot(H, N)),  HdotT = abs(dot(H, T)), HdotB = abs(dot(H, B));
+  float HdotN = abs(dot(H, N)), HdotT = abs(dot(H, T)), HdotB = abs(dot(H, B));
 
   float norm, lobe;
-  if(nu == nv){
+  if (nu == nv) {
     norm = (nu + 1.f) / (8.f * PI_F);
     lobe = powf(HdotN, nu);
   } else {
     norm = sqrtf((nu + 1.f) * (nv + 1.f)) / (8.f * PI_F);
-    
-    if(HdotN < 1.f)
-      lobe = powf(HdotN, (nu * HdotT * HdotT + nv * HdotB * HdotB) / (1.f - HdotN * HdotN));
-    else 
+
+    if (HdotN < 1.f)
+      lobe = powf(HdotN, (nu * HdotT * HdotT + nv * HdotB * HdotB) /
+                             (1.f - HdotN * HdotN));
+    else
       lobe = 1.f;
   }
 
@@ -201,5 +205,6 @@ RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
 
   float specular_PDF = HdotI / (norm * lobe);
 
-  return (diffuse_component / diffuse_PDF) + (specular_component / specular_PDF);
+  return (diffuse_component / diffuse_PDF) +
+         (specular_component / specular_PDF);
 }

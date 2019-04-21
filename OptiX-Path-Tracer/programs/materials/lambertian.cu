@@ -49,20 +49,26 @@ RT_PROGRAM void closest_hit() {
   prd.shading_normal = hit_rec.shading_normal;
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(PDFParams &pdf, uint &seed) {
-  float3 temp;
-  cosine_sample_hemisphere(rnd(seed), rnd(seed), temp);
+RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
+                                       const float3 &P,   // next ray origin
+                                       const float3 &Wo,  // prev ray direction
+                                       const float3 &N,   // shading normal
+                                       uint &seed) {
+  float3 Wi;
+  cosine_sample_hemisphere(rnd(seed), rnd(seed), Wi);
 
-  Onb uvw(pdf.normal);
-  uvw.inverse_transform(temp);
+  Onb uvw(N);
+  uvw.inverse_transform(Wi);
 
-  pdf.direction = temp;
-
-  return pdf.direction;
+  return Wi;
 }
 
-RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
-  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
+RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
+                                   const float3 &P,    // next ray origin
+                                   const float3 &Wo,   // prev ray direction
+                                   const float3 &Wi,   // next ray direction
+                                   const float3 &N) {  // shading normal
+  float cosine = dot(normalize(Wi), normalize(N));
 
   if (cosine < 0.f)
     return 0.f;
@@ -70,11 +76,16 @@ RT_CALLABLE_PROGRAM float BRDF_PDF(PDFParams &pdf) {
     return cosine / PI_F;
 }
 
-RT_CALLABLE_PROGRAM float3 BRDF_Evaluate(PDFParams &pdf) {
-  float cosine = dot(unit_vector(pdf.direction), unit_vector(pdf.normal));
+RT_CALLABLE_PROGRAM float3
+BRDF_Evaluate(const BRDFParameters &surface,
+              const float3 &P,    // next ray origin
+              const float3 &Wo,   // prev ray direction
+              const float3 &Wi,   // next ray direction
+              const float3 &N) {  // shading normal
+  float cosine = dot(normalize(Wi), normalize(N));
 
   if (cosine < 0.f)
     return make_float3(0.f);
   else
-    return (cosine * pdf.matParams.attenuation) / PI_F;
+    return (cosine * surface.attenuation) / PI_F;
 }

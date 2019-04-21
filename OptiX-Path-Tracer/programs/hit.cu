@@ -1,6 +1,7 @@
-#include "pdfs/pdf.cuh"
 #include "prd.cuh"
 #include "random.cuh"
+#include "sampling.cuh"
+#include "vec.hpp"
 
 // https://github.com/knightcrawler25/Optix-PathTracer
 // https://computergraphics.stackexchange.com/questions/4979/what-is-importance-sampling
