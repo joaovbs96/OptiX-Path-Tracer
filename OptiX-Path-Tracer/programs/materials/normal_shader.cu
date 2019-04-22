@@ -14,41 +14,14 @@ rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 rtDeclareVariable(int, useShadingNormal, , );
 
 RT_PROGRAM void closest_hit() {
-  // assign material params to prd
-  prd.matType = Normal_BRDF;
-
+  // set color based on normal value
   // check if we should use geometric or shading normals
   if (useShadingNormal) {
-    prd.geometric_normal = hit_rec.geometric_normal;
-    prd.shading_normal = hit_rec.shading_normal;
-  } else
-    prd.geometric_normal = prd.shading_normal = hit_rec.geometric_normal;
+    prd.radiance = hit_rec.shading_normal * 0.5f + make_float3(0.5f);
+  } else {
+    prd.radiance = hit_rec.geometric_normal * 0.5f + make_float3(0.5f);
+  }
 
-  // set color based on normal value
-  prd.attenuation = prd.shading_normal * 0.5f + make_float3(0.5f);
-}
-
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
-                                       const float3 &P,   // next ray origin
-                                       const float3 &Wo,  // prev ray direction
-                                       const float3 &N,   // shading normal
-                                       uint &seed) {
-  return make_float3(1.f);
-}
-
-RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
-                                   const float3 &P,    // next ray origin
-                                   const float3 &Wo,   // prev ray direction
-                                   const float3 &Wi,   // next ray direction
-                                   const float3 &N) {  // shading normal
-  return 1.f;
-}
-
-RT_CALLABLE_PROGRAM float3
-BRDF_Evaluate(const BRDFParameters &surface,
-              const float3 &P,    // next ray origin
-              const float3 &Wo,   // prev ray direction
-              const float3 &Wi,   // next ray direction
-              const float3 &N) {  // shading normal
-  return make_float3(1.f);
+  // Assign parameters to PRD
+  prd.scatterEvent = rayGotCancelled;
 }

@@ -41,78 +41,52 @@ rtDeclareVariable(float, ref_idx, , );
 rtDeclareVariable(float, density, , );
 
 RT_PROGRAM void closest_hit() {
-  prd.matType = Dielectric_BRDF;
-  prd.isSpecular = true;
-  prd.scatterEvent = rayGotBounced;
-
-  prd.origin = hit_rec.p;
-  prd.geometric_normal = hit_rec.geometric_normal;
-  prd.shading_normal = hit_rec.shading_normal;
-
   int index = hit_rec.index;
-  prd.attenuation = base_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
-  float3 volumeColor = volume_texture(hit_rec.u, hit_rec.v, hit_rec.p, index);
+  float u = hit_rec.u, v = hit_rec.v;
+  float3 P = hit_rec.p, Wo = -hit_rec.view_direction;
+  float3 N = hit_rec.shading_normal;
+
+  float3 base_color = base_texture(u, v, P, index);
+  float3 volume_color = volume_texture(u, v, P, index);
 
   float3 outward_normal;
   float ni_over_nt;
-  float cosine = dot(ray.direction, prd.shading_normal);
+  float cosine = dot(Wo, N);
 
   if (cosine > 0.f) {
     // from inside the object
-    outward_normal = -1 * prd.shading_normal;
+    outward_normal = -N;
     ni_over_nt = ref_idx;
-    cosine = ref_idx * cosine / length(ray.direction);
+    cosine = ref_idx * cosine / length(Wo);
 
     // since it was from inside the object, compute the attenuation according
     // to the Beer-Lambert Law
     // TODO: check glass.cu from optix advanced samples
     if (density > 0.f) {
-      float3 absorb = hit_rec.distance * density * volumeColor;
-      prd.attenuation *= expf(-absorb);
+      float3 absorb = hit_rec.distance * density * volume_color;
+      base_color *= expf(-absorb);
     }
-  }
-
-  else {
-    outward_normal = prd.shading_normal;
+  } else {
+    outward_normal = N;
     ni_over_nt = 1.f / ref_idx;
-    cosine = -cosine / length(ray.direction);
+    cosine = -cosine / length(Wo);
   }
 
   float3 refracted;
   float reflect_prob;
-  if (refract(ray.direction, outward_normal, ni_over_nt, refracted)) {
+  if (refract(Wo, outward_normal, ni_over_nt, refracted)) {
     reflect_prob = schlick(cosine, ref_idx);
   } else
     reflect_prob = 1.f;
 
-  float3 reflected = reflect(ray.direction, prd.shading_normal);
+  // reflect or refract ray
   if (rnd(prd.seed) < reflect_prob)
-    prd.direction = reflected;
+    prd.direction = reflect(Wo, N);
   else
     prd.direction = refracted;
-}
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
-                                       const float3 &P,   // next ray origin
-                                       const float3 &Wo,  // prev ray direction
-                                       const float3 &N,   // shading normal
-                                       uint &seed) {
-  return make_float3(1.f);
-}
-
-RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
-                                   const float3 &P,    // next ray origin
-                                   const float3 &Wo,   // prev ray direction
-                                   const float3 &Wi,   // next ray direction
-                                   const float3 &N) {  // shading normal
-  return 1.f;
-}
-
-RT_CALLABLE_PROGRAM float3
-BRDF_Evaluate(const BRDFParameters &surface,
-              const float3 &P,    // next ray origin
-              const float3 &Wo,   // prev ray direction
-              const float3 &Wi,   // next ray direction
-              const float3 &N) {  // shading normal
-  return make_float3(1.f);
+  // Assign parameters to PRD
+  prd.scatterEvent = rayGotBounced;
+  prd.origin = hit_rec.p;
+  prd.throughput *= clamp(base_color, 0.f, 1.f);
 }

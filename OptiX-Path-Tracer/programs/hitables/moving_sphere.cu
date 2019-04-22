@@ -53,7 +53,7 @@ RT_FUNCTION float3 center(float time) {
 // stable variants out there, but for now let's stick with the one that
 // the reference code used.
 RT_PROGRAM void hit_sphere(int pid) {
-  float pt;
+  //float pt;
   // int2 idx = Get_Motion_Data(motionRange, curTime, vertex_buffers.size(),
   // pt);
 

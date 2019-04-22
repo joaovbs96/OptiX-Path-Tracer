@@ -14,22 +14,16 @@ extern "C" const char miss_program[];
 extern "C" const char exception_program[];
 extern "C" const char raygen_program[];
 
-void setRayGenerationProgram(Context &g_context, BRDF_Sampler &brdf,
-                             Light_Sampler &lights) {
+void setRayGenerationProgram(Context &g_context, Light_Sampler &lights) {
   // create raygen program of the scene
   Program raygen = createProgram(raygen_program, "renderPixel", g_context);
 
-  // BRDF callable program buffers
-  raygen["BRDF_Sample"]->setBuffer(createBuffer(brdf.sample, g_context));
-  raygen["BRDF_PDF"]->setBuffer(createBuffer(brdf.pdf, g_context));
-  raygen["BRDF_Evaluate"]->setBuffer(createBuffer(brdf.eval, g_context));
-
   // Light sampling params and buffers
-  raygen["Light_Sample"]->setBuffer(createBuffer(lights.sample, g_context));
-  raygen["Light_PDF"]->setBuffer(createBuffer(lights.pdf, g_context));
-  raygen["Light_Emissions"]->setBuffer(
+  g_context["Light_Sample"]->setBuffer(createBuffer(lights.sample, g_context));
+  g_context["Light_PDF"]->setBuffer(createBuffer(lights.pdf, g_context));
+  g_context["Light_Emissions"]->setBuffer(
       createBuffer(lights.emissions, g_context));
-  raygen["numLights"]->setInt((int)lights.emissions.size());
+  g_context["numLights"]->setInt((int)lights.emissions.size());
 
   g_context->setEntryPointCount(1);
   g_context->setRayGenerationProgram(/*program ID:*/ 0, raygen);

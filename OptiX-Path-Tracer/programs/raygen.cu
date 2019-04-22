@@ -14,7 +14,9 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
-#include "raygen.cuh"
+#include "prd.cuh"
+#include "sampling.cuh"
+#include "vec.hpp"
 
 // launch index and frame dimensions
 rtDeclareVariable(uint2, pixelID, rtLaunchIndex, );
@@ -44,85 +46,6 @@ rtDeclareVariable(float, camera_lens_radius, , );
 rtDeclareVariable(float, time0, , );
 rtDeclareVariable(float, time1, , );
 
-RT_FUNCTION float PowerHeuristic(unsigned int numf, float fPdf,
-                                 unsigned int numg, float gPdf) {
-  float f = numf * fPdf;
-  float g = numg * gPdf;
-
-  return (f * f) / (f * f + g * g);
-}
-
-RT_FUNCTION float3 Direct_Light(PerRayData& prd) {
-  float3 directLight = make_float3(0.f);
-
-  // return black if there's no light
-  if (numLights == 0) return make_float3(0.f);
-
-  // return black if ray missed
-  if (prd.scatterEvent == rayMissed) return make_float3(0.f);
-
-  // ramdomly pick one light and multiply the result by the number of lights
-  // it's the same as dividing by the PDF if they have the same probability
-  int index = ((int)(rnd(prd.seed) * numLights)) % numLights;
-
-  // return black if there's just one light and we just hit it
-  if (prd.matType == Diffuse_Light_BRDF) {
-    if (numLights == 1) return make_float3(0.f);
-  }
-
-  float3 P = prd.origin;
-  float3 Wo = prd.view_direction;
-  float3 N = prd.shading_normal;
-
-  // Sample Light
-  float3 emission = Light_Emissions[index];
-  float3 Wi = Light_Sample[index](P, Wo, N, prd.seed);
-  float lightPDF = Light_PDF[index](P, Wo, Wi, N);
-
-  // only sample if surface normal is in the light direction
-  if (dot(Wi, N) < 0.f) return make_float3(0.f);
-
-  // Check if light is occluded
-  PerRayData_Shadow prdShadow;
-  Ray shadowRay = make_Ray(/* origin   : */ P,
-                           /* direction: */ Wi,
-                           /* ray type : */ 1,
-                           /* tmin     : */ 1e-3f,
-                           /* tmax     : */ RT_DEFAULT_MAX);
-  rtTrace(world, shadowRay, prdShadow);
-
-  // if light is occluded, return black
-  if (prdShadow.inShadow) return make_float3(0.f);
-
-  // Multiple Importance Sample
-
-  // Sample light
-  if (lightPDF != 0.f && !isNull(emission)) {
-    float matPDF = BRDF_PDF[prd.matType](prd.matParams, P, Wo, Wi, N);
-    float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, P, Wo, Wi, N);
-    if (matPDF != 0.f && !isNull(matValue)) {
-      float weight = PowerHeuristic(1, lightPDF, 1, matPDF);
-      directLight += matValue * emission * weight / lightPDF;
-    }
-  }
-
-  // Sample BRDF
-  Wi = BRDF_Sample[prd.matType](prd.matParams, P, Wo, N, prd.seed);
-  float matPDF = BRDF_PDF[prd.matType](prd.matParams, P, Wo, Wi, N);
-  float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, P, Wo, Wi, N);
-  if (matPDF != 0.f && !isNull(matValue)) {
-    lightPDF = Light_PDF[index](P, Wo, Wi, N);
-
-    // we didn't hit anything, ignore BRDF sample
-    if (!lightPDF || isNull(emission)) return directLight;
-
-    float weight = PowerHeuristic(1, matPDF, 1, lightPDF);
-    directLight += matValue * emission * weight / matPDF;
-  }
-
-  return directLight;
-}
-
 struct Camera {
   static RT_FUNCTION Ray generateRay(float s, float t, uint& seed) {
     const float3 rd = camera_lens_radius * random_in_unit_disk(seed);
@@ -139,7 +62,7 @@ struct Camera {
   }
 };
 
-// Check if we should take emissions into account, in the next light hit
+/*// Check if we should take emissions into account, in the next light hit
 RT_FUNCTION bool Emission_Next(BRDFType type) {
   switch (type) {
     case Metal_BRDF:
@@ -164,79 +87,39 @@ RT_FUNCTION bool Do_Direct_Sampling(BRDFType type) {
     default:
       return true;
   }
-}
+}*/
 
 RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   PerRayData prd;
   prd.seed = seed;
   prd.time = time0 + rnd(prd.seed) * (time1 - time0);
-
   prd.throughput = make_float3(1.f);
-  float3 radiance = make_float3(0.f);
-  bool previousHitSpecular = false;
-
-  // TODO: Isotropic isn't working when light is present
+  prd.radiance = make_float3(0.f);
 
   // iterative version of recursion
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
 
-    // if the material is the normal shader, return its color
-    if (prd.matType == Normal_BRDF) return prd.attenuation;
-
-    // Only sample direct light if last bounce wasn't specular
-    if (Do_Direct_Sampling(prd.matType))
-      radiance += prd.throughput * Direct_Light(prd);
-
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
-    if (prd.scatterEvent == rayMissed) {
-      radiance += prd.throughput * prd.attenuation;
-      return radiance;
-    }
+    if (prd.scatterEvent == rayMissed)
+      return prd.radiance + prd.throughput * prd.attenuation;
 
     // ray hit a light, return radiance
-    else if (prd.scatterEvent == rayGotCancelled) {
+    else if (prd.scatterEvent == rayHitLight) {
       // Take care not to double dip
-      if (depth == 0 || previousHitSpecular)
-        radiance += prd.throughput * prd.emitted;
+      if (depth == 0 /* || previousHitSpecular*/)
+        prd.radiance += prd.throughput;
 
-      return radiance;
+      return prd.radiance;
     }
+
+    // ray was cancelled, return radiance
+    else if (prd.scatterEvent == rayGotCancelled)
+      return prd.radiance;
 
     // ray is still alive, and got properly bounced
     else {
-      // if it was an ideal specular hit, accumulate color
-      if (prd.isSpecular) prd.throughput *= prd.attenuation;
-
-      // otherwise, do importance sample
-      else {
-        // Sample BRDF
-        float3 Wi = BRDF_Sample[prd.matType](prd.matParams, prd.origin,
-                                             prd.view_direction,
-                                             prd.shading_normal, prd.seed);
-        float matPDF =
-            BRDF_PDF[prd.matType](prd.matParams, prd.origin, prd.view_direction,
-                                  Wi, prd.shading_normal);
-        float3 matValue = BRDF_Evaluate[prd.matType](prd.matParams, prd.origin,
-                                                     prd.view_direction, Wi,
-                                                     prd.shading_normal);
-
-        if (matPDF == 0.f) return make_float3(0.f);
-        if (matValue.x < 0.f || matValue.y < 0.f || matValue.z < 0.f)
-          return make_float3(0.f);
-
-        // Accumulate color
-        prd.throughput *= clamp(matValue / matPDF, 0.f, 1.f);
-
-        // Update ray origin and direction
-        prd.origin = prd.origin;
-        prd.direction = Wi;
-      }
-
-      // check if emissions should be taken into account if we hit a light
-      previousHitSpecular = Emission_Next(prd.matType);
-
       // generate a new ray
       ray = make_Ray(/* origin   : */ prd.origin,
                      /* direction: */ prd.direction,
@@ -246,12 +129,12 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     }
 
     // Russian Roulette Path Termination
-    float p = max_component(prd.throughput);
+    float prob = max_component(prd.throughput);
     if (depth > 10) {
-      if (rnd(prd.seed) >= p)
-        return radiance + prd.throughput * prd.attenuation;
+      if (rnd(prd.seed) >= prob)
+        return prd.radiance + prd.throughput;
       else
-        prd.throughput *= 1.f / p;
+        prd.throughput *= 1.f / prob;
     }
   }
 

@@ -21,19 +21,11 @@
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // add BRDF programs
-  BRDF_Sampler brdf;
-  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
-  }
-
   // add light parameters and programs
   Light_Sampler lights;
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, brdf, lights);
+  setRayGenerationProgram(g_context, lights);
   setMissProgram(g_context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
                  make_float3(0.5f, 0.7f, 1.f));  // light blue
@@ -52,8 +44,8 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Texture* tx4 = new Constant_Texture(0.f);
-  Texture* tx3 = new Constant_Texture(0.4);
-  Host_Material* mt2 = new Anisotropic(tx1, tx3, 10000, 10);
+  Texture* tx3 = new Constant_Texture(0.4f);
+  Host_Material* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10, 10000);
 
   list.push(new Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, ground));
 
@@ -119,14 +111,6 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
 void MovingSpheres(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // add BRDF programs
-  BRDF_Sampler brdf;
-  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
-  }
-
   // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(3.f, 5.f, 1.f, 3.f, -0.5f, Z_AXIS);
@@ -135,7 +119,7 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   lights.emissions.push_back(make_float3(4.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, brdf, lights);
+  setRayGenerationProgram(g_context, lights);
   setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
@@ -223,14 +207,6 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 void Cornell(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure materials
-  BRDF_Sampler brdf;
-  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
-  }
-
   // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
@@ -244,7 +220,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   lights.emissions.push_back(make_float3(7.f));*/
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, brdf, lights);
+  setRayGenerationProgram(g_context, lights);
   setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
@@ -269,7 +245,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int whiteMt = mats.push(new Lambertian(textures[whiteTx]));
   int greenMt = mats.push(new Lambertian(textures[greenTx]));
   int lightMt = mats.push(new Diffuse_Light(textures[lightTx]));
-  int alumMt = mats.push(new Metal(textures[alumTx], 0.0));
+  int alumMt = mats.push(new Metal(textures[pWhiteTx], 0.0));
   int glassMt =
       mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
   int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
@@ -278,8 +254,8 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Texture* tx4 = new Constant_Texture(0.f);
-  Texture* tx3 = new Constant_Texture(0.4);
-  Host_Material* mt2 = new Anisotropic(tx1, tx3, 10000, 10);
+  Texture* tx3 = new Constant_Texture(0.4f);
+  Host_Material* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10000, 10);
   Host_Material* mt5 = new Oren_Nayar(tx1, 0.f);
   Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
 
@@ -297,26 +273,27 @@ void Cornell(Context& g_context, int Nx, int Ny) {
       new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
   list.push(
       new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
-  // list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f,
-  // mt2)); list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f,
-  // mt5)); list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 /
-  // 2.f), 90.f, mt6));
+  list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, mt2));
+  /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
+  list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
+  mt6));*/
 
   // Aluminium box
-  Box box =
+  /*Box box =
       Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
   box.translate(make_float3(265.f, 0.f, 295.f));
   box.rotate(15.f, Y_AXIS);
-  list.push(&box);
+  list.push(&box);*/
 
-  // list.push(new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
-  // mats[lightMt]));
+  /*list.push(
+      new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
+     mats[alumMt]));*/
 
-  Box box2 =
+  /*Box box2 =
       Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);
+  list.push(&box2);*/
 
   // transforms list elements, one by one, and adds them to the graph
   list.addChildren(group, g_context);
@@ -341,14 +318,6 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // add BRDF programs
-  BRDF_Sampler brdf;
-  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
-  }
-
   // TODO: find a way to add these automatically once we create a diffuse light
   // Maybe we could create lights separately, not with the other geometry
   // add light parameters and programs
@@ -359,7 +328,7 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, brdf, lights);
+  setRayGenerationProgram(g_context, lights);
   setMissProgram(g_context, CONSTANT);  // dark background
   setExceptionProgram(g_context);
 
@@ -469,19 +438,11 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
 void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   auto t0 = std::chrono::system_clock::now();
 
-  // configure BRDF programs
-  BRDF_Sampler brdf;
-  for (int i = 0; i < NUMBER_OF_MATERIALS; i++) {
-    brdf.sample.push_back(getSampleProgram(BRDFType(i), g_context));
-    brdf.pdf.push_back(getPDFProgram(BRDFType(i), g_context));
-    brdf.eval.push_back(getEvaluateProgram(BRDFType(i), g_context));
-  }
-
   // add light parameters and programs
   Light_Sampler lights;
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, brdf, lights);
+  setRayGenerationProgram(g_context, lights);
   // setMissProgram(g_context, HDR, "../../../assets/hdr/fireplace.hdr");
   setMissProgram(g_context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
@@ -535,7 +496,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     Texture* tx4 = new Constant_Texture(1.f);
     Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
-    Host_Material* mt3 = new Anisotropic(tx3, tx4, 1000, 1000);
+    Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 1000, 1000);
 
     /*Mesh model1 = Mesh("meetmat.obj", "../../../assets/", mats[whiteMt]);
     model1.scale(make_float3(40.f));

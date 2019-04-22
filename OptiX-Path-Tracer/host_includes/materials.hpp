@@ -14,7 +14,7 @@ extern "C" const char lambertian_programs[];
 extern "C" const char light_programs[];
 extern "C" const char isotropic_programs[];
 extern "C" const char normal_programs[];
-extern "C" const char anisotropic_programs[];
+extern "C" const char ashikhmin_shirley_programs[];
 extern "C" const char oren_nayar_programs[];
 extern "C" const char torrance_sparrow_programs[];
 extern "C" const char hit_program[];
@@ -35,41 +35,6 @@ struct Host_Material {
 
   virtual Program getAnyHitProgram(Context &g_context) const {
     return createProgram(hit_program, "any_hit", g_context);
-  }
-
-  static Program getBRDFProgram(Context &g_context, const BRDFType matType,
-                                const std::string name) {
-    switch (matType) {
-      case Lambertian_BRDF:
-        return createProgram(lambertian_programs, name, g_context);
-
-      case Metal_BRDF:
-        return createProgram(metal_programs, name, g_context);
-
-      case Diffuse_Light_BRDF:
-        return createProgram(light_programs, name, g_context);
-
-      case Isotropic_BRDF:
-        return createProgram(isotropic_programs, name, g_context);
-
-      case Dielectric_BRDF:
-        return createProgram(dielectric_programs, name, g_context);
-
-      case Normal_BRDF:
-        return createProgram(normal_programs, name, g_context);
-
-      case Anisotropic_BRDF:
-        return createProgram(anisotropic_programs, name, g_context);
-
-      case Oren_Nayar_BRDF:
-        return createProgram(oren_nayar_programs, name, g_context);
-
-      case Torrance_Sparrow_BRDF:
-        return createProgram(torrance_sparrow_programs, name, g_context);
-
-      default:
-        throw "Invalid Material";
-    }
   }
 
   // Creates device material object
@@ -240,10 +205,10 @@ struct Normal_Shader : public Host_Material {
   const bool useShadingNormal;
 };
 
-// Creates Anisotropic-Phong material
-struct Anisotropic : public Host_Material {
-  Anisotropic(const Texture *diffuse_tex, const Texture *specular_tex,
-              const float nu, const float nv)
+// Creates Ashikhmin_Shirley Anisotropic material
+struct Ashikhmin_Shirley : public Host_Material {
+  Ashikhmin_Shirley(const Texture *diffuse_tex, const Texture *specular_tex,
+                    const float nu, const float nv)
       : diffuse_tex(diffuse_tex),
         specular_tex(specular_tex),
         nu(nu),
@@ -253,7 +218,8 @@ struct Anisotropic : public Host_Material {
   // Assign host side Anisotropic material to device Material object
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
-    Program hit = createProgram(anisotropic_programs, "closest_hit", g_context);
+    Program hit =
+        createProgram(ashikhmin_shirley_programs, "closest_hit", g_context);
     assignParams(hit, g_context);
 
     return createMaterial(hit, getAnyHitProgram(g_context), g_context);
@@ -362,24 +328,5 @@ struct Material_List {
 
   std::vector<Host_Material *> matList;
 };
-
-///////////////////////////////////////
-//  BRDF Program Creation Functions  //
-///////////////////////////////////////
-
-// Returns a BRDF_Sample program object of the given material type
-Program getSampleProgram(BRDFType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Sample");
-}
-
-// Returns a BRDF_PDF program object of the given material type
-Program getPDFProgram(BRDFType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_PDF");
-}
-
-// Returns a BRDF_Evaluate program object of the given material type
-Program getEvaluateProgram(BRDFType type, Context &g_context) {
-  return Host_Material::getBRDFProgram(g_context, type, "BRDF_Evaluate");
-}
 
 #endif

@@ -1,60 +1,37 @@
-#include "material.cuh"
+#include "light_sample.cuh"
 
-// the implicit state's ray we will intersect against
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
-
-// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
-
-// the attributes we use to communicate between intersection programs and hit
-// program
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
 rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
                   sample_texture, , );
 
+RT_FUNCTION Diffuse_Light_Parameters Get_Parameters(const float3 &P, float u,
+                                                    float v, int index) {
+  Diffuse_Light_Parameters surface;
+
+  surface.color = sample_texture(u, v, P, index);
+
+  return surface;
+}
+
 RT_PROGRAM void closest_hit() {
-  // get material params from buffer
-  int texIndex = hit_rec.index;
+  int index = hit_rec.index;
+  float u = hit_rec.u, v = hit_rec.v;
+  float3 P = hit_rec.p, Wo = hit_rec.view_direction;
+  float3 N = hit_rec.shading_normal;
 
-  // assign material params to prd
-  prd.matType = Diffuse_Light_BRDF;
-  prd.isSpecular = false;
-  prd.scatterEvent = rayGotCancelled;
+  Diffuse_Light_Parameters surface = Get_Parameters(P, u, v, index);
 
-  // assign hit params to prd
-  prd.geometric_normal = hit_rec.geometric_normal;
-  prd.shading_normal = hit_rec.shading_normal;
+  // Sample Direct Light
+  float3 direct = Direct_Light(surface, P, Wo, N, true, prd.seed);
+  prd.radiance += prd.throughput * direct;
 
-  // assign emission prd
-  if (dot(prd.shading_normal, ray.direction) < 0.f)
-    prd.emitted = sample_texture(hit_rec.u, hit_rec.v, hit_rec.p, texIndex);
-  else
-    prd.emitted = make_float3(0.f);
-}
+  // Take Light emission into account
+  if (dot(N, Wo) < 0.f) prd.throughput *= surface.color;
 
-RT_CALLABLE_PROGRAM float3 BRDF_Sample(const BRDFParameters &surface,
-                                       const float3 &P,   // next ray origin
-                                       const float3 &Wo,  // prev ray direction
-                                       const float3 &N,   // shading normal
-                                       uint &seed) {
-  return make_float3(1.f);
-}
-
-RT_CALLABLE_PROGRAM float BRDF_PDF(const BRDFParameters &surface,
-                                   const float3 &P,    // next ray origin
-                                   const float3 &Wo,   // prev ray direction
-                                   const float3 &Wi,   // next ray direction
-                                   const float3 &N) {  // shading normal
-  return 1.f;
-}
-
-RT_CALLABLE_PROGRAM float3
-BRDF_Evaluate(const BRDFParameters &surface,
-              const float3 &P,    // next ray origin
-              const float3 &Wo,   // prev ray direction
-              const float3 &Wi,   // next ray direction
-              const float3 &N) {  // shading normal
-  return make_float3(1.f);
+  // Assign parameters to PRD
+  prd.scatterEvent = rayHitLight;
 }

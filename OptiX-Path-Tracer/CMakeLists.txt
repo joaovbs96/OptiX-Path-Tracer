@@ -42,7 +42,7 @@ cuda_compile_and_embed( hit_program programs/hit.cu )
 cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
 cuda_compile_and_embed( geom_tri_programs programs/hitables/geometry_triangles.cu )
 cuda_compile_and_embed( normal_programs programs/materials/normal_shader.cu )
-cuda_compile_and_embed( anisotropic_programs programs/materials/anisotropic_phong.cu )
+cuda_compile_and_embed( ashikhmin_shirley_programs programs/materials/ashikhmin_shirley.cu )
 cuda_compile_and_embed( oren_nayar_programs programs/materials/oren_nayar.cu )
 cuda_compile_and_embed( torrance_sparrow_programs programs/materials/torrance_sparrow.cu )
 cuda_compile_and_embed( cylinder_programs programs/hitables/cylinder.cu )
@@ -101,7 +101,7 @@ add_executable(OptiX_Path_Tracer
   ${vector_texture_programs}
   ${geom_tri_programs}
   ${normal_programs}
-  ${anisotropic_programs}
+  ${ashikhmin_shirley_programs}
   ${oren_nayar_programs}
   ${torrance_sparrow_programs}
   ${cylinder_programs}

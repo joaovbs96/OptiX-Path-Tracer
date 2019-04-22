@@ -21,12 +21,6 @@ float rnd() {
   return dis(gen);
 }
 
-// TODO: merge scene state, light sampler and brdf sampler in a single struct
-
-struct BRDF_Sampler {
-  std::vector<Program> sample, pdf, eval;
-};
-
 struct Light_Sampler {
   std::vector<Program> sample, pdf;
   std::vector<float3> emissions;

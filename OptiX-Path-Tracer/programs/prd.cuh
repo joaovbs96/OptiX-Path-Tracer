@@ -42,12 +42,10 @@ struct BRDFParameters {
 };
 
 typedef enum {
-  /*! ray could get properly bounced, and is still alive */
-  rayGotBounced,
-  /*! ray could not get scattered, and should get cancelled */
-  rayGotCancelled,
-  /*! ray didn't hit anything, and went into the environemnt */
-  rayMissed,
+  rayGotBounced,    // ray could get properly bounced, and is still alive
+  rayGotCancelled,  // ray could not get scattered, and should get cancelled
+  rayHitLight,      // ray hit a light, and should take emission into account
+  rayMissed,        // ray didn't hit anything, and went into the environemnt
 } ScatterEvent;
 
 struct HitRecord {
@@ -78,6 +76,7 @@ struct PerRayData {
   float3 emitted;
   float3 attenuation;
   float3 throughput;
+  float3 radiance;
   bool isSpecular;
   BRDFType matType;
   BRDFParameters matParams;
