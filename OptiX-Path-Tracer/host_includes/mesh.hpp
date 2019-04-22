@@ -140,8 +140,6 @@ class Mesh {
         } else
           mat_vector.push_back(0);  // uses the material given as parameter
       }
-
-      // TODO: check normal smoothing in the tinyobj example
     }
 
     // Create a GeometryTriangles object
@@ -206,7 +204,7 @@ class Mesh {
   }
 
   // Adds Hitable to the scene graph
-  void addToScene(Group &d_world, Context &g_context) {
+  void addTo(Group &d_world, Context &g_context) {
     // reverse vector of transforms
     std::reverse(arr.begin(), arr.end());
     GeometryInstance gi = getGeometryInstance(g_context);
@@ -291,7 +289,7 @@ class Mesh_List {
 
   // FIXME: not working
   // adds and transforms Mesh_List as a whole to the scene graph
-  void addList(Group &d_world, Context &g_context) {
+  void addListTo(Group &d_world, Context &g_context) {
     GeometryGroup gg = getGroup(g_context);
     addAndTransform(gg, d_world, g_context, arr);
   }
@@ -299,9 +297,9 @@ class Mesh_List {
   // the mesh should still be added separately
 
   // adds and transforms each list element to the scene graph individually
-  void addChildren(Group &d_world, Context &g_context) {
+  void addElementsTo(Group &d_world, Context &g_context) {
     for (int i = 0; i < (int)list.size(); i++)
-      list[i]->addToScene(d_world, g_context);
+      list[i]->addTo(d_world, g_context);
   }
 
  private:

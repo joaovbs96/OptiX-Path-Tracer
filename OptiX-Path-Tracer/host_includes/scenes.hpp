@@ -11,7 +11,6 @@
 #include "pdfs.hpp"
 
 // TODO: convert pointers to smart/shared pointers
-// TODO: code cleanup
 // TODO: add lights separately from raygen, and after all materials are
 // created(we may need to add back the material type to the materials)
 
@@ -86,7 +85,7 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   txt.push(tx3);
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addChildren(group, g_context);
+  list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera
@@ -181,7 +180,7 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   list.push(new AARect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Z_AXIS, lmt));
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addChildren(group, g_context);
+  list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera
@@ -251,7 +250,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   Texture* tx4 = new Constant_Texture(0.f);
   Texture* tx3 = new Constant_Texture(0.4f);
   Host_Material* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10000, 10);
-  Host_Material* mt5 = new Oren_Nayar(tx1, 0.f);
+  Host_Material* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.1f);
   Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
 
   // create geometries/hitables
@@ -263,7 +262,8 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, whiteMt));
-  list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, mt2));
+  list.push(
+      new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, glassMt));
   /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
   mt6));*/
@@ -286,7 +286,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   list.push(&box2);*/
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addChildren(group, g_context);
+  list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera
@@ -308,9 +308,6 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
-  // TODO: find a way to add these automatically once we create a diffuse light
-  // Maybe we could create lights separately, not with the other geometry
-  // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(113.f, 443.f, 127.f, 432.f, 554.f, Y_AXIS);
   lights.pdf.push_back(rect_pdf.createPDF(g_context));
@@ -402,10 +399,10 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   }
   spheres.translate(make_float3(-100.f, 270.f, 395.f));
   spheres.rotate(15.f, Y_AXIS);
-  spheres.addList(group, g_context);
+  spheres.addListTo(group, g_context);
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addChildren(group, g_context);
+  list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera
@@ -482,11 +479,11 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, whiteIso));
 
     Texture* tx4 = new Constant_Texture(1.f);
-    Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
+    Texture* tx3 = new Constant_Texture(0.3f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
-    Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 1000, 1000);
+    Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
 
-    /*Mesh model1 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
+    Mesh model1 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
     model1.scale(make_float3(40.f));
     model1.rotate(180.f, Y_AXIS);
     model1.translate(make_float3(-300.f, -600.f, 0.f));
@@ -498,7 +495,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model2.translate(make_float3(300.f, -600.f, 0.f));
     meshList.push(&model2);
 
-    meshList.addChildren(group, g_context);*/
+    meshList.addElementsTo(group, g_context);
 
     list.push(
         new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS, mt3));
@@ -509,7 +506,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/");
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
-    model.addToScene(group, g_context);
+    model.addTo(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
@@ -521,7 +518,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.scale(make_float3(350.f));
     model.rotate(180.f, Y_AXIS);
     model.translate(make_float3(0.f, -500.f, 200.f));
-    model.addToScene(group, g_context);
+    model.addTo(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
@@ -543,7 +540,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     Mesh model = Mesh("pie.obj", "../../../assets/pie/");
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
-    model.addToScene(group, g_context);
+    model.addTo(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
@@ -555,11 +552,11 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.scale(make_float3(0.5f));
     model.rotate(90.f, Y_AXIS);
     model.translate(make_float3(300.f, 5.f, -400.f));
-    model.addToScene(group, g_context);
+    model.addTo(group, g_context);
   }
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addChildren(group, g_context);
+  list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera

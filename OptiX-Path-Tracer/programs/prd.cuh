@@ -51,6 +51,7 @@ struct PerRayData {
   float3 direction;
   float3 throughput;
   float3 radiance;
+  bool isSpecular;
 };
 
 struct PerRayData_Shadow {

@@ -39,5 +39,6 @@ RT_PROGRAM void closest_hit() {
   prd.scatterEvent = rayGotBounced;
   prd.origin = hit_rec.p;
   prd.direction = Wi;
-  prd.throughput *= clamp(attenuation / pdf, 0.f, 1.f);
+  prd.throughput *= attenuation / pdf;
+  prd.isSpecular = false;
 }

@@ -58,7 +58,7 @@ class Hitable {
   }
 
   // Add the Hitable to the scene graph
-  virtual void addChild(Group &d_world, Context &g_context) {
+  virtual void addTo(Group &d_world, Context &g_context) {
     // reverse vector of transforms
     std::reverse(transforms.begin(), transforms.end());
 
@@ -395,7 +395,7 @@ class Triangle : public Hitable {
   const float2 a_uv, b_uv, c_uv;  // vertex texture coordinates
 };
 
-// FIXME: not working
+// FIXME: not working/incomplete
 // Creates a Sphere
 class Cylinder : public Hitable {
  public:
@@ -488,14 +488,14 @@ class Hitable_List {
     return gg;
   }
 
-  // adds and transforms Hitable_List as a whole to the scene graph
-  void addList(Group &d_world, Context &g_context) {
+  // adds and transforms Hitable_List as a group to the scene graph
+  void addListTo(Group &d_world, Context &g_context) {
     GeometryGroup gg = getGroup(g_context);
     addAndTransform(gg, d_world, g_context, transforms);
   }
 
   // adds and transforms each list element to the scene graph individually
-  void addChildren(Group &d_world, Context &g_context) {
+  void addElementsTo(Group &d_world, Context &g_context) {
     for (int i = 0; i < (int)hitList.size(); i++) {
       GeometryInstance gi = hitList[i]->getGeometryInstance(g_context);
       addAndTransform(gi, d_world, g_context, hitList[i]->transforms);

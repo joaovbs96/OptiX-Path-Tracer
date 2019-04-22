@@ -69,6 +69,8 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   prd.throughput = make_float3(1.f);
   prd.radiance = make_float3(0.f);
 
+  bool previousHitSpecular = false;
+
   // iterative version of recursion
   for (int depth = 0; depth < 50; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
@@ -80,8 +82,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     // ray hit a light, return radiance
     else if (prd.scatterEvent == rayHitLight) {
       // Take care not to double dip
-      if (depth == 0 /* || previousHitSpecular*/)
-        prd.radiance += prd.throughput;
+      if (depth == 0 || previousHitSpecular) prd.radiance += prd.throughput;
 
       return prd.radiance;
     }
@@ -98,6 +99,9 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
                      /* ray type : */ 0,
                      /* tmin     : */ 1e-3f,
                      /* tmax     : */ RT_DEFAULT_MAX);
+
+      // updated specular flag
+      previousHitSpecular = prd.isSpecular;
     }
 
     // Russian Roulette Path Termination

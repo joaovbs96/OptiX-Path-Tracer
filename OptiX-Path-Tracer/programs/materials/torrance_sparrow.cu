@@ -40,10 +40,6 @@ RT_PROGRAM void closest_hit() {
 
   Torrance_Sparrow_Parameters surface = Get_Parameters(P, u, v, index);
 
-  // Sample Direct Light
-  float3 direct = Direct_Light(surface, P, Wo, N, false, prd.seed);
-  prd.radiance += prd.throughput * direct;
-
   // Sample BRDF
   float3 Wi = Sample(surface, P, Wo, N, prd.seed);
   float pdf;  // calculated in the Evaluate function
@@ -54,4 +50,5 @@ RT_PROGRAM void closest_hit() {
   prd.origin = hit_rec.p;
   prd.direction = Wi;
   prd.throughput *= clamp(attenuation / pdf, 0.f, 1.f);
+  prd.isSpecular = true;
 }

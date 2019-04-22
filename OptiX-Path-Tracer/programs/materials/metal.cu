@@ -41,5 +41,6 @@ RT_PROGRAM void closest_hit() {
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
   prd.origin = hit_rec.p;
-  prd.throughput *= clamp(color, 0.f, 1.f);
+  prd.throughput *= color;
+  prd.isSpecular = true;
 }

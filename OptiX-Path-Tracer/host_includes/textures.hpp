@@ -249,7 +249,7 @@ struct Gradient_Texture : public Texture {
   const float3 colorC;
 };
 
-// TODO: prevent a vector texture from taking a vector texture
+// TODO: what happens if a vector texture takes a vector texture?
 struct Vector_Texture : public Texture {
   Vector_Texture(const std::vector<Texture *> &tv) : texture_vector(tv) {}
 

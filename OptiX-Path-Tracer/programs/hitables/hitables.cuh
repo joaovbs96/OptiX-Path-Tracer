@@ -2,8 +2,6 @@
 
 #include "../prd.cuh"
 
-// TODO: change all casts to static_cast<T>
-
 RT_FUNCTION int2 Get_Motion_Data(float2 motion_range, float cur_time,
                                  int num_keys, float &pt) {
   float t0 = motion_range.x;
