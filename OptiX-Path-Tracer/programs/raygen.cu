@@ -103,7 +103,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
     if (prd.scatterEvent == rayMissed)
-      return prd.radiance + prd.throughput * prd.attenuation;
+      return prd.radiance + prd.throughput;
 
     // ray hit a light, return radiance
     else if (prd.scatterEvent == rayHitLight) {

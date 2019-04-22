@@ -21,6 +21,7 @@
 
 // Host side constructors and functions
 #include "host_includes/gui.hpp"
+#include "host_includes/image_save.hpp"
 
 Context g_context;
 
@@ -209,7 +210,7 @@ int main(int ac, char **av) {
         ImGui::InputText("Filename", &state.fileName, 0, 0, 0);
         ImGui::SameLine();
         ShowHelpMarker("File extension will be added automatically.");
-        ImGui::Combo("Filetype", &state.fileType, ".PNG\0.JPG\0.HDR\0");
+        ImGui::Combo("Filetype", &state.fileType, ".PNG\0.HDR\0");
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
@@ -340,8 +341,6 @@ int main(int ac, char **av) {
           // Save to file type selected in the initial setup
           if (state.fileType == 0)
             Save_PNG(state, state.accBuffer);
-          else if (state.fileType == 1)
-            Save_JPG(state, state.accBuffer);
           else
             Save_HDR(state, state.accBuffer);
 

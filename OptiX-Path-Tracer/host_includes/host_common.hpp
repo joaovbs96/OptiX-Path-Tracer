@@ -9,6 +9,14 @@
 
 #include "../programs/vec.hpp"
 
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_IMPLEMENTATION
+#include "../lib/stb_image.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "../lib/stb_image_write.h"
+
+#include "../lib/HDRloader.h"
+
 // encapsulates PTX string program creation
 Program createProgram(const char file[], const std::string &program,
                       Context &g_context) {

@@ -35,7 +35,7 @@ RT_PROGRAM void gradient_color() {
   float3 c = (1.f - t) * sample_color1(0, 0, make_float3(0.f), 0);
   c += t * sample_color2(0, 0, make_float3(0.f), 0);
 
-  prd.attenuation = c;
+  prd.throughput *= c;
   prd.scatterEvent = rayMissed;
 }
 
@@ -45,7 +45,7 @@ rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
 
 // Constant Color Background
 RT_PROGRAM void constant_color() {
-  prd.attenuation = sample_texture(0, 0, make_float3(0.f), 0);
+  prd.throughput *= sample_texture(0, 0, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }
 
@@ -58,7 +58,7 @@ RT_PROGRAM void image_background() {
   float u = (theta + M_PIf) * (0.5f * M_1_PIf);
   float v = 0.5f * (1.f + sinf(phi));
 
-  prd.attenuation = sample_texture(u, v, make_float3(0.f), 0);
+  prd.throughput *= sample_texture(u, v, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }
 
@@ -94,6 +94,6 @@ RT_PROGRAM void environmental_mapping() {
     v = phi / PI_F;
   }
 
-  prd.attenuation = 2.f * sample_texture(u, v, make_float3(0.f), 0);
+  prd.throughput *= 2.f * sample_texture(u, v, make_float3(0.f), 0);
   prd.scatterEvent = rayMissed;
 }

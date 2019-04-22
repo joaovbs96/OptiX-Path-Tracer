@@ -6,6 +6,8 @@
 #include "host_common.hpp"
 #include "materials.hpp"
 
+// TODO: can we use templates here?
+
 //////////////////////////////////////////
 // Transform Types & Auxiliar Functions //
 //////////////////////////////////////////

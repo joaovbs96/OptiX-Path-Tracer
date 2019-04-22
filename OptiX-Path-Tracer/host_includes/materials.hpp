@@ -310,6 +310,7 @@ struct Torrance_Sparrow : public Host_Material {
   const float nu, nv;
 };
 
+// TODO: remove Material_List
 // List of Host_Materials
 struct Material_List {
   Material_List() {}

@@ -4,14 +4,6 @@
 #include "buffers.hpp"
 #include "host_common.hpp"
 
-#define STBI_MSC_SECURE_CRT
-#define STB_IMAGE_IMPLEMENTATION
-#include "../lib/stb_image.h"
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../lib/stb_image_write.h"
-
-#include "../lib/HDRloader.h"
-
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
 extern "C" const char constant_texture_programs[];
@@ -266,8 +258,8 @@ struct Vector_Texture : public Texture {
 
 // Gradient Texture
 struct Gradient_Texture : public Texture {
-  Gradient_Texture(const float3 &cA, const float3 &cB, const float3 &cC) 
-  : colorA(cA), colorB(cB), colorC(cC) {}
+  Gradient_Texture(const float3 &cA, const float3 &cB, const float3 &cC)
+      : colorA(cA), colorB(cB), colorC(cC) {}
 
   virtual Program assignTo(Context &g_context) const override {
     Program textProg =

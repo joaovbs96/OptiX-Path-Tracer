@@ -11,12 +11,7 @@
 #include "pdfs.hpp"
 
 // TODO: convert pointers to smart/shared pointers
-
-// Assumptions taken on scene functions:
-// - each Geometry(or GeometryTriangle) has only one material
-// - materials have one or more textures assigned to them
-// - For GeometryTriangles, as it's done in the Mesh class, make use of the
-// Vector_Texture.
+// TODO: code cleanup
 
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();

@@ -19,28 +19,6 @@
 #include "random.cuh"
 #include "vec.hpp"
 
-// TODO: clean up material parameters
-// Parameters used in some BRDF callable programs
-struct BRDFParameters {
-  BRDFType type;
-  int index;
-  float u, v;
-  float3 attenuation;
-
-  // sub-structs to hold material specific params
-  // anisotropic material
-  struct {
-    float3 diffuse_color;
-    float3 specular_color;
-    float nu, nv;
-  } anisotropic;
-
-  // oren-nayar material
-  struct {
-    float rA, rB;
-  } orenNayar;
-};
-
 typedef enum {
   rayGotBounced,    // ray could get properly bounced, and is still alive
   rayGotCancelled,  // ray could not get scattered, and should get cancelled
@@ -67,19 +45,12 @@ struct HitRecord {
 struct PerRayData {
   uint seed;
   float time;
+
   ScatterEvent scatterEvent;
-  float3 view_direction;
   float3 origin;
   float3 direction;
-  float3 geometric_normal;
-  float3 shading_normal;
-  float3 emitted;
-  float3 attenuation;
   float3 throughput;
   float3 radiance;
-  bool isSpecular;
-  BRDFType matType;
-  BRDFParameters matParams;
 };
 
 struct PerRayData_Shadow {
