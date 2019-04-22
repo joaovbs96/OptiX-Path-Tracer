@@ -62,33 +62,6 @@ struct Camera {
   }
 };
 
-/*// Check if we should take emissions into account, in the next light hit
-RT_FUNCTION bool Emission_Next(BRDFType type) {
-  switch (type) {
-    case Metal_BRDF:
-    case Dielectric_BRDF:
-    case Isotropic_BRDF:
-    case Anisotropic_BRDF:
-    case Torrance_Sparrow_BRDF:
-      return true;
-    default:
-      return false;
-  }
-}
-
-// Check if current BRDF should directly sample light
-RT_FUNCTION bool Do_Direct_Sampling(BRDFType type) {
-  switch (type) {
-    case Metal_BRDF:
-    case Dielectric_BRDF:
-    case Anisotropic_BRDF:
-    case Torrance_Sparrow_BRDF:
-      return false;
-    default:
-      return true;
-  }
-}*/
-
 RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   PerRayData prd;
   prd.seed = seed;
@@ -102,8 +75,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
-    if (prd.scatterEvent == rayMissed)
-      return prd.radiance + prd.throughput;
+    if (prd.scatterEvent == rayMissed) return prd.radiance + prd.throughput;
 
     // ray hit a light, return radiance
     else if (prd.scatterEvent == rayHitLight) {

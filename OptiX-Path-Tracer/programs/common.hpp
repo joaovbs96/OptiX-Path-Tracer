@@ -22,21 +22,6 @@ using namespace optix;
 #define PI_D 3.14159265358979323846264338327950288
 #endif
 
-// Material defines
-typedef enum {
-  Lambertian_BRDF,
-  Diffuse_Light_BRDF,
-  Metal_BRDF,
-  Dielectric_BRDF,
-  Isotropic_BRDF,
-  Normal_BRDF,
-  Anisotropic_BRDF,
-  Oren_Nayar_BRDF,
-  Torrance_Sparrow_BRDF
-} BRDFType;
-
-#define NUMBER_OF_MATERIALS 9
-
 // Axis type
 typedef enum { X_AXIS, Y_AXIS, Z_AXIS } AXIS;
 

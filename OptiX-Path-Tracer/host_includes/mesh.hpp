@@ -7,7 +7,7 @@
 
 #include <map>
 
-extern "C" const char geom_tri_programs[];
+extern "C" const char Mesh_PTX[];
 
 // Sources:
 // - GeometryTriangles setup from the OptiX 6.0 SDK samples
@@ -168,7 +168,7 @@ class Mesh {
     geom_tri["material_buffer"]->setBuffer(m_buffer);
 
     // Set attribute program
-    Program att = createProgram(geom_tri_programs, "attributes", g_context);
+    Program att = createProgram(Mesh_PTX, "attributes", g_context);
     geom_tri->setAttributeProgram(att);
 
     // returns GeometryInstance

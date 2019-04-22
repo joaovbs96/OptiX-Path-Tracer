@@ -6,8 +6,8 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char rect_pdf_programs[];
-extern "C" const char sphere_pdf_programs[];
+extern "C" const char Rect_PDF_PTX[];
+extern "C" const char Sphere_PDF_PTX[];
 
 struct PDF {
   virtual Program createSample(Context &g_context) const = 0;
@@ -25,15 +25,15 @@ struct Rectangle_PDF : public PDF {
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        sample = createProgram(rect_pdf_programs, "Sample_X", g_context);
+        sample = createProgram(Rect_PDF_PTX, "Sample_X", g_context);
         break;
 
       case Y_AXIS:
-        sample = createProgram(rect_pdf_programs, "Sample_Y", g_context);
+        sample = createProgram(Rect_PDF_PTX, "Sample_Y", g_context);
         break;
 
       case Z_AXIS:
-        sample = createProgram(rect_pdf_programs, "Sample_Z", g_context);
+        sample = createProgram(Rect_PDF_PTX, "Sample_Z", g_context);
         break;
     }
 
@@ -53,15 +53,15 @@ struct Rectangle_PDF : public PDF {
     // assign PDF callable program according to given axis
     switch (ax) {
       case X_AXIS:
-        pdf = createProgram(rect_pdf_programs, "PDF_X", g_context);
+        pdf = createProgram(Rect_PDF_PTX, "PDF_X", g_context);
         break;
 
       case Y_AXIS:
-        pdf = createProgram(rect_pdf_programs, "PDF_Y", g_context);
+        pdf = createProgram(Rect_PDF_PTX, "PDF_Y", g_context);
         break;
 
       case Z_AXIS:
-        pdf = createProgram(rect_pdf_programs, "PDF_Z", g_context);
+        pdf = createProgram(Rect_PDF_PTX, "PDF_Z", g_context);
         break;
     }
 
@@ -84,7 +84,7 @@ struct Sphere_PDF : public PDF {
 
   virtual Program createSample(Context &g_context) const override {
     // create PDF generate callable program
-    Program sample = createProgram(sphere_pdf_programs, "Sample", g_context);
+    Program sample = createProgram(Sphere_PDF_PTX, "Sample", g_context);
 
     // Basic parameters
     sample["center"]->setFloat(center.x, center.y, center.z);
@@ -95,7 +95,7 @@ struct Sphere_PDF : public PDF {
 
   virtual Program createPDF(Context &g_context) const override {
     // create PDF value callable program
-    Program pdf = createProgram(sphere_pdf_programs, "PDF", g_context);
+    Program pdf = createProgram(Sphere_PDF_PTX, "PDF", g_context);
 
     // Basic parameters
     pdf["center"]->setFloat(center.x, center.y, center.z);

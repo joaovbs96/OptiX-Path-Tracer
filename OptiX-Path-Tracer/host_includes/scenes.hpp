@@ -12,6 +12,8 @@
 
 // TODO: convert pointers to smart/shared pointers
 // TODO: code cleanup
+// TODO: add lights separately from raygen, and after all materials are
+// created(we may need to add back the material type to the materials)
 
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
@@ -124,7 +126,6 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
 
   // create scene
   Texture_List txt;
-  Material_List mat;
   Hitable_List list;
   Texture* ck1 = new Constant_Texture(0.2f, 0.3f, 0.1f);
   Texture* ck2 = new Constant_Texture(0.9f, 0.9f, 0.9f);
@@ -141,18 +142,18 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
       if (choose_mat < (1.f / 3)) {
         int mtx = txt.push(new Constant_Texture(
             0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        int lmt = mat.push(new Lambertian(txt[mtx]));
-        list.push(new Sphere(center, 0.2f, mat[lmt]));
+        Host_Material* lmt = new Lambertian(txt[mtx]);
+        list.push(new Sphere(center, 0.2f, lmt));
       } else if (choose_mat < (2.f / 3)) {
         int mtx = txt.push(new Constant_Texture(
             0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        int lmt = mat.push(new Metal(txt[mtx], 0.5f * rnd()));
-        list.push(new Sphere(center, 0.2f, mat[lmt]));
+        Host_Material* lmt = new Metal(txt[mtx], 0.5f * rnd());
+        list.push(new Sphere(center, 0.2f, lmt));
       } else {
         int mtx = txt.push(new Constant_Texture(
             0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        int lmt = mat.push(new Dielectric(txt[mtx], txt[mtx], 1.5, 0.f));
-        list.push(new Sphere(center, 0.2f, mat[lmt]));
+        Host_Material* lmt = new Dielectric(txt[mtx], txt[mtx], 1.5, 0.f);
+        list.push(new Sphere(center, 0.2f, lmt));
       }
     }
   }
@@ -235,16 +236,15 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   int testTx = textures.push(new Constant_Texture(0.5f));
 
   // create materials
-  Material_List mats;
-  int redMt = mats.push(new Lambertian(textures[redTx]));
-  int whiteMt = mats.push(new Lambertian(textures[whiteTx]));
-  int greenMt = mats.push(new Lambertian(textures[greenTx]));
-  int lightMt = mats.push(new Diffuse_Light(textures[lightTx]));
-  int alumMt = mats.push(new Metal(textures[pWhiteTx], 0.0));
-  int glassMt =
-      mats.push(new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f));
-  int blackSmokeMt = mats.push(new Isotropic(textures[pBlackTx]));
-  int oren = mats.push(new Oren_Nayar(textures[whiteTx], 1.f));
+  Host_Material* redMt = new Lambertian(textures[redTx]);
+  Host_Material* whiteMt = new Lambertian(textures[whiteTx]);
+  Host_Material* greenMt = new Lambertian(textures[greenTx]);
+  Host_Material* lightMt = new Diffuse_Light(textures[lightTx]);
+  Host_Material* alumMt = new Metal(textures[pWhiteTx], 0.0);
+  Host_Material* glassMt =
+      new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f);
+  Host_Material* blackSmokeMt = new Isotropic(textures[pBlackTx]);
+  Host_Material* oren = new Oren_Nayar(textures[whiteTx], 1.f);
 
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
@@ -256,18 +256,13 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 
   // create geometries/hitables
   Hitable_List list;
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, redMt));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, greenMt));
   list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, mats[redMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, mats[greenMt]));
-  list.push(new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS,
-                       mats[lightMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, mats[whiteMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, mats[whiteMt]));
-  list.push(
-      new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, mats[whiteMt]));
+      new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, lightMt));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, whiteMt));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, whiteMt));
+  list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, whiteMt));
   list.push(new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, mt2));
   /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
@@ -275,17 +270,17 @@ void Cornell(Context& g_context, int Nx, int Ny) {
 
   // Aluminium box
   /*Box box =
-      Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), mats[whiteMt]);
+      Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), whiteMt);
   box.translate(make_float3(265.f, 0.f, 295.f));
   box.rotate(15.f, Y_AXIS);
   list.push(&box);*/
 
   /*list.push(
       new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
-     mats[alumMt]));*/
+     alumMt));*/
 
   /*Box box2 =
-      Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), mats[whiteMt]);
+      Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), whiteMt);
   box2.translate(make_float3(130.f, 0.f, 65.f));
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
@@ -331,7 +326,6 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   Texture_List txt;
-  Material_List mat;
   Hitable_List list;
 
   int groundTx = txt.push(new Constant_Texture(0.48f, 0.83f, 0.53f));
@@ -461,20 +455,19 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   int pWhiteTx = txts.push(new Constant_Texture(1.f));
 
   // create materials
-  Material_List mats;
-  int whiteMt = mats.push(new Lambertian(txts[whiteTx]));
-  int blackMt = mats.push(new Lambertian(txts[blackTx]));
-  int alumMt = mats.push(new Metal(txts[alumTx], 0.0));
-  int glassMt =
-      mats.push(new Dielectric(txts[noiseTx], txts[blueTx], 1.5f, 0.f));
-  int blueMt =
-      mats.push(new Dielectric(txts[alumTx], txts[whiteTx], 1.5f, 0.f));
-  int normalMt = mats.push(new Normal_Shader());
-  int shadingMt = mats.push(new Normal_Shader(true));
-  int perlinXMt = mats.push(new Lambertian(txts[perlinXTx]));
-  int perlinYMt = mats.push(new Lambertian(txts[perlinYTx]));
-  int perlinZMt = mats.push(new Lambertian(txts[perlinZTx]));
-  int whiteIso = mats.push(new Isotropic(txts[blueTx]));
+  Host_Material* whiteMt = new Lambertian(txts[whiteTx]);
+  Host_Material* blackMt = new Lambertian(txts[blackTx]);
+  Host_Material* alumMt = new Metal(txts[alumTx], 0.0);
+  Host_Material* glassMt =
+      new Dielectric(txts[noiseTx], txts[blueTx], 1.5f, 0.f);
+  Host_Material* blueMt =
+      new Dielectric(txts[alumTx], txts[whiteTx], 1.5f, 0.f);
+  Host_Material* normalMt = new Normal_Shader();
+  Host_Material* shadingMt = new Normal_Shader(true);
+  Host_Material* perlinXMt = new Lambertian(txts[perlinXTx]);
+  Host_Material* perlinYMt = new Lambertian(txts[perlinYTx]);
+  Host_Material* perlinZMt = new Lambertian(txts[perlinZTx]);
+  Host_Material* whiteIso = new Isotropic(txts[blueTx]);
 
   // create geometries
   Hitable_List list;
@@ -484,22 +477,22 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     Mesh_List meshList;
 
     list.push(new Cylinder(make_float3(50.f), make_float3(350.f, -300.f, 10.f),
-                           100.f, mats[whiteIso]));
+                           100.f, whiteIso));
 
-    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, mats[whiteIso]));
+    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, whiteIso));
 
     Texture* tx4 = new Constant_Texture(1.f);
     Texture* tx3 = new Constant_Texture(255.f / 255.f, 215.f / 255.f, 0.f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
     Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 1000, 1000);
 
-    /*Mesh model1 = Mesh("meetmat.obj", "../../../assets/", mats[whiteMt]);
+    /*Mesh model1 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
     model1.scale(make_float3(40.f));
     model1.rotate(180.f, Y_AXIS);
     model1.translate(make_float3(-300.f, -600.f, 0.f));
     meshList.push(&model1);
 
-    Mesh model2 = Mesh("meetmat.obj", "../../../assets/", mats[whiteMt]);
+    Mesh model2 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
     model2.scale(make_float3(40.f));
     model2.rotate(180.f, Y_AXIS);
     model2.translate(make_float3(300.f, -600.f, 0.f));
@@ -519,7 +512,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.addToScene(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[whiteMt]));
+                         whiteMt));
   }
 
   // Dragon
@@ -531,18 +524,18 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.addToScene(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[whiteMt]));
+                         whiteMt));
   }
 
   // spheres
   else if (modelID == 3) {
     /*list.push(
-        new Sphere(make_float3(-350.f, -300.f, 0.f), 150.f, mats[perlinXMt]));*/
-    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, mats[whiteIso]));
+        new Sphere(make_float3(-350.f, -300.f, 0.f), 150.f, perlinXMt));*/
+    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, whiteIso));
     /*list.push(
-        new Sphere(make_float3(350.f, -300.f, 0.f), 150.f, mats[perlinZMt]));*/
+        new Sphere(make_float3(350.f, -300.f, 0.f), 150.f, perlinZMt));*/
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[whiteMt]));
+                         whiteMt));
   }
 
   // pie
@@ -553,7 +546,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.addToScene(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         mats[whiteMt]));
+                         whiteMt));
   }
 
   // sponza

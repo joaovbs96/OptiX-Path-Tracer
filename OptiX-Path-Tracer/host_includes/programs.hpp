@@ -10,13 +10,13 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char miss_program[];
-extern "C" const char exception_program[];
-extern "C" const char raygen_program[];
+extern "C" const char Miss_PTX[];
+extern "C" const char Exception_PTX[];
+extern "C" const char Raygen_PTX[];
 
 void setRayGenerationProgram(Context &g_context, Light_Sampler &lights) {
   // create raygen program of the scene
-  Program raygen = createProgram(raygen_program, "renderPixel", g_context);
+  Program raygen = createProgram(Raygen_PTX, "renderPixel", g_context);
 
   // Light sampling params and buffers
   g_context["Light_Sample"]->setBuffer(createBuffer(lights.sample, g_context));
@@ -38,7 +38,7 @@ void setMissProgram(Context &g_context, Miss_Programs id, std::string fileName,
 
   // LDR image background
   if (id == IMG) {
-    missProgram = createProgram(miss_program, "image_background", g_context);
+    missProgram = createProgram(Miss_PTX, "image_background", g_context);
 
     Image_Texture img(fileName);
     missProgram["sample_texture"]->setProgramId(img.assignTo(g_context));
@@ -46,8 +46,7 @@ void setMissProgram(Context &g_context, Miss_Programs id, std::string fileName,
 
   // HDR image background
   else if (id == HDR) {
-    missProgram =
-        createProgram(miss_program, "environmental_mapping", g_context);
+    missProgram = createProgram(Miss_PTX, "environmental_mapping", g_context);
 
     HDR_Texture img(fileName);
     missProgram["sample_texture"]->setProgramId(img.assignTo(g_context));
@@ -70,7 +69,7 @@ void setMissProgram(Context &g_context, Miss_Programs id,
 
   // gradient pattern background
   if (id == GRADIENT) {
-    missProgram = createProgram(miss_program, "gradient_color", g_context);
+    missProgram = createProgram(Miss_PTX, "gradient_color", g_context);
 
     Constant_Texture color1(colorValue1);
     Constant_Texture color2(colorValue2);
@@ -80,7 +79,7 @@ void setMissProgram(Context &g_context, Miss_Programs id,
 
   // constant color background
   else if (id == CONSTANT) {
-    missProgram = createProgram(miss_program, "constant_color", g_context);
+    missProgram = createProgram(Miss_PTX, "constant_color", g_context);
 
     Constant_Texture color(colorValue1);
     missProgram["sample_texture"]->setProgramId(color.assignTo(g_context));
@@ -93,9 +92,8 @@ void setMissProgram(Context &g_context, Miss_Programs id,
 }
 
 void setExceptionProgram(Context &g_context) {
-  Program program =
-      createProgram(exception_program, "exception_program", g_context);
-  g_context->setExceptionProgram(/*program ID:*/ 0, program);
+  Program prog = createProgram(Exception_PTX, "exception_program", g_context);
+  g_context->setExceptionProgram(/*program ID:*/ 0, prog);
 }
 
 #endif

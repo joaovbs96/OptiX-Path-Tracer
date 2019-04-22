@@ -16,37 +16,37 @@
 
 # do some cmake magic to pre-compile the cuda file to ptx, and embed
 # the resulting ptx code string into the final executable
-cuda_compile_and_embed( exception_program programs/exception.cu )
-cuda_compile_and_embed( raygen_program programs/raygen.cu )
-cuda_compile_and_embed( sphere_programs programs/hitables/sphere.cu )
-cuda_compile_and_embed( moving_sphere_programs programs/hitables/moving_sphere.cu )
-cuda_compile_and_embed( miss_program programs/miss.cu )
-cuda_compile_and_embed( metal_programs programs/materials/metal.cu )
-cuda_compile_and_embed( dielectric_programs programs/materials/dielectric.cu )
-cuda_compile_and_embed( lambertian_programs programs/materials/lambertian.cu )
-cuda_compile_and_embed( constant_texture_programs programs/textures/constant_texture.cu )
-cuda_compile_and_embed( aarect_programs programs/hitables/aarect.cu )
-cuda_compile_and_embed( checker_texture_programs programs/textures/checkered_texture.cu )
-cuda_compile_and_embed( noise_texture_programs programs/textures/noise_texture.cu )
-cuda_compile_and_embed( image_texture_programs programs/textures/image_texture.cu )
-cuda_compile_and_embed( light_programs programs/materials/diffuse_light.cu )
-cuda_compile_and_embed( box_programs programs/hitables/box.cu )
-cuda_compile_and_embed( isotropic_programs programs/materials/isotropic.cu )
-cuda_compile_and_embed( volume_sphere_programs programs/hitables/volume_sphere.cu )
-cuda_compile_and_embed( volume_box_programs programs/hitables/volume_box.cu )
-cuda_compile_and_embed( rect_pdf_programs programs/pdfs/rect_pdf.cu )
-cuda_compile_and_embed( sphere_pdf_programs programs/pdfs/sphere_pdf.cu )
-cuda_compile_and_embed( triangle_programs programs/hitables/triangle.cu )
-cuda_compile_and_embed( plane_programs programs/hitables/plane.cu )
-cuda_compile_and_embed( hit_program programs/hit.cu )
-cuda_compile_and_embed( vector_texture_programs programs/textures/vector.cu )
-cuda_compile_and_embed( geom_tri_programs programs/hitables/geometry_triangles.cu )
-cuda_compile_and_embed( normal_programs programs/materials/normal_shader.cu )
-cuda_compile_and_embed( ashikhmin_shirley_programs programs/materials/ashikhmin_shirley.cu )
-cuda_compile_and_embed( oren_nayar_programs programs/materials/oren_nayar.cu )
-cuda_compile_and_embed( torrance_sparrow_programs programs/materials/torrance_sparrow.cu )
-cuda_compile_and_embed( cylinder_programs programs/hitables/cylinder.cu )
-cuda_compile_and_embed( gradient_texture_programs programs/textures/gradient_texture.cu )
+cuda_compile_and_embed( Exception_PTX programs/exception.cu )
+cuda_compile_and_embed( Raygen_PTX programs/raygen.cu )
+cuda_compile_and_embed( Sphere_PTX programs/hitables/sphere.cu )
+cuda_compile_and_embed( Moving_Sphere_PTX programs/hitables/moving_sphere.cu )
+cuda_compile_and_embed( Miss_PTX programs/miss.cu )
+cuda_compile_and_embed( Metal_PTX programs/materials/metal.cu )
+cuda_compile_and_embed( Dielectric_PTX programs/materials/dielectric.cu )
+cuda_compile_and_embed( Lambertian_PTX programs/materials/lambertian.cu )
+cuda_compile_and_embed( Color_PTX programs/textures/constant_texture.cu )
+cuda_compile_and_embed( AARect_PTX programs/hitables/aarect.cu )
+cuda_compile_and_embed( Checker_PTX programs/textures/checkered_texture.cu )
+cuda_compile_and_embed( Noise_PTX programs/textures/noise_texture.cu )
+cuda_compile_and_embed( Image_PTX programs/textures/image_texture.cu )
+cuda_compile_and_embed( Light_PTX programs/materials/diffuse_light.cu )
+cuda_compile_and_embed( Box_PTX programs/hitables/box.cu )
+cuda_compile_and_embed( Isotropic_PTX programs/materials/isotropic.cu )
+cuda_compile_and_embed( Volume_Sphere_PTX programs/hitables/volume_sphere.cu )
+cuda_compile_and_embed( Volume_Box_PTX programs/hitables/volume_box.cu )
+cuda_compile_and_embed( Rect_PDF_PTX programs/pdfs/rect_pdf.cu )
+cuda_compile_and_embed( Sphere_PDF_PTX programs/pdfs/sphere_pdf.cu )
+cuda_compile_and_embed( Triangle_PTX programs/hitables/triangle.cu )
+cuda_compile_and_embed( Plane_PTX programs/hitables/plane.cu )
+cuda_compile_and_embed( Hit_PTX programs/hit.cu )
+cuda_compile_and_embed( Vector_Tex_PTX programs/textures/vector.cu )
+cuda_compile_and_embed( Mesh_PTX programs/hitables/geometry_triangles.cu )
+cuda_compile_and_embed( Normal_PTX programs/materials/normal_shader.cu )
+cuda_compile_and_embed( Ashikhmin_PTX programs/materials/ashikhmin_shirley.cu )
+cuda_compile_and_embed( Oren_Nayar_PTX programs/materials/oren_nayar.cu )
+cuda_compile_and_embed( Torrance_PTX programs/materials/torrance_sparrow.cu )
+cuda_compile_and_embed( Cylinder_PTX programs/hitables/cylinder.cu )
+cuda_compile_and_embed( Gradient_PTX programs/textures/gradient_texture.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -74,38 +74,47 @@ add_executable(OptiX_Path_Tracer
   lib/HDRloader.cpp
   lib/tiny_obj_loader.cc
   main.cpp
-  # embedded cuda kernels:
-  ${exception_program}
-  ${raygen_program}
-  ${sphere_programs}
-  ${moving_sphere_programs}
-  ${lambertian_programs}
-  ${miss_program}
-  ${metal_programs}
-  ${dielectric_programs}
-  ${constant_texture_programs}
-  ${aarect_programs}
-  ${checker_texture_programs}
-  ${noise_texture_programs}
-  ${image_texture_programs}
-  ${light_programs}
-  ${box_programs}
-  ${isotropic_programs}
-  ${volume_sphere_programs}
-  ${volume_box_programs}
-  ${rect_pdf_programs}
-  ${sphere_pdf_programs}
-  ${triangle_programs}
-  ${plane_programs}
-  ${hit_program}
-  ${vector_texture_programs}
-  ${geom_tri_programs}
-  ${normal_programs}
-  ${ashikhmin_shirley_programs}
-  ${oren_nayar_programs}
-  ${torrance_sparrow_programs}
-  ${cylinder_programs}
-  ${gradient_texture_programs}
+  
+  # General Programs
+  ${Exception_PTX}
+  ${Raygen_PTX}
+  ${Miss_PTX}
+  ${Hit_PTX}
+
+  # Surface Programs
+  ${Sphere_PTX}
+  ${Moving_Sphere_PTX}
+  ${AARect_PTX}
+  ${Box_PTX}
+  ${Volume_Sphere_PTX}
+  ${Volume_Box_PTX}
+  ${Triangle_PTX}
+  ${Mesh_PTX}
+  ${Cylinder_PTX}
+
+  # Material Programs
+  ${Lambertian_PTX}
+  ${Metal_PTX}
+  ${Dielectric_PTX}
+  ${Light_PTX}
+  ${Isotropic_PTX}
+  ${Normal_PTX}
+  ${Ashikhmin_PTX}
+  ${Oren_Nayar_PTX}
+  ${Torrance_PTX}
+  
+  # Texture Programs
+  ${Color_PTX}
+  ${Checker_PTX}
+  ${Noise_PTX}
+  ${Image_PTX}
+  ${Gradient_PTX}
+  ${Vector_Tex_PTX}
+  
+  #Sampling Programs
+  ${Rect_PDF_PTX}
+  ${Sphere_PDF_PTX}
+
   )
 
 target_link_libraries(OptiX_Path_Tracer ImGuiLibs)

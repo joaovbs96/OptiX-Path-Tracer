@@ -8,14 +8,14 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char sphere_programs[];
-extern "C" const char volume_sphere_programs[];
-extern "C" const char moving_sphere_programs[];
-extern "C" const char aarect_programs[];
-extern "C" const char box_programs[];
-extern "C" const char volume_box_programs[];
-extern "C" const char triangle_programs[];
-extern "C" const char cylinder_programs[];
+extern "C" const char Sphere_PTX[];
+extern "C" const char Volume_Sphere_PTX[];
+extern "C" const char Moving_Sphere_PTX[];
+extern "C" const char AARect_PTX[];
+extern "C" const char Box_PTX[];
+extern "C" const char Volume_Box_PTX[];
+extern "C" const char Triangle_PTX[];
+extern "C" const char Cylinder_PTX[];
 
 // Base geometry primitve class
 class Hitable {
@@ -98,11 +98,11 @@ class Sphere : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bb = createProgram(sphere_programs, "get_bounds", g_context);
+    Program bb = createProgram(Sphere_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bb);
 
     // Set intersection program
-    Program hit = createProgram(sphere_programs, "hit_sphere", g_context);
+    Program hit = createProgram(Sphere_PTX, "hit_sphere", g_context);
     geometry->setIntersectionProgram(hit);
 
     // Basic Parameters
@@ -138,12 +138,11 @@ class Moving_Sphere : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bb = createProgram(moving_sphere_programs, "get_bounds", g_context);
+    Program bb = createProgram(Moving_Sphere_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bb);
 
     // Set intersection program
-    Program hit =
-        createProgram(moving_sphere_programs, "hit_sphere", g_context);
+    Program hit = createProgram(Moving_Sphere_PTX, "hit_sphere", g_context);
     geometry->setIntersectionProgram(hit);
 
     // Basic Parameters
@@ -178,14 +177,12 @@ class Volumetric_Sphere : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bound =
-        createProgram(volume_sphere_programs, "get_bounds", g_context);
+    Program bound = createProgram(Volume_Sphere_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program intersect =
-        createProgram(volume_sphere_programs, "hit_sphere", g_context);
-    geometry->setIntersectionProgram(intersect);
+    Program hit = createProgram(Volume_Sphere_PTX, "hit_sphere", g_context);
+    geometry->setIntersectionProgram(hit);
 
     // Basic Parameters
     geometry["center"]->setFloat(center.x, center.y, center.z);
@@ -234,18 +231,18 @@ class AARect : public Hitable {
     Program bound, intersect;
     switch (axis) {
       case X_AXIS:
-        bound = createProgram(aarect_programs, "get_bounds_X", g_context);
-        intersect = createProgram(aarect_programs, "hit_rect_X", g_context);
+        bound = createProgram(AARect_PTX, "get_bounds_X", g_context);
+        intersect = createProgram(AARect_PTX, "hit_rect_X", g_context);
         break;
 
       case Y_AXIS:
-        bound = createProgram(aarect_programs, "get_bounds_Y", g_context);
-        intersect = createProgram(aarect_programs, "hit_rect_Y", g_context);
+        bound = createProgram(AARect_PTX, "get_bounds_Y", g_context);
+        intersect = createProgram(AARect_PTX, "hit_rect_Y", g_context);
         break;
 
       case Z_AXIS:
-        bound = createProgram(aarect_programs, "get_bounds_Z", g_context);
-        intersect = createProgram(aarect_programs, "hit_rect_Z", g_context);
+        bound = createProgram(AARect_PTX, "get_bounds_Z", g_context);
+        intersect = createProgram(AARect_PTX, "hit_rect_Z", g_context);
         break;
     }
     geometry->setBoundingBoxProgram(bound);
@@ -283,11 +280,11 @@ class Box : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bound = createProgram(box_programs, "get_bounds", g_context);
+    Program bound = createProgram(Box_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program intersect = createProgram(box_programs, "hit_box", g_context);
+    Program intersect = createProgram(Box_PTX, "hit_box", g_context);
     geometry->setIntersectionProgram(intersect);
 
     // Basic parameters
@@ -317,12 +314,11 @@ class Volumetric_Box : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bound = createProgram(volume_box_programs, "get_bounds", g_context);
+    Program bound = createProgram(Volume_Box_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program intersect =
-        createProgram(volume_box_programs, "hit_volume", g_context);
+    Program intersect = createProgram(Volume_Box_PTX, "hit_volume", g_context);
     geometry->setIntersectionProgram(intersect);
 
     // Basic parameters
@@ -361,12 +357,11 @@ class Triangle : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bound = createProgram(triangle_programs, "get_bounds", g_context);
+    Program bound = createProgram(Triangle_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program intersect =
-        createProgram(triangle_programs, "hit_triangle", g_context);
+    Program intersect = createProgram(Triangle_PTX, "hit_triangle", g_context);
     geometry->setIntersectionProgram(intersect);
 
     // basic parameters
@@ -404,7 +399,8 @@ class Triangle : public Hitable {
 // Creates a Sphere
 class Cylinder : public Hitable {
  public:
-  Cylinder(const float3 &p0, const float3 &p1, const float r, Host_Material *material)
+  Cylinder(const float3 &p0, const float3 &p1, const float r,
+           Host_Material *material)
       : p0(p0), p1(p1), radius(r), Hitable(material) {}
 
   // Creates a GeometryInstance object of a sphere primitive
@@ -414,11 +410,11 @@ class Cylinder : public Hitable {
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bb = createProgram(cylinder_programs, "get_bounds", g_context);
+    Program bb = createProgram(Cylinder_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bb);
 
     // Set intersection program
-    Program hit = createProgram(cylinder_programs, "intersection", g_context);
+    Program hit = createProgram(Cylinder_PTX, "intersection", g_context);
     geometry->setIntersectionProgram(hit);
 
     // Basic Parameters
@@ -432,9 +428,9 @@ class Cylinder : public Hitable {
   }
 
  protected:
-  const float3 p0;  // origin of the cylinder
-  const float3 p1;  // destination of the cylinder
-  const float radius;   // radius of the cylinder
+  const float3 p0;     // origin of the cylinder
+  const float3 p1;     // destination of the cylinder
+  const float radius;  // radius of the cylinder
 };
 
 // List of Hitable objects

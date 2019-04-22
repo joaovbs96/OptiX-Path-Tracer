@@ -6,12 +6,12 @@
 
 /*! The precompiled programs code (in ptx) that our cmake script
 will precompile (to ptx) and link to the generated executable */
-extern "C" const char constant_texture_programs[];
-extern "C" const char checker_texture_programs[];
-extern "C" const char noise_texture_programs[];
-extern "C" const char image_texture_programs[];
-extern "C" const char vector_texture_programs[];
-extern "C" const char gradient_texture_programs[];
+extern "C" const char Color_PTX[];
+extern "C" const char Checker_PTX[];
+extern "C" const char Noise_PTX[];
+extern "C" const char Image_PTX[];
+extern "C" const char Gradient_PTX[];
+extern "C" const char Vector_Tex_PTX[];
 
 struct Texture {
   virtual Program assignTo(Context &g_context) const = 0;
@@ -26,12 +26,11 @@ struct Constant_Texture : public Texture {
       : color(make_float3(r, g, b)) {}
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(constant_texture_programs, "sample_texture", g_context);
+    Program prog = createProgram(Color_PTX, "sample_texture", g_context);
 
-    textProg["color"]->set3fv(&color.x);
+    prog["color"]->set3fv(&color.x);
 
-    return textProg;
+    return prog;
   }
 
   const float3 color;
@@ -41,8 +40,7 @@ struct Checker_Texture : public Texture {
   Checker_Texture(const Texture *o, const Texture *e) : odd(o), even(e) {}
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(checker_texture_programs, "sample_texture", g_context);
+    Program textProg = createProgram(Checker_PTX, "sample_texture", g_context);
 
     textProg["odd"]->setProgramId(odd->assignTo(g_context));
     textProg["even"]->setProgramId(even->assignTo(g_context));
@@ -97,8 +95,7 @@ struct Noise_Texture : public Texture {
     perlin_generate_perm(perm_y, g_context);
     perlin_generate_perm(perm_z, g_context);
 
-    Program textProg =
-        createProgram(noise_texture_programs, "sample_texture", g_context);
+    Program textProg = createProgram(Noise_PTX, "sample_texture", g_context);
 
     textProg["ranvec"]->set(ranvec);
     textProg["perm_x"]->set(perm_x);
@@ -167,8 +164,7 @@ struct Image_Texture : public Texture {
   }
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(image_texture_programs, "sample_texture", g_context);
+    Program textProg = createProgram(Image_PTX, "sample_texture", g_context);
 
     textProg["data"]->setTextureSampler(loadTexture(g_context, fileName));
 
@@ -223,8 +219,7 @@ struct HDR_Texture : public Texture {
   }
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(image_texture_programs, "sample_texture", g_context);
+    Program textProg = createProgram(Image_PTX, "sample_texture", g_context);
 
     textProg["data"]->setTextureSampler(loadHDRTexture(g_context, fileName));
 
@@ -234,36 +229,13 @@ struct HDR_Texture : public Texture {
   const std::string fileName;
 };
 
-// TODO: prevent a vector texture from taking a vector texture
-struct Vector_Texture : public Texture {
-  Vector_Texture(const std::vector<Texture *> &tv) : texture_vector(tv) {}
-
-  virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(vector_texture_programs, "sample_texture", g_context);
-
-    std::vector<Program> programs;
-    for (int i = 0; i < texture_vector.size(); i++) {
-      programs.push_back(texture_vector[i]->assignTo(g_context));
-    }
-
-    textProg["size"]->setInt((int)programs.size());
-    textProg["texture_vector"]->setBuffer(createBuffer(programs, g_context));
-
-    return textProg;
-  }
-
-  const std::vector<Texture *> texture_vector;
-};
-
 // Gradient Texture
 struct Gradient_Texture : public Texture {
   Gradient_Texture(const float3 &cA, const float3 &cB, const float3 &cC)
       : colorA(cA), colorB(cB), colorC(cC) {}
 
   virtual Program assignTo(Context &g_context) const override {
-    Program textProg =
-        createProgram(gradient_texture_programs, "sample_texture", g_context);
+    Program textProg = createProgram(Gradient_PTX, "sample_texture", g_context);
 
     textProg["colorA"]->set3fv(&colorA.x);
     textProg["colorB"]->set3fv(&colorB.x);
@@ -275,6 +247,27 @@ struct Gradient_Texture : public Texture {
   const float3 colorA;
   const float3 colorB;
   const float3 colorC;
+};
+
+// TODO: prevent a vector texture from taking a vector texture
+struct Vector_Texture : public Texture {
+  Vector_Texture(const std::vector<Texture *> &tv) : texture_vector(tv) {}
+
+  virtual Program assignTo(Context &g_context) const override {
+    Program prog = createProgram(Vector_Tex_PTX, "sample_texture", g_context);
+
+    std::vector<Program> programs;
+    for (int i = 0; i < texture_vector.size(); i++) {
+      programs.push_back(texture_vector[i]->assignTo(g_context));
+    }
+
+    prog["size"]->setInt((int)programs.size());
+    prog["texture_vector"]->setBuffer(createBuffer(programs, g_context));
+
+    return prog;
+  }
+
+  const std::vector<Texture *> texture_vector;
 };
 
 // Texture 'container'
