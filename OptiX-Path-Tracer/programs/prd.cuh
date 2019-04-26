@@ -33,6 +33,8 @@ struct HitRecord {
   float v;
   float3 geometric_normal;
   float3 shading_normal;
+  float3 front_P;
+  float3 back_P;
   float3 p;
   float3 view_direction;
 };

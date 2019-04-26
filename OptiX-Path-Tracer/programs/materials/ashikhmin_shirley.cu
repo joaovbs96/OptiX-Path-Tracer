@@ -21,10 +21,8 @@ rtDeclareVariable(rtObject, world, , );                      // scene graph
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
 // Material Parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  diffuse_color, , );
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  specular_color, , );
+rtDeclareVariable(Texture_Function, diffuse_color, , );
+rtDeclareVariable(Texture_Function, specular_color, , );
 rtDeclareVariable(float, nu, , );
 rtDeclareVariable(float, nv, , );
 

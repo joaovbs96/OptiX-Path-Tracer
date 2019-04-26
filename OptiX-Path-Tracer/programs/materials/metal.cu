@@ -16,14 +16,18 @@
 
 #include "material.cuh"
 
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-rtDeclareVariable(rtObject, world, , );
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
+////////////////////////////////////////
+// --- Ideal Metal Material Model --- //
+////////////////////////////////////////
 
-// and finally - that particular material's parameters
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+// OptiX Context objects
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
+rtDeclareVariable(rtObject, world, , );                      // scene graph
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+
+// Material Parameters
+rtDeclareVariable(Texture_Function, sample_texture, , );
 rtDeclareVariable(float, fuzz, , );
 
 RT_PROGRAM void closest_hit() {

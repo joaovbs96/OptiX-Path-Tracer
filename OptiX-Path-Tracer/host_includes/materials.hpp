@@ -79,16 +79,16 @@ struct Metal : public Host_Material {
 
 // Create Dielectric material
 struct Dielectric : public Host_Material {
-  Dielectric(const Texture *baseTex, const Texture *volTex, const float ref_idx,
+  Dielectric(const Texture *baseTex, const Texture *extTex, const float ref_idx,
              const float density = 0.f)
-      : baseTex(baseTex), volTex(volTex), ref_idx(ref_idx), density(density) {}
+      : baseTex(baseTex), extTex(extTex), ref_idx(ref_idx), density(density) {}
 
   // Assign host side Dielectric material to device Material object
   virtual Material assignTo(Context &g_context) const override {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(Dielectric_PTX, "closest_hit", g_context);
     hit["base_texture"]->setProgramId(baseTex->assignTo(g_context));
-    hit["volume_texture"]->setProgramId(volTex->assignTo(g_context));
+    hit["volume_texture"]->setProgramId(extTex->assignTo(g_context));
     hit["ref_idx"]->setFloat(ref_idx);
     hit["density"]->setFloat(density);
 
@@ -97,7 +97,7 @@ struct Dielectric : public Host_Material {
     return createMaterial(hit, any, g_context);
   }
 
-  const Texture *baseTex, *volTex;
+  const Texture *baseTex, *extTex;
   const float ref_idx;
   const float density;
 };

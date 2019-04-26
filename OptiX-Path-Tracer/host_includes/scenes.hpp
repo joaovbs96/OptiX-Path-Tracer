@@ -32,10 +32,9 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // create geometries
-  Texture_List txt;
   Hitable_List list;
-  int groundTx = txt.push(new Constant_Texture(0.5f));
-  Host_Material* ground = new Lambertian(txt[groundTx]);
+  Texture* groundTx = new Constant_Texture(0.5f);
+  Host_Material* ground = new Lambertian(groundTx);
 
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
@@ -53,36 +52,29 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
         Texture* tx = new Constant_Texture(rnd(), rnd(), rnd());
         Host_Material* mt = new Lambertian(tx);
         list.push(new Sphere(center, 0.2f, mt));
-        txt.push(tx);
       } else if (choose_mat < 0.95f) {
         Texture* tx = new Constant_Texture(
             0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
         Host_Material* mt = new Metal(tx, 0.5f * rnd());
         list.push(new Sphere(center, 0.2f, mt));
-        txt.push(tx);
       } else {
         Texture* tx1 = new Constant_Texture(1.f);
         Texture* tx2 = new Constant_Texture(rnd(), rnd(), rnd());
         Host_Material* mt = new Dielectric(tx1, tx2, 1.5, 0.f);
         list.push(new Sphere(center, 0.2f, mt));
-        txt.push(tx1);
-        txt.push(tx2);
       }
     }
   }
 
-  Host_Material* mt1 = new Dielectric(tx1, tx2, 1.5, 0.f);
+  Host_Material* mt1 = new Dielectric(tx1, tx1, 1.5, 0.f);
   list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
-  txt.push(tx1);
-  txt.push(tx2);
 
   Host_Material* mt0 = new Lambertian(tx1);
   list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
 
   Host_Material* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.9f);
   Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
-  list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt5));
-  txt.push(tx3);
+  list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt1));
 
   // transforms list elements, one by one, and adds them to the graph
   list.addElementsTo(group, g_context);
@@ -124,12 +116,11 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // create scene
-  Texture_List txt;
   Hitable_List list;
   Texture* ck1 = new Constant_Texture(0.2f, 0.3f, 0.1f);
   Texture* ck2 = new Constant_Texture(0.9f, 0.9f, 0.9f);
-  int groundTx = txt.push(new Checker_Texture(ck1, ck2));
-  Host_Material* ground = new Lambertian(txt[groundTx]);
+  Texture* groundTx = new Checker_Texture(ck1, ck2);
+  Host_Material* ground = new Lambertian(groundTx);
   list.push(new Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, ground));
 
   // Small spheres
@@ -139,44 +130,40 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
       float3 center = make_float3(a + rnd(), 0.2f, b + rnd());
       float3 center2 = center + make_float3(0.f, 0.5f * rnd(), 0.f);
       if (choose_mat < (1.f / 3)) {
-        int mtx = txt.push(new Constant_Texture(
-            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        Host_Material* lmt = new Lambertian(txt[mtx]);
+        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Host_Material* lmt = new Lambertian(mtx);
         list.push(new Sphere(center, 0.2f, lmt));
       } else if (choose_mat < (2.f / 3)) {
-        int mtx = txt.push(new Constant_Texture(
-            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        Host_Material* lmt = new Metal(txt[mtx], 0.5f * rnd());
+        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Host_Material* lmt = new Metal(mtx, 0.5f * rnd());
         list.push(new Sphere(center, 0.2f, lmt));
       } else {
-        int mtx = txt.push(new Constant_Texture(
-            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd())));
-        Host_Material* lmt = new Dielectric(txt[mtx], txt[mtx], 1.5, 0.f);
+        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Host_Material* lmt = new Dielectric(mtx, mtx, 1.5, 0.f);
         list.push(new Sphere(center, 0.2f, lmt));
       }
     }
   }
 
   // Earth
-  int etx =
-      txt.push(new Image_Texture("../../../assets/other_textures/map.jpg"));
-  Host_Material* emt = new Lambertian(txt[etx]);
+  Texture* etx = new Image_Texture("../../../assets/other_textures/map.jpg");
+  Host_Material* emt = new Lambertian(etx);
   list.push(new Sphere(make_float3(-4.f, 1.f, 2.f), 1.f, emt));
 
   // Glass Sphere
-  int gtx1 = txt.push(new Constant_Texture(1.f));
-  int gtx2 = txt.push(new Constant_Texture(rnd(), rnd(), rnd()));
-  Host_Material* gmt = new Dielectric(txt[gtx1], txt[gtx2], 1.5, 0.f);
+  Texture* gtx1 = new Constant_Texture(1.f);
+  Texture* gtx2 = new Constant_Texture(rnd(), rnd(), rnd());
+  Host_Material* gmt = new Dielectric(gtx1, gtx2, 1.5, 0.f);
   list.push(new Sphere(make_float3(4.f, 1.f, 1.f), 1.f, gmt));
 
   // 'rusty' Metal Sphere
-  int mtx = txt.push(new Noise_Texture(4.f));
-  Host_Material* mmt = new Metal(txt[mtx], 0.f);
+  Texture* mtx = new Noise_Texture(4.f);
+  Host_Material* mmt = new Metal(mtx, 0.f);
   list.push(new Sphere(make_float3(0.f, 1.f, 1.5f), 1.f, mmt));
 
   // Light
-  int ltx = txt.push(new Constant_Texture(4.f));
-  Host_Material* lmt = new Diffuse_Light(txt[ltx]);
+  Texture* ltx = new Constant_Texture(4.f);
+  Host_Material* lmt = new Diffuse_Light(ltx);
   list.push(new AARect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Z_AXIS, lmt));
 
   // transforms list elements, one by one, and adds them to the graph
@@ -224,31 +211,28 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // create textures
-  Texture_List textures;
-  int redTx = textures.push(new Constant_Texture(0.65f, 0.05f, 0.05f));
-  int whiteTx = textures.push(new Constant_Texture(0.73f));
-  int greenTx = textures.push(new Constant_Texture(0.12f, 0.45f, 0.15f));
-  int lightTx = textures.push(new Constant_Texture(7.f));
-  int alumTx = textures.push(new Constant_Texture(0.8f, 0.85f, 0.88f));
-  int pWhiteTx = textures.push(new Constant_Texture(1.f));
-  int pBlackTx = textures.push(new Constant_Texture(0.f));
-  int testTx = textures.push(new Constant_Texture(0.5f));
-
-  // create materials
-  Host_Material* redMt = new Lambertian(textures[redTx]);
-  Host_Material* whiteMt = new Lambertian(textures[whiteTx]);
-  Host_Material* greenMt = new Lambertian(textures[greenTx]);
-  Host_Material* lightMt = new Diffuse_Light(textures[lightTx]);
-  Host_Material* alumMt = new Metal(textures[pWhiteTx], 0.0);
-  Host_Material* glassMt =
-      new Dielectric(textures[pWhiteTx], textures[redTx], 1.5f, 0.f);
-  Host_Material* blackSmokeMt = new Isotropic(textures[pBlackTx]);
-  Host_Material* oren = new Oren_Nayar(textures[whiteTx], 1.f);
-
+  Texture* redTx = new Constant_Texture(0.65f, 0.05f, 0.05f);
+  Texture* whiteTx = new Constant_Texture(0.73f);
+  Texture* greenTx = new Constant_Texture(0.12f, 0.45f, 0.15f);
+  Texture* lightTx = new Constant_Texture(7.f);
+  Texture* alumTx = new Constant_Texture(0.8f, 0.85f, 0.88f);
+  Texture* pWhiteTx = new Constant_Texture(1.f);
+  Texture* pBlackTx = new Constant_Texture(0.f);
   Texture* tx1 = new Constant_Texture(1.f);
   Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
   Texture* tx4 = new Constant_Texture(0.f);
   Texture* tx3 = new Constant_Texture(0.4f);
+  Texture* glass = new Constant_Texture(0.1f, 0.603f, 0.3f);
+
+  // create materials
+  Host_Material* redMt = new Lambertian(redTx);
+  Host_Material* whiteMt = new Lambertian(whiteTx);
+  Host_Material* greenMt = new Lambertian(greenTx);
+  Host_Material* lightMt = new Diffuse_Light(lightTx);
+  Host_Material* alumMt = new Metal(pWhiteTx, 0.0);
+  Host_Material* glassMt = new Dielectric(pWhiteTx, glass, 1.5f, 0.f);
+  Host_Material* blackSmokeMt = new Isotropic(pBlackTx);
+  Host_Material* oren = new Oren_Nayar(whiteTx, 1.f);
   Host_Material* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10000, 10);
   Host_Material* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.1f);
   Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
@@ -257,13 +241,12 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   Hitable_List list;
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, redMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, greenMt));
-  list.push(
-      new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, lightMt));
+  list.push(new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, lightMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, whiteMt));
-  list.push(
-      new Sphere(make_float3(555.f / 2.f, 90.f, 555.f / 2.f), 90.f, glassMt));
+  //list.push(new Sphere(make_float3(150.f, 90.f, 150.f), 90.f, glassMt));
+  list.push(new Sphere(make_float3(555.f - 150.f, 90.f, 555.f - 150.f), 90.f, alumMt));
   /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
   mt6));*/
@@ -285,7 +268,13 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
 
-  // transforms list elements, one by one, and adds them to the graph
+  Mesh model2 = Mesh("teapot20.obj", "../../../assets/", glassMt);
+  model2.scale(make_float3(10.f));
+  model2.rotate(180.f, Y_AXIS);
+  model2.translate(make_float3(150.f, 0.f, 0.f));
+  model2.addTo(group, g_context);
+
+  // transforms list elements, one by one, and adds them to the scene graph
   list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
@@ -322,11 +311,10 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   Group group = g_context->createGroup();
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
-  Texture_List txt;
   Hitable_List list;
 
-  int groundTx = txt.push(new Constant_Texture(0.48f, 0.83f, 0.53f));
-  Host_Material* ground = new Lambertian(txt[groundTx]);
+  Texture* groundTx = new Constant_Texture(0.48f, 0.83f, 0.53f);
+  Host_Material* ground = new Lambertian(groundTx);
 
   // ground
   for (int i = 0; i < 20; i++) {
@@ -345,54 +333,53 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   }
 
   // light
-  int lightTx = txt.push(new Constant_Texture(7.f));
-  Host_Material* light = new Diffuse_Light(txt[lightTx]);
+  Texture* lightTx = new Constant_Texture(7.f);
+  Host_Material* light = new Diffuse_Light(lightTx);
   list.push(new AARect(113.f, 443.f, 127.f, 432.f, 554.f, true, Y_AXIS, light));
 
   // brown sphere
   float3 center = make_float3(400.f, 400.f, 200.f);
-  int brownTx = txt.push(new Constant_Texture(0.7f, 0.3f, 0.1f));
-  Host_Material* brown = new Lambertian(txt[brownTx]);
+  Texture* brownTx = new Constant_Texture(0.7f, 0.3f, 0.1f);
+  Host_Material* brown = new Lambertian(brownTx);
   list.push(new Sphere(center, 50.f, brown));
 
   // glass sphere
-  int glassTx1 = txt.push(new Constant_Texture(1.f));
-  Host_Material* glass = new Dielectric(txt[glassTx1], txt[glassTx1], 1.5f);
+  Texture* glassTx1 = new Constant_Texture(1.f);
+  Host_Material* glass = new Dielectric(glassTx1, glassTx1, 1.5f);
   list.push(new Sphere(make_float3(260.f, 150.f, 45.f), 50.f, glass));
 
   // metal sphere
-  int metalTx = txt.push(new Constant_Texture(0.8f, 0.8f, 0.9f));
-  Host_Material* metal = new Metal(txt[metalTx], 10.f);
+  Texture* metalTx = new Constant_Texture(0.8f, 0.8f, 0.9f);
+  Host_Material* metal = new Metal(metalTx, 10.f);
   list.push(new Sphere(make_float3(0.f, 150.f, 145.f), 50.f, metal));
 
   // blue sphere
   // glass sphere
   list.push(new Sphere(make_float3(360.f, 150.f, 45.f), 70.f, glass));
   // blue fog
-  int blueTx = txt.push(new Constant_Texture(0.2f, 0.4f, 0.9f));
-  Host_Material* blueFog = new Isotropic(txt[blueTx]);
+  Texture* blueTx = new Constant_Texture(0.2f, 0.4f, 0.9f);
+  Host_Material* blueFog = new Isotropic(blueTx);
   list.push(new Volumetric_Sphere(make_float3(360.f, 150.f, 45.f), 70.f, 0.2f,
                                   blueFog));
 
   // white fog
-  Host_Material* whiteFog = new Isotropic(txt[glassTx1]);
+  Host_Material* whiteFog = new Isotropic(glassTx1);
   list.push(new Volumetric_Sphere(make_float3(0.f), 5000.f, 0.0001f, whiteFog));
 
   // earth
-  int etx =
-      txt.push(new Image_Texture("../../../assets/other_textures/map.jpg"));
-  Host_Material* emt = new Lambertian(txt[etx]);
+  Texture* etx = new Image_Texture("../../../assets/other_textures/map.jpg");
+  Host_Material* emt = new Lambertian(etx);
   list.push(new Sphere(make_float3(400.f, 200.f, 400.f), 100.f, emt));
 
   // Perlin sphere
-  int perlinTx = txt.push(new Noise_Texture(0.1f));
-  Host_Material* noise = new Lambertian(txt[perlinTx]);
+  Texture* perlinTx = new Noise_Texture(0.1f);
+  Host_Material* noise = new Lambertian(perlinTx);
   list.push(new Sphere(make_float3(220.f, 280.f, 300.f), 80.f, noise));
 
   // group of small spheres
-  int whiteTx = txt.push(new Constant_Texture(0.73f));
-  Host_Material* whiteMt = new Lambertian(txt[whiteTx]);
   Hitable_List spheres;
+  Texture* whiteTx = new Constant_Texture(0.73f);
+  Host_Material* whiteMt = new Lambertian(whiteTx);
   for (int j = 0; j < 1000; j++) {
     center = make_float3(165 * rnd(), 165 * rnd(), 165 * rnd());
     spheres.push(new Sphere(center, 10.f, whiteMt));
@@ -429,10 +416,10 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, lights);
-  // setMissProgram(g_context, HDR, "../../../assets/hdr/fireplace.hdr");
-  setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+  setMissProgram(g_context, HDR, "../../../assets/HDR_111_Parking_Lot_2_Ref.hdr");
+  /*setMissProgram(g_context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
-                 make_float3(0.5f, 0.7f, 1.f));  // light blue
+                 make_float3(0.5f, 0.7f, 1.f));  // light blue*/
   setExceptionProgram(g_context);
 
   // create scene group
@@ -440,31 +427,29 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   group->setAcceleration(g_context->createAcceleration("Trbvh"));
 
   // create textures
-  Texture_List txts;
-  int whiteTx = txts.push(new Constant_Texture(0.73f));
-  int blackTx = txts.push(new Constant_Texture(0.f));
-  int alumTx = txts.push(new Constant_Texture(0.8f, 0.85f, 0.88f));
-  int noiseTx = txts.push(new Noise_Texture(0.01f));
-  int blueTx = txts.push(new Constant_Texture(0.2f, 0.4f, 0.9f));
-  int perlinXTx = txts.push(new Noise_Texture(0.01f, X_AXIS));
-  int perlinYTx = txts.push(new Noise_Texture(0.01f, Y_AXIS));
-  int perlinZTx = txts.push(new Noise_Texture(0.01f, Z_AXIS));
-  int pWhiteTx = txts.push(new Constant_Texture(1.f));
+  Texture* whiteTx = new Constant_Texture(0.73f);
+  Texture* blackTx = new Constant_Texture(0.f);
+  Texture* alumTx = new Constant_Texture(0.8f, 0.85f, 0.88f);
+  Texture* noiseTx = new Noise_Texture(0.01f);
+  Texture* blueTx = new Constant_Texture(0.2f, 0.4f, 0.9f);
+  Texture* perlinXTx = new Noise_Texture(0.01f, X_AXIS);
+  Texture* perlinYTx = new Noise_Texture(0.01f, Y_AXIS);
+  Texture* perlinZTx = new Noise_Texture(0.01f, Z_AXIS);
+  Texture* pWhiteTx = new Constant_Texture(1.f);
+  Texture* glass = new Constant_Texture(0.1f, 0.603f, 0.3f);
 
   // create materials
-  Host_Material* whiteMt = new Lambertian(txts[whiteTx]);
-  Host_Material* blackMt = new Lambertian(txts[blackTx]);
-  Host_Material* alumMt = new Metal(txts[alumTx], 0.0);
-  Host_Material* glassMt =
-      new Dielectric(txts[noiseTx], txts[blueTx], 1.5f, 0.f);
-  Host_Material* blueMt =
-      new Dielectric(txts[alumTx], txts[whiteTx], 1.5f, 0.f);
+  Host_Material* whiteMt = new Lambertian(whiteTx);
+  Host_Material* blackMt = new Lambertian(blackTx);
+  Host_Material* alumMt = new Metal(alumTx, 0.0);
+  Host_Material* glassMt = new Dielectric(glass, pWhiteTx, 1.5f, 0.f);
+  Host_Material* blueMt = new Dielectric(blueTx, blackTx, 1.5f, 0.f);
   Host_Material* normalMt = new Normal_Shader();
   Host_Material* shadingMt = new Normal_Shader(true);
-  Host_Material* perlinXMt = new Lambertian(txts[perlinXTx]);
-  Host_Material* perlinYMt = new Lambertian(txts[perlinYTx]);
-  Host_Material* perlinZMt = new Lambertian(txts[perlinZTx]);
-  Host_Material* whiteIso = new Isotropic(txts[blueTx]);
+  Host_Material* perlinXMt = new Lambertian(perlinXTx);
+  Host_Material* perlinYMt = new Lambertian(perlinYTx);
+  Host_Material* perlinZMt = new Lambertian(perlinZTx);
+  Host_Material* whiteIso = new Isotropic(blueTx);
 
   // create geometries
   Hitable_List list;
@@ -473,32 +458,22 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   if (modelID == 0) {
     Mesh_List meshList;
 
-    list.push(new Cylinder(make_float3(50.f), make_float3(350.f, -300.f, 10.f),
-                           100.f, whiteIso));
-
-    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, whiteIso));
+    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, perlinXMt));
 
     Texture* tx4 = new Constant_Texture(1.f);
     Texture* tx3 = new Constant_Texture(0.3f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
     Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
 
-    Mesh model1 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
-    model1.scale(make_float3(40.f));
-    model1.rotate(180.f, Y_AXIS);
-    model1.translate(make_float3(-300.f, -600.f, 0.f));
-    meshList.push(&model1);
-
-    Mesh model2 = Mesh("meetmat.obj", "../../../assets/", whiteMt);
+    Mesh model2 = Mesh("teapot20.obj", "../../../assets/", glassMt);
     model2.scale(make_float3(40.f));
-    model2.rotate(180.f, Y_AXIS);
-    model2.translate(make_float3(300.f, -600.f, 0.f));
+    model2.rotate(-90.f, X_AXIS);
+    model2.translate(make_float3(150.f, -600.f, 150.f));
     meshList.push(&model2);
 
     meshList.addElementsTo(group, g_context);
 
-    list.push(
-        new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS, mt3));
+    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS, whiteMt));
   }
 
   // lucy

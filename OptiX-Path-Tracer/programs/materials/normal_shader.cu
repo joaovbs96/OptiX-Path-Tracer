@@ -1,16 +1,16 @@
 #include "material.cuh"
 
-/*! the implicit state's ray we will intersect against */
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
+///////////////////////////
+// --- Normal Shader --- //
+///////////////////////////
 
-/*! the per ray data we operate on */
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-rtDeclareVariable(rtObject, world, , );
+// OptiX Context objects
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
+rtDeclareVariable(rtObject, world, , );                      // scene graph
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
 
-/*! the attributes we use to communicate between intersection programs and hit
- * program */
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
-
+// Material Parameters
 rtDeclareVariable(int, useShadingNormal, , );
 
 RT_PROGRAM void closest_hit() {

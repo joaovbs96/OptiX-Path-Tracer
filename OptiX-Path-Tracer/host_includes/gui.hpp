@@ -38,7 +38,6 @@ struct GUIState {
   GUIState()
       : w(500),
         h(500),
-        pW(1),
         samples(500),
         scene(2),
         model(0),
@@ -49,7 +48,7 @@ struct GUIState {
         start(false),
         fileType(0),
         fileName("out") {}
-  int w, h, pW, samples, scene, currentSample, model, frequency, fileType;
+  int w, h, samples, scene, currentSample, model, frequency, fileType;
   bool done, start, showProgress;
   Buffer accBuffer, displayBuffer;
   std::string fileName;

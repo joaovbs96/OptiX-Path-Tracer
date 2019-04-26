@@ -5,8 +5,7 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+rtDeclareVariable(Texture_Function, sample_texture, , );
 
 RT_FUNCTION Isotropic_Parameters Get_Parameters(const float3 &P, float u,
                                                 float v, int index) {

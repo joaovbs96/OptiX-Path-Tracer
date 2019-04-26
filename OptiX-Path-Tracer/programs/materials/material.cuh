@@ -21,6 +21,9 @@
 #include "../sampling.cuh"
 #include "../vec.hpp"
 
+// Typedef of Texture callable program calls
+typedef rtCallableProgramId<float3(float, float, float3, int)> Texture_Function;
+
 // returns smallest integer not less than a scalar or each vector component
 // RT_FUNCTION float saturate(float x) { return fmaxf(0.f, fminf(1.f, x)); }
 
@@ -69,4 +72,13 @@ RT_FUNCTION bool Transmit(float3 wm, float3 wi, float n, float3& wo) {
 
   wo = (n * c - sqrtf(root)) * wm - n * wi;
   return true;
+}
+
+RT_FUNCTION float fresnel(float cos_theta_i, float cos_theta_t, float eta){
+    const float rs = ( cos_theta_i - cos_theta_t* eta ) / 
+                     ( cos_theta_i + eta*cos_theta_t );
+    const float rp = ( cos_theta_i*eta - cos_theta_t ) /
+                     ( cos_theta_i*eta + cos_theta_t );
+
+    return 0.5f * ( rs*rs + rp*rp );
 }

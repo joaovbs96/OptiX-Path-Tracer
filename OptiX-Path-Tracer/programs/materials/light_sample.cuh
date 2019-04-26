@@ -32,7 +32,6 @@ RT_FUNCTION float PowerHeuristic(unsigned int numf, float fPdf,
   return (f * f) / (f * f + g * g);
 }
 
-// TODO: direct light not working
 template <typename T>
 RT_FUNCTION float3 Direct_Light(T &surface,        // surface parameters
                                 const float3 &P,   // next ray origin

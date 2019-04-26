@@ -31,7 +31,6 @@ rtBuffer<uchar4, 2> display_buffer;  // display buffer
 
 rtDeclareVariable(int, samples, , );   // number of samples
 rtDeclareVariable(int, frame, , );     // frame number
-rtDeclareVariable(int, pixelDim, , );  // pxiel dimension for stratification
 
 rtDeclareVariable(rtObject, world, , );  // scene/top obj variable
 
@@ -77,7 +76,8 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
-    if (prd.scatterEvent == rayMissed) return prd.radiance + prd.throughput;
+    if (prd.scatterEvent == rayMissed) 
+      return prd.radiance + clamp(prd.throughput, 0.f, 1.f);
 
     // ray hit a light, return radiance
     else if (prd.scatterEvent == rayHitLight) {
@@ -149,26 +149,16 @@ RT_PROGRAM void renderPixel() {
   uint2 index = make_uint2(pixelID.x, launchDim.y - pixelID.y - 1);
   if (frame == 0) acc_buffer[index] = make_float4(0.f);
 
-  float3 col = make_float3(0.f);
-  for (int i = 0; i < pixelDim; i++) {
-    for (int j = 0; j < pixelDim; j++) {
-      // Subpixel jitter: send the ray through a different position inside the
-      // pixel each time, to provide antialiasing.
-      float u = float(pixelID.x + (i + rnd(seed)) / pixelDim) / launchDim.x;
-      float v = float(pixelID.y + (j + rnd(seed)) / pixelDim) / launchDim.y;
+  // Subpixel jitter: send the ray through a different position inside the
+  // pixel each time, to provide antialiasing.
+  float u = float(pixelID.x + rnd(seed)) / launchDim.x;
+  float v = float(pixelID.y + rnd(seed)) / launchDim.y;
 
-      // trace ray
-      Ray ray = Camera::generateRay(u, v, seed);
-
-      // accumulate subpixel color
-      col += de_nan(color(ray, seed));
-    }
-  }
-
-  // average subpixel sum
-  col /= (pixelDim * pixelDim);
+  // trace ray
+  Ray ray = Camera::generateRay(u, v, seed);
 
   // accumulate pixel color
+  float3 col = de_nan(color(ray, seed));
   acc_buffer[index] += make_float4(col.x, col.y, col.z, 1.f);
   display_buffer[index] = make_Color(acc_buffer[index]);
 }

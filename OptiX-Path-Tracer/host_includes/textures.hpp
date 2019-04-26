@@ -283,27 +283,6 @@ struct Texture_List {
     return index;
   }
 
-  // Create int buffer
-  Buffer createBuffer(Context &g_context) {
-    std::vector<Program> prog_list;
-    for (int i = 0; i < texList.size(); i++)
-      prog_list.push_back(texList[i]->assignTo(g_context));
-
-    Buffer buffer =
-        g_context->createBuffer(RT_BUFFER_INPUT, RT_FORMAT_PROGRAM_ID);
-    buffer->setSize(prog_list.size());
-
-    callableProgramId<int(int)> *data =
-        static_cast<callableProgramId<int(int)> *>(buffer->map());
-
-    for (int i = 0; i < prog_list.size(); i++)
-      data[i] = callableProgramId<int(int)>(prog_list[i]->getId());
-
-    buffer->unmap();
-
-    return buffer;
-  }
-
   // returns the element of index 'i'
   Texture *operator[](const int i) { return texList[i]; }
 

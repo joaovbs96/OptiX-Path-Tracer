@@ -84,8 +84,7 @@ class Mesh {
                                      mp->ambient[2]);  // B
 
         // Assign texture index to the Material's name
-        int texId = textures.push(tex);
-        material_map[mp->name] = texId;
+        material_map[mp->name] = textures.push(tex);
       }
 
       // Create a vector of textures

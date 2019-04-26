@@ -1,12 +1,17 @@
 #include "light_sample.cuh"
 
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-rtDeclareVariable(rtObject, world, , );
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
+//////////////////////////////////////////
+// --- Diffuse Light Material Model --- //
+//////////////////////////////////////////
 
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
+// OptiX Context objects
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
+rtDeclareVariable(rtObject, world, , );                      // scene graph
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+
+// Material Parameters
+rtDeclareVariable(Texture_Function, sample_texture, , );
 
 RT_FUNCTION Diffuse_Light_Parameters Get_Parameters(const float3 &P, float u,
                                                     float v, int index) {

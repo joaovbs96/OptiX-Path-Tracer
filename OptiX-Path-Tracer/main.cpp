@@ -60,9 +60,6 @@ int Optix_Config(GUIState &state) {
   // Set number of samples
   g_context["samples"]->setInt(state.samples);
 
-  // Set pixel dimension
-  g_context["pixelDim"]->setInt(state.pW);
-
   // Create and set the world
   switch (state.scene) {
     case 0:  // Peter Shirley's "In One Weekend" scene
@@ -189,10 +186,6 @@ int main(int ac, char **av) {
         ImGui::InputInt("Height", &state.h, 1, 100);
 
         ImGui::InputInt("Samples Per Pixel", &state.samples, 1, 100);
-
-        ImGui::InputInt("Subpixel Size", &state.pW, 1, 100);
-        ImGui::SameLine();
-        ShowHelpMarker("Greatly impacts execution time.");
 
         ImGui::Combo("Scene", &state.scene,
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "

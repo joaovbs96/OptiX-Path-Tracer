@@ -16,27 +16,26 @@
 
 #include "material.cuh"
 
-// the implicit state's ray we will intersect against
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
+////////////////////////////////////////
+// --- Ideal Glass Material Model --- //
+////////////////////////////////////////
 
-// the per ray data we operate on
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-rtDeclareVariable(rtObject, world, , );
-
-// the attributes we use to communicate between intersection programs and hit
-// program
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
-
-// Source of use of Beer-Lambert Law:
+// Based on:
 // https://github.com/aromanro/RayTracer/blob/c8ad5de7fa91faa7e0a9de652c21284633659e2c/RayTracer/Material.cpp
 
 // Beer-Lambert Law Theory:
 // http://www.pci.tu-bs.de/aggericke/PC4/Kap_I/beerslaw.htm
 
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  base_texture, , );
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  volume_texture, , );
+// OptiX Context objects
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
+rtDeclareVariable(rtObject, world, , );                      // scene graph
+rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+rtDeclareVariable(float, t_hit, rtIntersectionDistance, );
+
+// Material Parameters
+rtDeclareVariable(Texture_Function, base_texture, , );
+rtDeclareVariable(Texture_Function, extinction_texture, , );
 rtDeclareVariable(float, ref_idx, , );
 rtDeclareVariable(float, density, , );
 
@@ -47,47 +46,49 @@ RT_PROGRAM void closest_hit() {
   float3 N = hit_rec.shading_normal;
 
   float3 base_color = base_texture(u, v, P, index);
-  float3 volume_color = volume_texture(u, v, P, index);
 
-  float3 outward_normal;
   float ni_over_nt;
   float cosine = dot(Wo, N);
 
+  // Ray is exiting the object
   if (cosine > 0.f) {
-    // from inside the object
-    outward_normal = -N;
+    N = -N;
     ni_over_nt = ref_idx;
     cosine = ref_idx * cosine / length(Wo);
 
-    // since it was from inside the object, compute the attenuation according
-    // to the Beer-Lambert Law
-    // TODO: check glass.cu from optix advanced samples
-    if (density > 0.f) {
-      float3 absorb = hit_rec.distance * density * volume_color;
-      base_color *= expf(-absorb);
-    }
-  } else {
-    outward_normal = N;
+    // Apply the Beer-Lambert Law
+    float3 extinction_color = extinction_texture(u, v, P, index);
+    //base_color *= expf(-extinction_color * t_hit);
+  } 
+  
+  // Ray is entering the object
+  else {
     ni_over_nt = 1.f / ref_idx;
     cosine = -cosine / length(Wo);
   }
 
+  // Importance sample the Fresnel term
   float3 refracted;
   float reflect_prob;
-  if (refract(Wo, outward_normal, ni_over_nt, refracted)) {
+  if (refract(Wo, N, ni_over_nt, refracted))
     reflect_prob = schlick(cosine, ref_idx);
-  } else
+  else
     reflect_prob = 1.f;
 
-  // reflect or refract ray
-  if (rnd(prd.seed) < reflect_prob)
+  // Ray should be reflected...
+  if (rnd(prd.seed) < reflect_prob) {
     prd.direction = reflect(Wo, N);
-  else
+    prd.origin = hit_rec.front_P;
+  }
+  
+  // ...or refracted
+  else{
     prd.direction = refracted;
+    prd.origin = hit_rec.back_P;
+  }
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.origin = hit_rec.p;
   prd.throughput *= base_color;
   prd.isSpecular = true;
 }

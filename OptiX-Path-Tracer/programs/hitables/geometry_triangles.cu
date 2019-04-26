@@ -64,8 +64,12 @@ RT_PROGRAM void attributes() {
 
   // Get triangle hit point
   float3 hit_point = ray.origin + t * ray.direction;
-  hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-  hit_rec.p = hit_point;
+
+  refine_and_offset_hitpoint(hit_point, ray.direction, normal, a, hit_rec.front_P, hit_rec.back_P);
+
+  hit_rec.p = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+  hit_rec.front_P = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_rec.front_P);
+  hit_rec.back_P = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_rec.back_P);
 
   // Get shading normal, if possible
   float2 barycentrics = rtGetTriangleBarycentrics();
