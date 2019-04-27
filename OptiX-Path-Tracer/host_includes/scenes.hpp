@@ -437,12 +437,13 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   Texture* perlinZTx = new Noise_Texture(0.01f, Z_AXIS);
   Texture* pWhiteTx = new Constant_Texture(1.f);
   Texture* glass = new Constant_Texture(0.1f, 0.603f, 0.3f);
+  Texture* glassbase = new Constant_Texture(0.99f);
 
   // create materials
   Host_Material* whiteMt = new Lambertian(whiteTx);
   Host_Material* blackMt = new Lambertian(blackTx);
   Host_Material* alumMt = new Metal(alumTx, 0.0);
-  Host_Material* glassMt = new Dielectric(glass, pWhiteTx, 1.5f, 0.f);
+  Host_Material* glassMt = new Dielectric(glass, glassbase, 1.5f, 0.f);
   Host_Material* blueMt = new Dielectric(blueTx, blackTx, 1.5f, 0.f);
   Host_Material* normalMt = new Normal_Shader();
   Host_Material* shadingMt = new Normal_Shader(true);

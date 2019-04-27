@@ -46,6 +46,7 @@ RT_PROGRAM void closest_hit() {
   float3 N = hit_rec.shading_normal;
 
   float3 base_color = base_texture(u, v, P, index);
+  float3 absortion = make_float3(1.f);
 
   float ni_over_nt;
   float cosine = dot(Wo, N);
@@ -57,8 +58,8 @@ RT_PROGRAM void closest_hit() {
     cosine = ref_idx * cosine / length(Wo);
 
     // Apply the Beer-Lambert Law
-    float3 extinction_color = extinction_texture(u, v, P, index);
-    //base_color *= expf(-extinction_color * t_hit);
+    float3 extinction = extinction_texture(u, v, P, index);
+    absortion = expf(-hit_rec.distance * extinction);
   } 
   
   // Ray is entering the object
@@ -89,6 +90,6 @@ RT_PROGRAM void closest_hit() {
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.throughput *= base_color;
+  prd.throughput *= (base_color * absortion);
   prd.isSpecular = true;
 }

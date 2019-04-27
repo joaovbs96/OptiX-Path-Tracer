@@ -88,7 +88,7 @@ struct Dielectric : public Host_Material {
     // Creates closest hit programs and assigns variables and textures
     Program hit = createProgram(Dielectric_PTX, "closest_hit", g_context);
     hit["base_texture"]->setProgramId(baseTex->assignTo(g_context));
-    hit["volume_texture"]->setProgramId(extTex->assignTo(g_context));
+    hit["extinction_texture"]->setProgramId(extTex->assignTo(g_context));
     hit["ref_idx"]->setFloat(ref_idx);
     hit["density"]->setFloat(density);
 

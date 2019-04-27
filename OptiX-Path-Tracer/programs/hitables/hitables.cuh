@@ -67,7 +67,4 @@ RT_FUNCTION void refine_and_offset_hitpoint(const float3& P, // P
     back_hit_point  = offset(refined_hit_point, -normal);
     front_hit_point = offset(refined_hit_point,  normal);
   }
-
-  back_hit_point = refined_hit_point;
-  front_hit_point = refined_hit_point;
 }
