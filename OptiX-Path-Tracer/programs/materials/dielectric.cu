@@ -72,6 +72,7 @@ RT_PROGRAM void closest_hit() {
   float3 refracted;
   float reflect_prob;
   if (refract(Wo, N, ni_over_nt, refracted))
+  //if(refract(refracted, Wo, normalize(N), ni_over_nt))
     reflect_prob = schlick(cosine, ref_idx);
   else
     reflect_prob = 1.f;
