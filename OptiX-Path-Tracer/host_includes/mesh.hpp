@@ -27,11 +27,11 @@ class Mesh {
         assetsFolder(assetsFolder),
         givenMaterial(nullptr) {}
 
-  Mesh(std::string fileName, Host_Material *givenMaterial)
+  Mesh(std::string fileName, BRDF *givenMaterial)
       : fileName(fileName), assetsFolder(""), givenMaterial(givenMaterial) {}
 
   Mesh(std::string fileName, std::string assetsFolder,
-       Host_Material *givenMaterial)
+       BRDF *givenMaterial)
       : fileName(fileName),
         assetsFolder(assetsFolder),
         givenMaterial(givenMaterial) {}
@@ -88,7 +88,7 @@ class Mesh {
       }
 
       // Create a vector of textures
-      Host_Material *host_material;
+      BRDF *host_material;
       host_material = new Lambertian(new Vector_Texture(textures.texList));
       device_material = host_material->assignTo(g_context);
     }
@@ -226,7 +226,7 @@ class Mesh {
     return make_float2(x, y);
   }
 
-  const Host_Material *givenMaterial;
+  const BRDF *givenMaterial;
   const std::string fileName, assetsFolder;
   std::vector<TransformParameter> arr;
 };

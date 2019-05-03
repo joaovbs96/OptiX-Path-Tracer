@@ -22,7 +22,7 @@ class Hitable {
  public:
   std::vector<TransformParameter> transforms;  // vector of transforms
 
-  Hitable(Host_Material *material) : material(material) {}
+  Hitable(BRDF *material) : material(material) {}
 
   // Get GeometryInstance of Hitable element
   virtual GeometryInstance getGeometryInstance(Context &g_context) = 0;
@@ -71,7 +71,7 @@ class Hitable {
 
  protected:
   Geometry geometry;        // Geometry object
-  Host_Material *material;  // Host side material object
+  BRDF *material;  // Host side material object
 
   // Creates GeometryInstance
   virtual GeometryInstance createGeometryInstance(Context &g_context) {
@@ -88,7 +88,7 @@ class Hitable {
 // Creates a Sphere
 class Sphere : public Hitable {
  public:
-  Sphere(const float3 &c, const float r, Host_Material *material)
+  Sphere(const float3 &c, const float r, BRDF *material)
       : center(c), radius(r), Hitable(material) {}
 
   // Creates a GeometryInstance object of a sphere primitive
@@ -123,7 +123,7 @@ class Sphere : public Hitable {
 class Moving_Sphere : public Hitable {
  public:
   Moving_Sphere(const float3 &c0, const float3 &c1, const float r,
-                const float t0, const float t1, Host_Material *material)
+                const float t0, const float t1, BRDF *material)
       : center0(c0),
         center1(c1),
         radius(r),
@@ -167,7 +167,7 @@ class Moving_Sphere : public Hitable {
 class Volumetric_Sphere : public Hitable {
  public:
   Volumetric_Sphere(const float3 &c, const float r, const float d,
-                    Host_Material *material)
+                    BRDF *material)
       : center(c), radius(r), density(d), Hitable(material) {}
 
   // Creates a GeometryInstance object of a volumetric sphere primitive
@@ -211,7 +211,7 @@ The meaning of K, A0/A1 and B0/B1 change depending on the chosen axis. If ax is:
 class AARect : public Hitable {
  public:
   AARect(const float a0, const float a1, const float b0, const float b1,
-         const float k, const bool flip, const AXIS ax, Host_Material *material)
+         const float k, const bool flip, const AXIS ax, BRDF *material)
       : a0(a0),
         a1(a1),
         b0(b0),
@@ -270,7 +270,7 @@ class AARect : public Hitable {
 // Creates a Box
 class Box : public Hitable {
  public:
-  Box(const float3 &p0, const float3 &p1, Host_Material *material)
+  Box(const float3 &p0, const float3 &p1, BRDF *material)
       : p0(p0), p1(p1), Hitable(material) {}
 
   // Creates a GeometryInstance object of a Box primitive
@@ -304,7 +304,7 @@ class Box : public Hitable {
 class Volumetric_Box : public Hitable {
  public:
   Volumetric_Box(const float3 &p0, const float3 &p1, const float d,
-                 Host_Material *material)
+                 BRDF *material)
       : p0(p0), p1(p1), density(d), Hitable(material) {}
 
   // Creates a GeometryInstance object of a Volumetric Box primitive
@@ -341,7 +341,7 @@ class Triangle : public Hitable {
  public:
   Triangle(const float3 &a, const float2 &a_uv, const float3 &b,
            const float2 &b_uv, const float3 &c, const float2 &c_uv,
-           Host_Material *material)
+           BRDF *material)
       : a(a),
         b(b),
         c(c),
@@ -400,7 +400,7 @@ class Triangle : public Hitable {
 class Cylinder : public Hitable {
  public:
   Cylinder(const float3 &p0, const float3 &p1, const float r,
-           Host_Material *material)
+           BRDF *material)
       : p0(p0), p1(p1), radius(r), Hitable(material) {}
 
   // Creates a GeometryInstance object of a sphere primitive
