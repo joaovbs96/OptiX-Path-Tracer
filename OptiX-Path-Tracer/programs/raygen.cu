@@ -29,8 +29,8 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtBuffer<float4, 2> acc_buffer;      // HDR color frame buffer
 rtBuffer<uchar4, 2> display_buffer;  // display buffer
 
-rtDeclareVariable(int, samples, , );   // number of samples
-rtDeclareVariable(int, frame, , );     // frame number
+rtDeclareVariable(int, samples, , );  // number of samples
+rtDeclareVariable(int, frame, , );    // frame number
 
 rtDeclareVariable(rtObject, world, , );  // scene/top obj variable
 
@@ -76,7 +76,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
 
     // ray got 'lost' to the environment
     // return attenuation set by miss shader
-    if (prd.scatterEvent == rayMissed) 
+    if (prd.scatterEvent == rayMissed)
       return prd.radiance + clamp(prd.throughput, 0.f, 1.f);
 
     // ray hit a light, return radiance

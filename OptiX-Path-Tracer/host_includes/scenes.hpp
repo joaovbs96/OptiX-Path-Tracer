@@ -36,12 +36,6 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   Texture* groundTx = new Constant_Texture(0.5f);
   Host_Material* ground = new Lambertian(groundTx);
 
-  Texture* tx1 = new Constant_Texture(1.f);
-  Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
-  Texture* tx4 = new Constant_Texture(0.f);
-  Texture* tx3 = new Constant_Texture(0.4f);
-  Host_Material* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10, 10000);
-
   list.push(new Sphere(make_float3(0.f, -1000.f, -1.f), 1000.f, ground));
 
   for (int a = -11; a < 11; a++) {
@@ -66,22 +60,24 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
     }
   }
 
-  Host_Material* mt1 = new Dielectric(tx1, tx1, 1.5, 0.f);
-  list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt1));
+  Texture* tx1 = new Constant_Texture(1.f);
+  Host_Material* mt0 = new Dielectric(tx1, tx1, 1.5, 0.f);
+  list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt0));
 
-  Host_Material* mt0 = new Lambertian(tx1);
-  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt0));
+  Texture* tx2 = new Constant_Texture(0.4f, 0.2f, 0.1f);
+  Host_Material* mt2 = new Lambertian(tx2);
+  list.push(new Sphere(make_float3(0.f, 1.f, 0.5f), 1.f, mt2));
 
-  Host_Material* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.9f);
-  Host_Material* mt6 = new Oren_Nayar(tx1, 1.f);
-  list.push(new Sphere(make_float3(4.f, 1.f, 0.f), 1.f, mt1));
+  Texture* tx3 = new Constant_Texture(0.7f, 0.6f, 0.5f);
+  Host_Material* mt3 = new Metal(tx3, 0.f);
+  list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt3));
 
   // transforms list elements, one by one, and adds them to the graph
   list.addElementsTo(group, g_context);
   g_context["world"]->set(group);
 
   // configure camera
-  const float3 lookfrom = make_float3(13.f, 5.f, 3.f);
+  const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
@@ -130,15 +126,18 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
       float3 center = make_float3(a + rnd(), 0.2f, b + rnd());
       float3 center2 = center + make_float3(0.f, 0.5f * rnd(), 0.f);
       if (choose_mat < (1.f / 3)) {
-        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Texture* mtx = new Constant_Texture(
+            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
         Host_Material* lmt = new Lambertian(mtx);
         list.push(new Sphere(center, 0.2f, lmt));
       } else if (choose_mat < (2.f / 3)) {
-        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Texture* mtx = new Constant_Texture(
+            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
         Host_Material* lmt = new Metal(mtx, 0.5f * rnd());
         list.push(new Sphere(center, 0.2f, lmt));
       } else {
-        Texture* mtx = new Constant_Texture(0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
+        Texture* mtx = new Constant_Texture(
+            0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()), 0.5f * (1.f + rnd()));
         Host_Material* lmt = new Dielectric(mtx, mtx, 1.5, 0.f);
         list.push(new Sphere(center, 0.2f, lmt));
       }
@@ -241,12 +240,14 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   Hitable_List list;
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, X_AXIS, redMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, X_AXIS, greenMt));
-  list.push(new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, lightMt));
+  list.push(
+      new AARect(213.f, 343.f, 227.f, 332.f, 554.f, true, Y_AXIS, lightMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, whiteMt));
-  //list.push(new Sphere(make_float3(150.f, 90.f, 150.f), 90.f, glassMt));
-  list.push(new Sphere(make_float3(555.f - 150.f, 90.f, 555.f - 150.f), 90.f, alumMt));
+  // list.push(new Sphere(make_float3(150.f, 90.f, 150.f), 90.f, glassMt));
+  list.push(new Sphere(make_float3(555.f - 150.f, 90.f, 555.f - 150.f), 90.f,
+                       alumMt));
   /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
   list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
   mt6));*/
@@ -268,7 +269,7 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
 
-  Mesh model2 = Mesh("teapot20.obj", "../../../assets/", glassMt);
+  Mesh model2 = Mesh("teapot.obj", "../../../assets/teapot/", glassMt);
   model2.scale(make_float3(10.f));
   model2.rotate(180.f, Y_AXIS);
   model2.translate(make_float3(150.f, 0.f, 0.f));
@@ -416,7 +417,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, HDR, "../../../assets/HDR_111_Parking_Lot_2_Ref.hdr");
+  setMissProgram(g_context, HDR, "../../../assets/hdr/ennis.hdr");
   /*setMissProgram(g_context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
                  make_float3(0.5f, 0.7f, 1.f));  // light blue*/
@@ -437,14 +438,12 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   Texture* perlinZTx = new Noise_Texture(0.01f, Z_AXIS);
   Texture* pWhiteTx = new Constant_Texture(1.f);
   Texture* glass = new Constant_Texture(0.1f, 0.603f, 0.3f);
-  Texture* glassbase = new Constant_Texture(0.99f);
+  Texture* glassbase = new Constant_Texture(0.2f);
 
   // create materials
   Host_Material* whiteMt = new Lambertian(whiteTx);
   Host_Material* blackMt = new Lambertian(blackTx);
   Host_Material* alumMt = new Metal(alumTx, 0.0);
-  Host_Material* glassMt = new Dielectric(glass, glassbase, 1.5f, 0.f);
-  Host_Material* blueMt = new Dielectric(blueTx, blackTx, 1.5f, 0.f);
   Host_Material* normalMt = new Normal_Shader();
   Host_Material* shadingMt = new Normal_Shader(true);
   Host_Material* perlinXMt = new Lambertian(perlinXTx);
@@ -459,22 +458,24 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   if (modelID == 0) {
     Mesh_List meshList;
 
-    list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, perlinXMt));
+    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, perlinXMt));
 
     Texture* tx4 = new Constant_Texture(1.f);
     Texture* tx3 = new Constant_Texture(0.3f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
     Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
 
-    Mesh model2 = Mesh("teapot20.obj", "../../../assets/", glassMt);
+    Host_Material* glassMt = new Dielectric(glass, glassbase, 1.5f, 0.f);
+    Mesh model2 = Mesh("thin.obj", "../../../assets/teapot/", glassMt);
     model2.scale(make_float3(40.f));
-    model2.rotate(-90.f, X_AXIS);
+    // model2.rotate(-90.f, X_AXIS);
     model2.translate(make_float3(150.f, -600.f, 150.f));
     meshList.push(&model2);
 
-    meshList.addElementsTo(group, g_context);
+    // meshList.addElementsTo(group, g_context);
 
-    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS, whiteMt));
+    list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
+                         whiteMt));
   }
 
   // lucy

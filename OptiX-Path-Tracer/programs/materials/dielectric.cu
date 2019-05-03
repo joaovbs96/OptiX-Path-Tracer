@@ -46,7 +46,7 @@ RT_PROGRAM void closest_hit() {
   float3 N = hit_rec.shading_normal;
 
   float3 base_color = base_texture(u, v, P, index);
-  float3 absortion = make_float3(1.f);
+  float3 absorption = make_float3(1.f);
 
   float ni_over_nt;
   float cosine = dot(Wo, N);
@@ -59,9 +59,9 @@ RT_PROGRAM void closest_hit() {
 
     // Apply the Beer-Lambert Law
     float3 extinction = extinction_texture(u, v, P, index);
-    absortion = expf(-hit_rec.distance * extinction);
-  } 
-  
+    // absorption = expf(-hit_rec.distance * extinction);
+  }
+
   // Ray is entering the object
   else {
     ni_over_nt = 1.f / ref_idx;
@@ -71,26 +71,21 @@ RT_PROGRAM void closest_hit() {
   // Importance sample the Fresnel term
   float3 refracted;
   float reflect_prob;
-  if (refract(Wo, N, ni_over_nt, refracted))
-  //if(refract(refracted, Wo, normalize(N), ni_over_nt))
+  if (refract(refracted, Wo, N, ni_over_nt))
     reflect_prob = schlick(cosine, ref_idx);
   else
     reflect_prob = 1.f;
 
   // Ray should be reflected...
-  if (rnd(prd.seed) < reflect_prob) {
-    prd.direction = reflect(Wo, N);
-    prd.origin = hit_rec.front_P;
-  }
-  
+  if (rnd(prd.seed) < reflect_prob) prd.direction = reflect(Wo, N);
+
   // ...or refracted
-  else{
-    prd.direction = refracted;
-    prd.origin = hit_rec.back_P;
-  }
+  else
+    prd.direction = normalize(refracted);
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.throughput *= (base_color * absortion);
+  prd.origin = hit_rec.p;
+  prd.throughput *= (base_color * absorption);
   prd.isSpecular = true;
 }
