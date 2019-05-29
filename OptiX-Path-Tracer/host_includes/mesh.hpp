@@ -28,11 +28,10 @@ class Mesh {
         assetsFolder(assetsFolder),
         givenMaterial(nullptr) {}
 
-  Mesh(std::string fileName, Host_Material *givenMaterial)
+  Mesh(std::string fileName, BRDF *givenMaterial)
       : fileName(fileName), assetsFolder(""), givenMaterial(givenMaterial) {}
 
-  Mesh(std::string fileName, std::string assetsFolder,
-       Host_Material *givenMaterial)
+  Mesh(std::string fileName, std::string assetsFolder, BRDF *givenMaterial)
       : fileName(fileName),
         assetsFolder(assetsFolder),
         givenMaterial(givenMaterial) {}
@@ -65,7 +64,7 @@ class Mesh {
 
     // Convert Materials from MTL file
     std::map<std::string, int> material_map;  // [Name, index] map
-    Host_Material *host_material;
+    BRDF *host_material;
     if (givenMaterial == nullptr) {
       Texture_List textures;
 
@@ -257,8 +256,8 @@ class Mesh {
     }
   }
 
-  Host_Material *givenMaterial;
-  std::string fileName, assetsFolder;
+  BRDF *givenMaterial;
+  const std::string fileName, assetsFolder;
   std::vector<TransformParameter> arr;
 };
 

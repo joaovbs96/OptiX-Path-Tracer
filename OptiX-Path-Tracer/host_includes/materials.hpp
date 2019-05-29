@@ -24,7 +24,7 @@ extern "C" const char Hit_PTX[];
 //////////////////////////////////
 
 // Creates base Host Material class
-struct Host_Material {
+struct BRDF {
   virtual Material assignTo(Context &g_context) const = 0;
 
   // Creates device material object
@@ -40,7 +40,7 @@ struct Host_Material {
 };
 
 // Create Lambertian material
-struct Lambertian : public Host_Material {
+struct Lambertian : public BRDF {
   Lambertian(const Texture *t) : texture(t) {}
 
   // Assign host side Lambertian material to device Material object
@@ -58,7 +58,7 @@ struct Lambertian : public Host_Material {
 };
 
 // Create Metal material
-struct Metal : public Host_Material {
+struct Metal : public BRDF {
   Metal(const Texture *t, const float fuzz) : texture(t), fuzz(fuzz) {}
 
   // Assign host side Metal material to device Material object
@@ -78,7 +78,7 @@ struct Metal : public Host_Material {
 };
 
 // Create Dielectric material
-struct Dielectric : public Host_Material {
+struct Dielectric : public BRDF {
   Dielectric(const Texture *baseTex, const Texture *extTex, const float ref_idx,
              const float density = 0.f)
       : baseTex(baseTex), extTex(extTex), ref_idx(ref_idx), density(density) {}
@@ -103,7 +103,7 @@ struct Dielectric : public Host_Material {
 };
 
 // Create Diffuse Light material
-struct Diffuse_Light : public Host_Material {
+struct Diffuse_Light : public BRDF {
   Diffuse_Light(const Texture *t) : texture(t) {}
 
   // Assign host side Diffuse Light material to device Material object
@@ -122,7 +122,7 @@ struct Diffuse_Light : public Host_Material {
 };
 
 // Creates Isotropic material
-struct Isotropic : public Host_Material {
+struct Isotropic : public BRDF {
   Isotropic(const Texture *t) : texture(t) {}
 
   // Assign host side Isotropic material to device Material object
@@ -140,7 +140,7 @@ struct Isotropic : public Host_Material {
 };
 
 // Creates Normal Shader material
-struct Normal_Shader : public Host_Material {
+struct Normal_Shader : public BRDF {
   Normal_Shader(const bool useShadingNormal = false)
       : useShadingNormal(useShadingNormal) {}
 
@@ -159,7 +159,7 @@ struct Normal_Shader : public Host_Material {
 };
 
 // Creates Ashikhmin_Shirley Anisotropic material
-struct Ashikhmin_Shirley : public Host_Material {
+struct Ashikhmin_Shirley : public BRDF {
   Ashikhmin_Shirley(const Texture *diffuse_tex, const Texture *specular_tex,
                     const float nu, const float nv)
       : diffuse_tex(diffuse_tex), specular_tex(specular_tex), nu(nu), nv(nv) {}
@@ -188,7 +188,7 @@ struct Ashikhmin_Shirley : public Host_Material {
 };
 
 // Creates Oren-Nayar material
-struct Oren_Nayar : public Host_Material {
+struct Oren_Nayar : public BRDF {
   Oren_Nayar(const Texture *t, const float R) : texture(t) {
     // converts roughness to internal parameters
     float sigma = saturate(R);  // [0, 1]
@@ -215,7 +215,7 @@ struct Oren_Nayar : public Host_Material {
 };
 
 // Creates Torrance-Sparrow material
-struct Torrance_Sparrow : public Host_Material {
+struct Torrance_Sparrow : public BRDF {
   Torrance_Sparrow(const Texture *texture, const float nu, const float nv)
       : texture(texture), nu(nu), nv(nv) {}
 
