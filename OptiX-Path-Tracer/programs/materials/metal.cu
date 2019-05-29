@@ -21,22 +21,28 @@
 ////////////////////////////////////////
 
 // OptiX Context objects
-rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
-rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
-rtDeclareVariable(rtObject, world, , );                      // scene graph
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );            // ray PRD
+rtDeclareVariable(rtObject, world, , );                     // scene graph
+rtDeclareVariable(float, t_hit, rtIntersectionDistance, );  // hit distance
+
+// Intersected Geometry Parameters
+rtDeclareVariable(HitRecord_Function, Get_HitRecord, , );  // HitRecord function
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
 
 // Material Parameters
 rtDeclareVariable(Texture_Function, sample_texture, , );
 rtDeclareVariable(float, fuzz, , );
 
 RT_PROGRAM void closest_hit() {
-  int index = hit_rec.index;
-  float u = hit_rec.u, v = hit_rec.v;
-  float3 P = hit_rec.p, Wo = hit_rec.view_direction;
-  float3 N = hit_rec.shading_normal;
+  HitRecord rec = Get_HitRecord(geo_index, ray, t_hit, bc);
+  int index = rec.index;          // texture index
+  float3 P = rec.P;               // Hit Point
+  float3 Wo = rec.Wo;             // Ray view direction
+  float3 N = rec.shading_normal;  // normal
 
-  float3 color = sample_texture(u, v, P, index);
+  float3 color = sample_texture(rec.u, rec.v, P, index);
 
   // reflect ray
   float3 reflected = reflect(-Wo, N);
@@ -44,7 +50,7 @@ RT_PROGRAM void closest_hit() {
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.origin = hit_rec.p;
+  prd.origin = P;
   prd.throughput *= color;
   prd.isSpecular = true;
 }

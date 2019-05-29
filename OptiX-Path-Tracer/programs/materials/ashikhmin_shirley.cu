@@ -15,10 +15,15 @@
 // https://github.com/mmp/pbrt-v3/blob/9f717d847a807793fa966cf0eaa366852efef167/src/core/reflection.h
 
 // OptiX Context objects
-rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
-rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
-rtDeclareVariable(rtObject, world, , );                      // scene graph
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );            // ray PRD
+rtDeclareVariable(rtObject, world, , );                     // scene graph
+rtDeclareVariable(float, t_hit, rtIntersectionDistance, );  // hit distance
+
+// Intersected Geometry Parameters
+rtDeclareVariable(HitRecord_Function, Get_HitRecord, , );  // HitRecord function
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
 
 // Material Parameters
 rtDeclareVariable(Texture_Function, diffuse_color, , );
@@ -41,12 +46,13 @@ RT_FUNCTION Ashikhmin_Shirley_Parameters Get_Parameters(const float3 &P,
 
 // Assigns material and hit parameters to PRD
 RT_PROGRAM void closest_hit() {
-  int index = hit_rec.index;
-  float u = hit_rec.u, v = hit_rec.v;
-  float3 P = hit_rec.p, Wo = hit_rec.view_direction;
-  float3 N = hit_rec.shading_normal;
+  HitRecord rec = Get_HitRecord(geo_index, ray, t_hit, bc);
+  int index = rec.index;          // texture index
+  float3 P = rec.P;               // Hit Point
+  float3 Wo = rec.Wo;             // Ray view direction
+  float3 N = rec.shading_normal;  // normal
 
-  Ashikhmin_Shirley_Parameters surface = Get_Parameters(P, u, v, index);
+  Ashikhmin_Shirley_Parameters surface = Get_Parameters(P, rec.u, rec.v, index);
 
   // Sample BRDF
   float3 Wi = Sample(surface, P, Wo, N, prd.seed);
@@ -55,7 +61,7 @@ RT_PROGRAM void closest_hit() {
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.origin = hit_rec.p;
+  prd.origin = P;
   prd.direction = Wi;
   prd.throughput *= clamp(attenuation, 0.f, 1.f);
   prd.isSpecular = true;

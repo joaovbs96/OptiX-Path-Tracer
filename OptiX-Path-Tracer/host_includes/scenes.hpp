@@ -458,21 +458,21 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   if (modelID == 0) {
     Mesh_List meshList;
 
-    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, perlinXMt));
-
     Texture* tx4 = new Constant_Texture(1.f);
     Texture* tx3 = new Constant_Texture(0.3f);
     Host_Material* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
     Host_Material* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
 
-    Host_Material* glassMt = new Dielectric(glass, glassbase, 1.5f, 0.f);
-    Mesh model2 = Mesh("thin.obj", "../../../assets/teapot/", glassMt);
-    model2.scale(make_float3(40.f));
-    // model2.rotate(-90.f, X_AXIS);
-    model2.translate(make_float3(150.f, -600.f, 150.f));
+    Host_Material* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
+    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
+
+    Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt);
+    model2.scale(make_float3(100.f));
+    model2.rotate(-90.f, Y_AXIS);
+    model2.translate(make_float3(80.f, -500.f, 80.f));
     meshList.push(&model2);
 
-    // meshList.addElementsTo(group, g_context);
+    meshList.addElementsTo(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
@@ -538,7 +538,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // configure camera
   if ((modelID >= 0) && (modelID < 5)) {
-    const float3 lookfrom = make_float3(0.f, 0.f, -800.f);
+    const float3 lookfrom = make_float3(0.f, 10.f, -800.f);
     const float3 lookat = make_float3(0.f, 0.f, 0.f);
     const float3 up = make_float3(0.f, 1.f, 0.f);
     const float fovy(100.f);

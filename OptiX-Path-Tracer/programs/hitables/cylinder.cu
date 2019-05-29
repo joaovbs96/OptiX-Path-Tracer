@@ -1,7 +1,9 @@
+#include "../prd.cuh"
 #include "hitables.cuh"
 
-rtDeclareVariable(float3, P0, , ); // origin
-rtDeclareVariable(float3, P1, , ); // destination
+
+rtDeclareVariable(float3, P0, , );  // origin
+rtDeclareVariable(float3, P1, , );  // destination
 rtDeclareVariable(float, R, , );
 rtDeclareVariable(int, index, , );
 
@@ -9,7 +11,7 @@ rtDeclareVariable(Ray, ray, rtCurrentRay, );
 rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-RT_FUNCTION bool Intersect_Plane(const float3& P, const float3& N, float& t){
+RT_FUNCTION bool Intersect_Plane(const float3& P, const float3& N, float& t) {
   float denominator = dot(N, ray.direction);
 
   if (abs(denominator) < 1e-6f) return false;
@@ -20,14 +22,16 @@ RT_FUNCTION bool Intersect_Plane(const float3& P, const float3& N, float& t){
   return true;
 }
 
-RT_FUNCTION void Get_Intersection_Params(const float3& P, const float3& N, const float t){
-  hit_rec.distance = t;
+RT_FUNCTION void Get_Intersection_Params(const float3& P, const float3& N,
+                                         const float t) {
+  hit_rec.t = t;
 
-  hit_rec.view_direction = normalize(-ray.direction);
+  hit_rec.Wo = normalize(-ray.direction);
 
-  hit_rec.p = rtTransformPoint(RT_OBJECT_TO_WORLD, P);
+  hit_rec.P = rtTransformPoint(RT_OBJECT_TO_WORLD, P);
 
-  hit_rec.geometric_normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, N));
+  hit_rec.geometric_normal =
+      normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, N));
   hit_rec.shading_normal = hit_rec.geometric_normal;
 
   hit_rec.index = index;
@@ -41,7 +45,7 @@ RT_FUNCTION void Get_Intersection_Params(const float3& P, const float3& N, const
 // http://hugi.scene.org/online/hugi24/coding%20graphics%20chris%20dragan%20raytracing%20shapes.htm
 RT_PROGRAM void intersection(int pid) {
   float3 X = ray.origin - P0;
-  float3 V = (P1 - P0) / length(P1 - P0);      // axis
+  float3 V = (P1 - P0) / length(P1 - P0);  // axis
 
   const float DdotV = dot(ray.direction, V);
   const float DdotD = dot(ray.direction, ray.direction);
@@ -68,10 +72,10 @@ RT_PROGRAM void intersection(int pid) {
 
   // get the min T
   const float t01 = fminf(t0, t1);
-  
+
   float t23 = 0.f;
   float3 planeN;
-  if(t2 < t3){
+  if (t2 < t3) {
     planeN = normalize(-V);
     t23 = t2;
   } else {
@@ -79,9 +83,9 @@ RT_PROGRAM void intersection(int pid) {
     t23 = t3;
   }
 
-  if(t01 < t23){
+  if (t01 < t23) {
     // test for the mininmal cylinder root
-    if (t01 < ray.tmax && t01 > ray.tmin && rtPotentialIntersection(t01)){
+    if (t01 < ray.tmax && t01 > ray.tmin && rtPotentialIntersection(t01)) {
       float m = DdotV * t01 + XdotV;
       float3 hit_point = ray.origin + t01 * ray.direction;
       float3 normal = normalize(hit_point - P0 - V * m);
@@ -89,13 +93,12 @@ RT_PROGRAM void intersection(int pid) {
     }
   } else {
     // test for the minimal plane root
-    if (t23 < ray.tmax && t23 > ray.tmin && rtPotentialIntersection(t23)){
+    if (t23 < ray.tmax && t23 > ray.tmin && rtPotentialIntersection(t23)) {
       float3 hit_point = ray.origin + t23 * ray.direction;
       Get_Intersection_Params(hit_point, planeN, t23);
     }
   }
 }
-    
 
 // Cylinder AABB by Inigo Quilez
 // http://www.iquilezles.org/www/articles/diskbbox/diskbbox.htm

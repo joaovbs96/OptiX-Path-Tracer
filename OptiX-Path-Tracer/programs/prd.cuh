@@ -16,46 +16,49 @@
 
 #pragma once
 
+#include "hitables/hitables.cuh"
 #include "random.cuh"
 #include "vec.hpp"
 
+// Scatter events
 typedef enum {
   rayGotBounced,    // ray could get properly bounced, and is still alive
   rayGotCancelled,  // ray could not get scattered, and should get cancelled
   rayHitLight,      // ray hit a light, and should take emission into account
-  rayMissed,        // ray didn't hit anything, and went into the environemnt
+  rayMissed         // ray didn't hit anything, and went into the environemnt
 } ScatterEvent;
 
+// Struct containing
 struct HitRecord {
-  int index;
-  float distance;
-  float u;
-  float v;
+  int index;   // geometry texture index
+  float3 P;    // hit point
+  float t;     // distance from ray origin to hit point
+  float u, v;  // texcoords
+  float2 bc;   // triangle barycentric coordinates
   float3 geometric_normal;
   float3 shading_normal;
-  float3 front_P;
-  float3 back_P;
-  float3 p;
-  float3 view_direction;
+  float3 Wo;          // view direction(i.e. direction to camera)
+  GeometryType type;  // type of geometry
 };
 
-/*! "per ray data" (PRD) for our sample's rays. In the simple example, there is
-  only one ray type, and it only ever returns one thing, which is a color
-  (everything else is handled through the recursion). In addition to that return
-  type, rays have to carry recursion state, which in this case are recursion
-  depth and random number state */
+// Radiance PRD containing variables that should be propagated as the ray
+// scatters. It's also how the closest hit and ray gen programs communicate.
 struct PerRayData {
+  // data related to the current sample
   uint seed;
   float time;
+  float3 throughput, radiance;
 
+  // data related to the last hit
   ScatterEvent scatterEvent;
-  float3 origin;
-  float3 direction;
-  float3 throughput;
-  float3 radiance;
   bool isSpecular;
+
+  // data related to the next ray
+  float3 origin, direction;
 };
 
+// Shadow Ray PRD
 struct PerRayData_Shadow {
   bool inShadow;
+  float3 normal;
 };

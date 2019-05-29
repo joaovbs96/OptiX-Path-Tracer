@@ -21,16 +21,23 @@
 ///////////////////////////////////
 
 // OptiX Context objects
-rtDeclareVariable(Ray, ray, rtCurrentRay, );                 // current ray
-rtDeclareVariable(PerRayData, prd, rtPayload, );             // ray PRD
-rtDeclareVariable(rtObject, world, , );                      // scene graph
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );  // from geometry
+rtDeclareVariable(Ray, ray, rtCurrentRay, );                // current ray
+rtDeclareVariable(PerRayData, prd, rtPayload, );            // ray PRD
+rtDeclareVariable(rtObject, world, , );                     // scene graph
+rtDeclareVariable(float, t_hit, rtIntersectionDistance, );  // hit distance
+
+// Intersected Geometry Attributes
+rtDeclareVariable(HitRecord_Function, Get_HitRecord, , );  // HitRecord function
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
 
 // Material Parameters
 rtDeclareVariable(Texture_Function, sample_texture, , );
 
-RT_FUNCTION Lambertian_Parameters Get_Parameters(const float3 &P, float u,
-                                                 float v, int index) {
+RT_FUNCTION Lambertian_Parameters Get_Parameters(const float3 &P,  // hit point
+                                                 float u,  // texture coord x
+                                                 float v,  // texture coord y
+                                                 int index) {  // texture index
   Lambertian_Parameters surface;
 
   surface.color = sample_texture(u, v, P, index);
@@ -40,12 +47,13 @@ RT_FUNCTION Lambertian_Parameters Get_Parameters(const float3 &P, float u,
 
 // Lambertian Material Closest Hit Program
 RT_PROGRAM void closest_hit() {
-  int index = hit_rec.index;
-  float u = hit_rec.u, v = hit_rec.v;
-  float3 P = hit_rec.p, Wo = hit_rec.view_direction;
-  float3 N = hit_rec.shading_normal;
+  HitRecord rec = Get_HitRecord(geo_index, ray, t_hit, bc);
+  int index = rec.index;          // texture index
+  float3 P = rec.P;               // Hit Point
+  float3 Wo = rec.Wo;             // Ray view direction
+  float3 N = rec.shading_normal;  // normal
 
-  Lambertian_Parameters surface = Get_Parameters(P, u, v, index);
+  Lambertian_Parameters surface = Get_Parameters(P, rec.u, rec.v, index);
 
   // Sample Direct Light
   float3 direct = Direct_Light(surface, P, Wo, N, false, prd.seed);
@@ -58,7 +66,7 @@ RT_PROGRAM void closest_hit() {
 
   // Assign parameters to PRD
   prd.scatterEvent = rayGotBounced;
-  prd.origin = hit_rec.p;
+  prd.origin = P;
   prd.direction = Wi;
   prd.throughput *= clamp(attenuation / pdf, 0.f, 1.f);
   prd.isSpecular = false;

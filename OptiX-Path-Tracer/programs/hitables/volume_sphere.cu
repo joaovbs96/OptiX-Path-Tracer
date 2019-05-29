@@ -1,5 +1,6 @@
-#include "../random.cuh"
+#include "../prd.cuh"
 #include "hitables.cuh"
+
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center, , );
@@ -80,13 +81,13 @@ RT_PROGRAM void hit_sphere(int pid) {
       float temp = rec1 + hit_distance / length(ray.direction);
 
       if (rtPotentialIntersection(temp)) {
-        hit_rec.distance = temp;
+        hit_rec.t = temp;
 
-        hit_rec.view_direction = normalize(-ray.direction);
+        hit_rec.Wo = normalize(-ray.direction);
 
         float3 hit_point = ray.origin + temp * ray.direction;
         hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-        hit_rec.p = hit_point;
+        hit_rec.P = hit_point;
 
         float3 normal = make_float3(1.f, 0.f, 0.f);
         normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));

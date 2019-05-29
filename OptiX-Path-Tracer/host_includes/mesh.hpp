@@ -8,6 +8,7 @@
 #include <map>
 
 extern "C" const char Mesh_PTX[];
+extern "C" const char Old_Mesh_PTX[];
 
 // Sources:
 // - GeometryTriangles setup from the OptiX 6.0 SDK samples
@@ -62,11 +63,9 @@ class Mesh {
       exit(0);
     }
 
-    // Convert Materials
-    Material device_material;  // material object to be passed to device
+    // Convert Materials from MTL file
     std::map<std::string, int> material_map;  // [Name, index] map
-
-    // if no material is given, convert MTL file
+    Host_Material *host_material;
     if (givenMaterial == nullptr) {
       Texture_List textures;
 
@@ -88,13 +87,11 @@ class Mesh {
       }
 
       // Create a vector of textures
-      Host_Material *host_material;
       host_material = new Lambertian(new Vector_Texture(textures.texList));
-      device_material = host_material->assignTo(g_context);
+    } else {
+      // Use given material object
+      host_material = givenMaterial;
     }
-
-    else  // a Material was given, assign it to the Mesh
-      device_material = givenMaterial->assignTo(g_context);
 
     // Convert Geoemtry
     std::vector<int> mat_vector;             // material index vector
@@ -102,7 +99,7 @@ class Mesh {
     std::vector<float2> t_vector;            // texcoord vector
     std::vector<float3> v_vector, n_vector;  // vertex and normal vector
 
-    int index = 0;
+    int index = 0, n_faces = 0;
     std::vector<tinyobj::shape_t>::const_iterator it;
     for (it = shapes.begin(); it < shapes.end(); ++it) {
       const tinyobj::shape_t &shape = *it;
@@ -115,19 +112,19 @@ class Mesh {
         tinyobj::index_t idx2 = shape.mesh.indices[3 * f + 2];
 
         // get the vertex coordinates
-        v_vector.push_back(make_Vertex3(attrib.vertices, idx0.vertex_index));
-        v_vector.push_back(make_Vertex3(attrib.vertices, idx1.vertex_index));
-        v_vector.push_back(make_Vertex3(attrib.vertices, idx2.vertex_index));
+        make_Vertex3(v_vector, attrib.vertices, idx0.vertex_index);
+        make_Vertex3(v_vector, attrib.vertices, idx1.vertex_index);
+        make_Vertex3(v_vector, attrib.vertices, idx2.vertex_index);
 
         // get the normal coordinates
-        n_vector.push_back(make_Vertex3(attrib.normals, idx0.normal_index));
-        n_vector.push_back(make_Vertex3(attrib.normals, idx1.normal_index));
-        n_vector.push_back(make_Vertex3(attrib.normals, idx2.normal_index));
+        make_Vertex3(n_vector, attrib.normals, idx0.normal_index);
+        make_Vertex3(n_vector, attrib.normals, idx1.normal_index);
+        make_Vertex3(n_vector, attrib.normals, idx2.normal_index);
 
         // get the vertex tex coordinates
-        t_vector.push_back(make_Vertex2(attrib.texcoords, idx0.texcoord_index));
-        t_vector.push_back(make_Vertex2(attrib.texcoords, idx1.texcoord_index));
-        t_vector.push_back(make_Vertex2(attrib.texcoords, idx2.texcoord_index));
+        make_Vertex2(t_vector, attrib.texcoords, idx0.texcoord_index);
+        make_Vertex2(t_vector, attrib.texcoords, idx1.texcoord_index);
+        make_Vertex2(t_vector, attrib.texcoords, idx2.texcoord_index);
 
         // set index vector
         i_vector.push_back(make_uint3(index++, index++, index++));
@@ -138,38 +135,66 @@ class Mesh {
           mat_vector.push_back(m);
         } else
           mat_vector.push_back(0);  // uses the material given as parameter
+
+        n_faces++;
       }
     }
 
-    // Create a GeometryTriangles object
-    optix::GeometryTriangles geom_tri = g_context->createGeometryTriangles();
+    // create GeometryInstance
+    GeometryInstance gi = g_context->createGeometryInstance();
 
-    // create buffers
+    // Create Geometry parameters callable program
+    Program prog = createProgram(Mesh_PTX, "Get_HitRecord", g_context);
+
+    // create and set buffers
     Buffer v_buffer = createBuffer(v_vector, g_context);
     Buffer n_buffer = createBuffer(n_vector, g_context);
     Buffer t_buffer = createBuffer(t_vector, g_context);
     Buffer i_buffer = createBuffer(i_vector, g_context);
     Buffer m_buffer = createBuffer(mat_vector, g_context);
 
-    // set GeometryTriangles parameters
-    geom_tri->setPrimitiveCount((int)i_vector.size());
-    geom_tri->setTriangleIndices(i_buffer, RT_FORMAT_UNSIGNED_INT3);
-    geom_tri->setVertices((int)v_vector.size(), v_buffer, RT_FORMAT_FLOAT3);
-    geom_tri->setBuildFlags(RTgeometrybuildflags(0));
+    // assign programs and paramters to GeometryInstance
+    gi["vertex_buffer"]->setBuffer(v_buffer);
+    gi["normal_buffer"]->setBuffer(n_buffer);
+    gi["texcoord_buffer"]->setBuffer(t_buffer);
+    gi["index_buffer"]->setBuffer(i_buffer);
+    gi["material_buffer"]->setBuffer(m_buffer);
+    gi["Get_HitRecord"]->set(prog);
 
-    // Set buffers
-    geom_tri["vertex_buffer"]->setBuffer(v_buffer);
-    geom_tri["normal_buffer"]->setBuffer(n_buffer);
-    geom_tri["texcoord_buffer"]->setBuffer(t_buffer);
-    geom_tri["index_buffer"]->setBuffer(i_buffer);
-    geom_tri["material_buffer"]->setBuffer(m_buffer);
+    // set material
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, host_material->assignTo(g_context));
 
-    // Set attribute program
-    Program att = createProgram(Mesh_PTX, "attributes", g_context);
-    geom_tri->setAttributeProgram(att);
+    // TODO: get this attribute from the main function
+    bool RTX_MODE = true;
+    if (RTX_MODE) {
+      // Create a GeometryTriangles object
+      GeometryTriangles geometry = g_context->createGeometryTriangles();
+      geometry->setPrimitiveCount((int)i_vector.size());
+      geometry->setTriangleIndices(i_buffer, RT_FORMAT_UNSIGNED_INT3);
+      geometry->setVertices((int)v_vector.size(), v_buffer, RT_FORMAT_FLOAT3);
+      geometry->setBuildFlags(RTgeometrybuildflags(0));
 
-    // returns GeometryInstance
-    return g_context->createGeometryInstance(geom_tri, device_material);
+      // Set attribute program
+      Program att = createProgram(Mesh_PTX, "TriangleAttributes", g_context);
+      geometry->setAttributeProgram(att);
+
+      gi->setGeometryTriangles(geometry);
+    } else {
+      // Create a Geometry object
+      Geometry geometry = g_context->createGeometry();
+      geometry->setPrimitiveCount(n_faces);
+
+      // Set intersection and bounding box programs
+      Program bound = createProgram(Old_Mesh_PTX, "bounds", g_context);
+      geometry->setBoundingBoxProgram(bound);
+      Program inter = createProgram(Old_Mesh_PTX, "intersection", g_context);
+      geometry->setIntersectionProgram(inter);
+
+      gi->setGeometry(geometry);
+    }
+
+    return gi;
   }
 
   // Apply a rotation to the hitable
@@ -212,22 +237,28 @@ class Mesh {
 
  private:
   // Make a float3 vertex out of a vector and an index
-  float3 make_Vertex3(std::vector<tinyobj::real_t> &vertices, int index) {
-    float x = vertices[3 * index + 0];
-    float y = vertices[3 * index + 1];
-    float z = vertices[3 * index + 2];
-    return make_float3(x, y, z);
+  void make_Vertex3(std::vector<float3> &vertex_list,
+                    std::vector<tinyobj::real_t> &attribs, int index) {
+    if (index >= 0) {
+      float x = attribs[3 * index + 0];
+      float y = attribs[3 * index + 1];
+      float z = attribs[3 * index + 2];
+      vertex_list.push_back(make_float3(x, y, z));
+    }
   }
 
   // Make a float2 vertex out of a vector and an index
-  float2 make_Vertex2(std::vector<tinyobj::real_t> &vertices, int index) {
-    float x = vertices[2 * index + 0];
-    float y = vertices[2 * index + 1];
-    return make_float2(x, y);
+  void make_Vertex2(std::vector<float2> &vertex_list,
+                    std::vector<tinyobj::real_t> &attribs, int index) {
+    if (index >= 0) {
+      float x = attribs[2 * index + 0];
+      float y = attribs[2 * index + 1];
+      vertex_list.push_back(make_float2(x, y));
+    }
   }
 
-  const Host_Material *givenMaterial;
-  const std::string fileName, assetsFolder;
+  Host_Material *givenMaterial;
+  std::string fileName, assetsFolder;
   std::vector<TransformParameter> arr;
 };
 

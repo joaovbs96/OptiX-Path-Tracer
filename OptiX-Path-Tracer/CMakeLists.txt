@@ -47,6 +47,7 @@ cuda_compile_and_embed( Oren_Nayar_PTX programs/materials/oren_nayar.cu )
 cuda_compile_and_embed( Torrance_PTX programs/materials/torrance_sparrow.cu )
 cuda_compile_and_embed( Cylinder_PTX programs/hitables/cylinder.cu )
 cuda_compile_and_embed( Gradient_PTX programs/textures/gradient_texture.cu )
+cuda_compile_and_embed( Old_Mesh_PTX programs/hitables/mesh.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -90,6 +91,7 @@ add_executable(OptiX_Path_Tracer
   ${Volume_Box_PTX}
   ${Triangle_PTX}
   ${Mesh_PTX}
+  ${Old_Mesh_PTX}
   ${Cylinder_PTX}
 
   # Material Programs

@@ -93,25 +93,33 @@ class Sphere : public Hitable {
 
   // Creates a GeometryInstance object of a sphere primitive
   virtual GeometryInstance getGeometryInstance(Context &g_context) override {
+    GeometryInstance gi = g_context->createGeometryInstance();
+
+    // set material
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, material->assignTo(g_context));
+
+    // Create Geometry parameters callable program
+    Program prog = createProgram(Sphere_PTX, "Get_HitRecord", g_context);
+
+    // Basic Parameters
+    gi["center"]->setFloat(center.x, center.y, center.z);
+    gi["radius"]->setFloat(radius);
+    gi["Get_HitRecord"]->set(prog);
+
     // Create Geometry variable
-    geometry = g_context->createGeometry();
+    Geometry geometry = g_context->createGeometry();
     geometry->setPrimitiveCount(1);
 
-    // Set bounding box program
+    // Set intersection and bounding box programs
     Program bb = createProgram(Sphere_PTX, "get_bounds", g_context);
     geometry->setBoundingBoxProgram(bb);
-
-    // Set intersection program
     Program hit = createProgram(Sphere_PTX, "hit_sphere", g_context);
     geometry->setIntersectionProgram(hit);
 
-    // Basic Parameters
-    geometry["center"]->setFloat(center.x, center.y, center.z);
-    geometry["radius"]->setFloat(radius);
-    geometry["index"]->setInt(0);
+    gi->setGeometry(geometry);
 
-    // returns new GeometryInstance
-    return createGeometryInstance(g_context);
+    return gi;
   }
 
  protected:
@@ -223,42 +231,38 @@ class AARect : public Hitable {
 
   // Creates a GeometryInstance object of a rectangle primitive
   virtual GeometryInstance getGeometryInstance(Context &g_context) override {
-    // Create Geometry variable
-    geometry = g_context->createGeometry();
+    GeometryInstance gi = g_context->createGeometryInstance();
+
+    // set material
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, material->assignTo(g_context));
+
+    // Create a Geometry object and set programs
+    Geometry geometry = g_context->createGeometry();
     geometry->setPrimitiveCount(1);
 
-    // Set bounding box and intersection programs depending on axis
-    Program bound, intersect;
-    switch (axis) {
-      case X_AXIS:
-        bound = createProgram(AARect_PTX, "get_bounds_X", g_context);
-        intersect = createProgram(AARect_PTX, "hit_rect_X", g_context);
-        break;
-
-      case Y_AXIS:
-        bound = createProgram(AARect_PTX, "get_bounds_Y", g_context);
-        intersect = createProgram(AARect_PTX, "hit_rect_Y", g_context);
-        break;
-
-      case Z_AXIS:
-        bound = createProgram(AARect_PTX, "get_bounds_Z", g_context);
-        intersect = createProgram(AARect_PTX, "hit_rect_Z", g_context);
-        break;
-    }
+    // Create intersection and bounding box programs
+    Program bound = createProgram(AARect_PTX, "Get_Bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
+    Program intersect = createProgram(AARect_PTX, "Hit_Rect", g_context);
     geometry->setIntersectionProgram(intersect);
 
-    // Basic Parameters
-    geometry["a0"]->setFloat(a0);
-    geometry["a1"]->setFloat(a1);
-    geometry["b0"]->setFloat(b0);
-    geometry["b1"]->setFloat(b1);
-    geometry["k"]->setFloat(k);
-    geometry["flip"]->setInt(flip);
-    geometry["index"]->setInt(0);
+    // Create Geometry parameters callable program
+    Program prog = createProgram(AARect_PTX, "Get_HitRecord", g_context);
 
-    // returns new GeometryInstance
-    return createGeometryInstance(g_context);
+    // Basic Parameters
+    gi["axis"]->setInt(int(axis));
+    gi["a0"]->setFloat(a0);
+    gi["a1"]->setFloat(a1);
+    gi["b0"]->setFloat(b0);
+    gi["b1"]->setFloat(b1);
+    gi["k"]->setFloat(k);
+    gi["flip"]->setInt(flip);
+    gi["Get_HitRecord"]->set(prog);
+
+    gi->setGeometry(geometry);
+
+    return gi;
   }
 
  protected:
@@ -275,25 +279,35 @@ class Box : public Hitable {
 
   // Creates a GeometryInstance object of a Box primitive
   virtual GeometryInstance getGeometryInstance(Context &g_context) override {
-    // Create Geometry variable
-    geometry = g_context->createGeometry();
+    GeometryInstance gi = g_context->createGeometryInstance();
+
+    // set material
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, material->assignTo(g_context));
+
+    // Create a Geometry object and set programs
+    Geometry geometry = g_context->createGeometry();
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bound = createProgram(Box_PTX, "get_bounds", g_context);
+    Program bound = createProgram(Box_PTX, "Get_Bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program intersect = createProgram(Box_PTX, "hit_box", g_context);
+    Program intersect = createProgram(Box_PTX, "Intersect", g_context);
     geometry->setIntersectionProgram(intersect);
 
-    // Basic parameters
-    geometry["boxmin"]->setFloat(p0.x, p0.y, p0.z);
-    geometry["boxmax"]->setFloat(p1.x, p1.y, p1.z);
-    geometry["index"]->setInt(0);
+    // Create Geometry parameters callable program
+    Program prog = createProgram(Box_PTX, "Get_HitRecord", g_context);
 
-    // returns new GeometryInstance
-    return createGeometryInstance(g_context);
+    // Basic parameters
+    gi["boxmin"]->setFloat(p0.x, p0.y, p0.z);
+    gi["boxmax"]->setFloat(p1.x, p1.y, p1.z);
+    gi["Get_HitRecord"]->set(prog);
+
+    gi->setGeometry(geometry);
+
+    return gi;
   }
 
  protected:

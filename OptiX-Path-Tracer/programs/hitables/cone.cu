@@ -1,17 +1,17 @@
+#include "../prd.cuh"
 #include "hitables.cuh"
 
-rtDeclareVariable(float3, P0, , ); // origin
-rtDeclareVariable(float3, P1, , ); // destination
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
+rtDeclareVariable(PerRayData, prd, rtPayload, );
+
+rtDeclareVariable(float3, P0, , );  // origin
+rtDeclareVariable(float3, P1, , );  // destination
 rtDeclareVariable(float, r0, , );
 rtDeclareVariable(float, r1, , );
 rtDeclareVariable(int, index, , );
 
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-
 RT_PROGRAM void hit_sphere(int pid) {
-  float3 V = (P1 - P0) / length(P1 - P0);      // axis
+  float3 V = (P1 - P0) / length(P1 - P0);  // axis
 
   float3 X = ray.origin - P0;
 

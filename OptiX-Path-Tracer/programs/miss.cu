@@ -16,15 +16,15 @@
 
 #include "materials/material.cuh"
 
-// the implicit state's ray we will intersect against
+// OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
-// the per ray data we operate on
 rtDeclareVariable(PerRayData, prd, rtPayload, );
 
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_color1, , );
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_color2, , );
+// Texture Samplers
+// TODO: remove one of these
+rtDeclareVariable(Texture_Function, sample_color1, , );
+rtDeclareVariable(Texture_Function, sample_color2, , );
+rtDeclareVariable(Texture_Function, sample_texture, , );
 
 // Gradient Color Background
 RT_PROGRAM void gradient_color() {
@@ -38,10 +38,6 @@ RT_PROGRAM void gradient_color() {
   prd.throughput *= c;
   prd.scatterEvent = rayMissed;
 }
-
-// texture sampling
-rtDeclareVariable(rtCallableProgramId<float3(float, float, float3, int)>,
-                  sample_texture, , );
 
 // Constant Color Background
 RT_PROGRAM void constant_color() {

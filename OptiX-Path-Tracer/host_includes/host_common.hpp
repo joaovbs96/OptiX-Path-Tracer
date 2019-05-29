@@ -18,9 +18,15 @@
 #include "../lib/HDRloader.h"
 
 // encapsulates PTX string program creation
-Program createProgram(const char file[], const std::string &program,
+Program createProgram(const char file[], const std::string &name,
                       Context &g_context) {
-  return g_context->createProgramFromPTXString(file, program);
+  Program program = g_context->createProgramFromPTXString(file, name);
+
+  if (rtProgramValidate(program->get()) != RT_SUCCESS) {
+    throw "Program " + name + " is not complete.\n";
+  }
+
+  return program;
 }
 
 float rnd() {

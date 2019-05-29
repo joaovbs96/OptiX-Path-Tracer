@@ -24,8 +24,8 @@
 // Typedef of Texture callable program calls
 typedef rtCallableProgramId<float3(float, float, float3, int)> Texture_Function;
 
-// returns smallest integer not less than a scalar or each vector component
-// RT_FUNCTION float saturate(float x) { return fmaxf(0.f, fminf(1.f, x)); }
+// Typedef of geometry parameters callable program calls
+typedef rtCallableProgramX<HitRecord(int, Ray, float, float2)> HitRecord_Function;
 
 RT_FUNCTION float schlick(float cosine, float ref_idx) {
   float r0 = (1.f - ref_idx) / (1.f + ref_idx);
@@ -47,7 +47,9 @@ RT_FUNCTION float SchlickR0FromRelativeIOR(float eta) {
   return ((eta - 1.f) * (eta - 1.f)) / ((eta + 1.f) * (eta + 1.f));
 }
 
-RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
+RT_FUNCTION bool Refract(const float3& v,   // origin
+                         const float3& n,   // normal
+                         float ni_over_nt,  // ni over nt
                          float3& refracted) {
   float3 uv = normalize(v);
   float dt = dot(uv, n);
@@ -60,25 +62,28 @@ RT_FUNCTION bool refract(const float3& v, const float3& n, float ni_over_nt,
     return false;
 }
 
-RT_FUNCTION bool Transmit(float3 wm, float3 wi, float n, float3& wo) {
-  float c = dot(wi, wm);
-  if (c < 0.f) {
-    c = -c;
-    wm = -wm;
+RT_FUNCTION float FrDielectric(float _cosThetaI, float _etaI, float _etaT) {
+  float etaI = _etaI, etaT = _etaT;
+  float cosThetaI = clamp(_cosThetaI, -1.f, 1.f);
+  // Potentially swap indices of refraction
+  bool entering = cosThetaI > 0.f;
+  if (!entering) {
+    // float temp = etaI;
+    etaI = etaT;
+    etaT = etaI;
+    cosThetaI = fabsf(cosThetaI);
   }
 
-  float root = 1.f - n * n * (1.f - c * c);
-  if (root <= 0.f) return false;
+  // Compute _cosThetaT_ using Snell's law
+  float sinThetaI = sqrtf(fmaxf(0.f, 1.f - cosThetaI * cosThetaI));
+  float sinThetaT = etaI / etaT * sinThetaI;
 
-  wo = (n * c - sqrtf(root)) * wm - n * wi;
-  return true;
-}
-
-RT_FUNCTION float fresnel(float cos_theta_i, float cos_theta_t, float eta){
-    const float rs = ( cos_theta_i - cos_theta_t* eta ) / 
-                     ( cos_theta_i + eta*cos_theta_t );
-    const float rp = ( cos_theta_i*eta - cos_theta_t ) /
-                     ( cos_theta_i*eta + cos_theta_t );
-
-    return 0.5f * ( rs*rs + rp*rp );
+  // Handle total internal reflection
+  if (sinThetaT >= 1) return 1.f;
+  float cosThetaT = sqrtf(fmaxf(0.f, 1.f - sinThetaT * sinThetaT));
+  float Rparl = ((etaT * cosThetaI) - (etaI * cosThetaT)) /
+                ((etaT * cosThetaI) + (etaI * cosThetaT));
+  float Rperp = ((etaI * cosThetaI) - (etaT * cosThetaT)) /
+                ((etaI * cosThetaI) + (etaT * cosThetaT));
+  return (Rparl * Rparl + Rperp * Rperp) / 2;
 }

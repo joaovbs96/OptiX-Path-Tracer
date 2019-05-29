@@ -1,4 +1,6 @@
+#include "../prd.cuh"
 #include "hitables.cuh"
+
 
 /*! the parameters that describe each individual triangle geometry */
 rtDeclareVariable(float3, a, , );
@@ -48,13 +50,13 @@ RT_PROGRAM void hit_triangle(int pid) {
   float t(dot(qVec, e2) / aNum);
   if (t < ray.tmax && t > ray.tmin) {
     if (rtPotentialIntersection(t)) {
-      hit_rec.distance = t;
+      hit_rec.t = t;
 
-      hit_rec.view_direction = normalize(-ray.direction);
+      hit_rec.Wo = normalize(-ray.direction);
 
       float3 hit_point = ray.origin + t * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.p = hit_point;
+      hit_rec.P = hit_point;
 
       float3 Ng = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.geometric_normal = Ng;

@@ -60,6 +60,7 @@ RT_FUNCTION float3 Direct_Light(T &surface,        // surface parameters
 
   // Check if light is occluded
   PerRayData_Shadow prdShadow;
+  prdShadow.normal = N;
   Ray shadowRay = make_Ray(/* origin   : */ P,
                            /* direction: */ Wi,
                            /* ray type : */ 1,

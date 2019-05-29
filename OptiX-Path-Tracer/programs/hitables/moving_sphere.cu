@@ -14,7 +14,9 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
+#include "../prd.cuh"
 #include "hitables.cuh"
+
 
 /*! the parameters that describe each individual sphere geometry */
 rtDeclareVariable(float3, center0, , );
@@ -53,7 +55,7 @@ RT_FUNCTION float3 center(float time) {
 // stable variants out there, but for now let's stick with the one that
 // the reference code used.
 RT_PROGRAM void hit_sphere(int pid) {
-  //float pt;
+  // float pt;
   // int2 idx = Get_Motion_Data(motionRange, curTime, vertex_buffers.size(),
   // pt);
 
@@ -80,20 +82,20 @@ RT_PROGRAM void hit_sphere(int pid) {
   // if the first root was a hit,
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
-      hit_rec.distance = temp;
+      hit_rec.t = temp;
 
-      hit_rec.view_direction = normalize(-ray.direction);
+      hit_rec.Wo = normalize(-ray.direction);
 
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.p = hit_point;
+      hit_rec.P = hit_point;
 
-      float3 normal = (hit_rec.p - center(prd.time)) / radius;
+      float3 normal = (hit_rec.P - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.geometric_normal = normal;
       hit_rec.shading_normal = hit_rec.geometric_normal;
 
-      get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
+      get_sphere_uv((hit_rec.P - center(prd.time)) / radius);
 
       hit_rec.index = index;
 
@@ -105,20 +107,20 @@ RT_PROGRAM void hit_sphere(int pid) {
   temp = (-b + sqrtf(discriminant)) / a;
   if (temp < ray.tmax && temp > ray.tmin) {
     if (rtPotentialIntersection(temp)) {
-      hit_rec.distance = temp;
+      hit_rec.t = temp;
 
-      hit_rec.view_direction = normalize(-ray.direction);
+      hit_rec.Wo = normalize(-ray.direction);
 
       float3 hit_point = ray.origin + temp * ray.direction;
       hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.p = hit_point;
+      hit_rec.P = hit_point;
 
-      float3 normal = (hit_rec.p - center(prd.time)) / radius;
+      float3 normal = (hit_rec.P - center(prd.time)) / radius;
       normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
       hit_rec.geometric_normal = normal;
       hit_rec.shading_normal = hit_rec.geometric_normal;
 
-      get_sphere_uv((hit_rec.p - center(prd.time)) / radius);
+      get_sphere_uv((hit_rec.P - center(prd.time)) / radius);
 
       hit_rec.index = index;
 

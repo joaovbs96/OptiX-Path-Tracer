@@ -14,37 +14,21 @@
 // limitations under the License.                                           //
 // ======================================================================== //
 
+#include "../prd.cuh"
 #include "hitables.cuh"
 
-/*! the parameters that describe each individual sphere geometry */
-rtDeclareVariable(float3, center, , );
-rtDeclareVariable(float, radius, , );
-rtDeclareVariable(int, index, , );
-
-/*! the implicit state's ray we will intersect against */
+// OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
-/*! the attributes we use to communicate between intersection programs and hit
- * program */
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
+// Intersected Geometry Attributes
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
 
-/*! the per ray data we operate on */
-rtDeclareVariable(PerRayData, prd, rtPayload, );
+// Primitive Parameters
+rtDeclareVariable(float3, center, , );
+rtDeclareVariable(float, radius, , );
 
-RT_FUNCTION void get_sphere_uv(const float3& p) {
-  float phi = atan2(p.z, p.x);
-  float theta = asin(p.y);
-
-  hit_rec.u = 1.f - (phi + PI_F) / (2.f * PI_F);
-  hit_rec.v = (theta + PI_F / 2.f) / PI_F;
-}
-
-// Program that performs the ray-sphere intersection
-//
-// note that this is here is a simple, but not necessarily most numerically
-// stable ray-sphere intersection variant out there. There are more
-// stable variants out there, but for now let's stick with the one that
-// the reference code used.
+// Checks if Ray intersects Sphere and computes hit distance
 RT_PROGRAM void hit_sphere(int pid) {
   const float3 oc = ray.origin - center;
 
@@ -62,64 +46,53 @@ RT_PROGRAM void hit_sphere(int pid) {
   if (discriminant < 0.f) return;
 
   // first root of the sphere equation:
-  float temp = (-b - sqrtf(discriminant)) / a;
-
-  // for a sphere, its normal is in (hitpoint - center)
-
-  // if the first root was a hit,
-  if (temp < ray.tmax && temp > ray.tmin) {
-    if (rtPotentialIntersection(temp)) {
-      hit_rec.distance = temp;
-
-      hit_rec.view_direction = normalize(-ray.direction);
-
-      float3 hit_point = ray.origin + temp * ray.direction;
-      hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.p = hit_point;
-
-      float3 normal = (hit_rec.p - center) / radius;
-      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.geometric_normal = normal;
-      hit_rec.shading_normal = hit_rec.geometric_normal;
-
-      get_sphere_uv((hit_rec.p - center) / radius);
-
-      hit_rec.index = index;
-
-      rtReportIntersection(0);
-    }
+  float t = (-b - sqrtf(discriminant)) / a;
+  if (rtPotentialIntersection(t)) {
+    geo_index = 0;
+    bc = make_float2(0);
+    rtReportIntersection(0);
   }
 
-  // if the second root was a hit,
-  temp = (-b + sqrtf(discriminant)) / a;
-  if (temp < ray.tmax && temp > ray.tmin) {
-    if (rtPotentialIntersection(temp)) {
-      hit_rec.distance = temp;
-
-      hit_rec.view_direction = normalize(-ray.direction);
-
-      float3 hit_point = ray.origin + temp * ray.direction;
-      hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.p = hit_point;
-
-      float3 normal = (hit_rec.p - center) / radius;
-      normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.geometric_normal = normal;
-      hit_rec.shading_normal = hit_rec.geometric_normal;
-
-      get_sphere_uv((hit_rec.p - center) / radius);
-
-      hit_rec.index = index;
-
-      rtReportIntersection(0);
-    }
+  t = (-b + sqrtf(discriminant)) / a;
+  if (rtPotentialIntersection(t)) {
+    geo_index = 0;
+    bc = make_float2(0);
+    rtReportIntersection(0);
   }
 }
 
-/*! returns the bounding box of the pid'th primitive
-  in this gometry. Since we only have one sphere in this
-  program (we handle multiple spheres by having a different
-  geometry per sphere), the'pid' parameter is ignored */
+// Gets HitRecord parameters, given a ray, an index and a hit distance
+RT_CALLABLE_PROGRAM HitRecord Get_HitRecord(int index,    // primitive index
+                                            Ray ray,      // current ray
+                                            float t_hit,  // intersection dist
+                                            float2 bc) {  // barycentrics
+  HitRecord rec;
+
+  // view direction
+  rec.Wo = normalize(-ray.direction);
+
+  // Hit Point
+  float3 hit_point = ray.origin + t_hit * ray.direction;
+  rec.P = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+
+  // Normal
+  float3 T = (rec.P - center) / radius;
+  float3 normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, T));
+  rec.shading_normal = rec.geometric_normal = normal;
+
+  // Texture coordinates
+  float phi = atan2(T.z, T.x);
+  float theta = asin(T.y);
+  rec.u = 1.f - (phi + PI_F) / (2.f * PI_F);
+  rec.v = (theta + PI_F / 2.f) / PI_F;
+
+  // Texture Index
+  rec.index = index;
+
+  return rec;
+}
+
+// Computes Sphere bounding box attributes
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
   Aabb* aabb = (Aabb*)result;
   aabb->m_min = center - radius;
