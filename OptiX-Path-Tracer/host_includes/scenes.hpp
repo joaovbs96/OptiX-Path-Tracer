@@ -417,10 +417,10 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, HDR, "../../../assets/hdr/ennis.hdr");
-  /*setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+  //setMissProgram(g_context, HDR, "../../../assets/hdr/ennis.hdr");
+  setMissProgram(g_context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
-                 make_float3(0.5f, 0.7f, 1.f));  // light blue*/
+                 make_float3(0.5f, 0.7f, 1.f));  // light blue
   setExceptionProgram(g_context);
 
   // create scene group
@@ -464,7 +464,10 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     BRDF* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
 
     BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
-    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
+
+    list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
+
+    /*list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
 
     Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt);
     model2.scale(make_float3(100.f));
@@ -476,7 +479,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     meshList.addElementsTo(group, g_context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         whiteMt));
+                         whiteMt));*/
   }
 
   // lucy

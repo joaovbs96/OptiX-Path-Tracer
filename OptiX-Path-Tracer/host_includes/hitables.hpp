@@ -409,41 +409,50 @@ class Triangle : public Hitable {
   const float2 a_uv, b_uv, c_uv;  // vertex texture coordinates
 };
 
-// FIXME: not working/incomplete
-// Creates a Sphere
+// Creates a Cylinder
 class Cylinder : public Hitable {
  public:
-  Cylinder(const float3 &p0, const float3 &p1, const float r,
+  Cylinder(const float3 &oo, const float &ll, const float r,
            BRDF *material)
-      : p0(p0), p1(p1), radius(r), Hitable(material) {}
+      : O(oo), length(ll), radius(r), Hitable(material) {}
 
   // Creates a GeometryInstance object of a sphere primitive
   virtual GeometryInstance getGeometryInstance(Context &g_context) override {
-    // Create Geometry variable
-    geometry = g_context->createGeometry();
+    GeometryInstance gi = g_context->createGeometryInstance();
+
+    // set material
+    gi->setMaterialCount(1);
+    gi->setMaterial(0, material->assignTo(g_context));
+
+    // Create a Geometry object and set programs
+    Geometry geometry = g_context->createGeometry();
     geometry->setPrimitiveCount(1);
 
     // Set bounding box program
-    Program bb = createProgram(Cylinder_PTX, "get_bounds", g_context);
-    geometry->setBoundingBoxProgram(bb);
+    Program bound = createProgram(Cylinder_PTX, "Get_Bounds", g_context);
+    geometry->setBoundingBoxProgram(bound);
 
     // Set intersection program
-    Program hit = createProgram(Cylinder_PTX, "intersection", g_context);
-    geometry->setIntersectionProgram(hit);
+    Program intersect = createProgram(Cylinder_PTX, "Intersect", g_context);
+    geometry->setIntersectionProgram(intersect);
+
+    // Create Geometry parameters callable program
+    Program prog = createProgram(Cylinder_PTX, "Get_HitRecord", g_context);
 
     // Basic Parameters
-    geometry["p0"]->setFloat(p0.x, p0.y, p0.z);
-    geometry["p1"]->setFloat(p1.x, p1.y, p1.z);
-    geometry["radius"]->setFloat(radius);
-    geometry["index"]->setInt(0);
+    gi["O"]->setFloat(O.x, O.y, O.z);
+    gi["L"]->setFloat(length);
+    gi["R"]->setFloat(radius);
+    gi["Get_HitRecord"]->set(prog);
 
-    // returns new GeometryInstance
-    return createGeometryInstance(g_context);
+    gi->setGeometry(geometry);
+
+    return gi;
   }
 
  protected:
-  const float3 p0;     // origin of the cylinder
-  const float3 p1;     // destination of the cylinder
+  const float3 O;      // origin of the cylinder
+  const float length;  // length of the cylinder
   const float radius;  // radius of the cylinder
 };
 

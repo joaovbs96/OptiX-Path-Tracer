@@ -1,8 +1,19 @@
 #include "../prd.cuh"
 #include "hitables.cuh"
 
+//////////////////
+// --- Cone --- //
+//////////////////
+
+
+// OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
-rtDeclareVariable(PerRayData, prd, rtPayload, );
+
+// Intersected Geometry Attributes
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
+
+// Primitive Parameters
 
 rtDeclareVariable(float3, P0, , );  // origin
 rtDeclareVariable(float3, P1, , );  // destination
@@ -26,10 +37,7 @@ RT_PROGRAM void hit_sphere(int pid) {
   float c = XdotX - powf(XdotV, 2.f) - r * r;
 }
 
-/*! returns the bounding box of the pid'th primitive
-  in this gometry. Since we only have one sphere in this
-  program (we handle multiple spheres by having a different
-  geometry per sphere), the'pid' parameter is ignored */
+
 RT_PROGRAM void get_bounds(int pid, float result[6]) {
   Aabb* aabb = (Aabb*)result;
   aabb->m_min = center - radius;

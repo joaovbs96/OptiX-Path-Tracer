@@ -1,113 +1,101 @@
 #include "../prd.cuh"
 #include "hitables.cuh"
+#include "../math/math_commons.cuh"
 
+//////////////////////
+// --- Cylinder --- //
+//////////////////////
 
-rtDeclareVariable(float3, P0, , );  // origin
-rtDeclareVariable(float3, P1, , );  // destination
-rtDeclareVariable(float, R, , );
-rtDeclareVariable(int, index, , );
-
-rtDeclareVariable(Ray, ray, rtCurrentRay, );
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
-rtDeclareVariable(PerRayData, prd, rtPayload, );
-
-RT_FUNCTION bool Intersect_Plane(const float3& P, const float3& N, float& t) {
-  float denominator = dot(N, ray.direction);
-
-  if (abs(denominator) < 1e-6f) return false;
-
-  float3 X = P - ray.origin;
-  t = fabsf(dot(X, N) / denominator);
-
-  return true;
-}
-
-RT_FUNCTION void Get_Intersection_Params(const float3& P, const float3& N,
-                                         const float t) {
-  hit_rec.t = t;
-
-  hit_rec.Wo = normalize(-ray.direction);
-
-  hit_rec.P = rtTransformPoint(RT_OBJECT_TO_WORLD, P);
-
-  hit_rec.geometric_normal =
-      normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, N));
-  hit_rec.shading_normal = hit_rec.geometric_normal;
-
-  hit_rec.index = index;
-
-  hit_rec.u = 0;
-  hit_rec.v = 0;
-
-  rtReportIntersection(0);
-}
-
-// http://hugi.scene.org/online/hugi24/coding%20graphics%20chris%20dragan%20raytracing%20shapes.htm
-RT_PROGRAM void intersection(int pid) {
-  float3 X = ray.origin - P0;
-  float3 V = (P1 - P0) / length(P1 - P0);  // axis
-
-  const float DdotV = dot(ray.direction, V);
-  const float DdotD = dot(ray.direction, ray.direction);
-  const float DdotX = dot(ray.direction, X);
-  const float XdotV = dot(X, V);
-  const float XdotX = dot(X, X);
-
-  const float a = DdotD - powf(DdotV, 2.f);
-  const float b = DdotX - DdotV * XdotV;
-  const float c = XdotX - powf(XdotV, 2.f) - R * R;
-  const float discriminant = b * b - a * c;
-
-  // if the discriminant is lower than zero, there's no real
-  // solution and thus no hit
-  if (discriminant < 0.f) return;
-
-  // roots of the equation:
-  const float t0 = (-b - sqrtf(discriminant)) / a;
-  const float t1 = (-b + sqrtf(discriminant)) / a;
-  float t2 = FLT_MAX, t3 = FLT_MAX;
-
-  const bool b0 = Intersect_Plane(P0, normalize(-V), t2);
-  const bool b1 = Intersect_Plane(P1, normalize(V), t3);
-
-  // get the min T
-  const float t01 = fminf(t0, t1);
-
-  float t23 = 0.f;
-  float3 planeN;
-  if (t2 < t3) {
-    planeN = normalize(-V);
-    t23 = t2;
-  } else {
-    planeN = normalize(V);
-    t23 = t3;
-  }
-
-  if (t01 < t23) {
-    // test for the mininmal cylinder root
-    if (t01 < ray.tmax && t01 > ray.tmin && rtPotentialIntersection(t01)) {
-      float m = DdotV * t01 + XdotV;
-      float3 hit_point = ray.origin + t01 * ray.direction;
-      float3 normal = normalize(hit_point - P0 - V * m);
-      Get_Intersection_Params(hit_point, normal, t01);
-    }
-  } else {
-    // test for the minimal plane root
-    if (t23 < ray.tmax && t23 > ray.tmin && rtPotentialIntersection(t23)) {
-      float3 hit_point = ray.origin + t23 * ray.direction;
-      Get_Intersection_Params(hit_point, planeN, t23);
-    }
-  }
-}
-
-// Cylinder AABB by Inigo Quilez
 // http://www.iquilezles.org/www/articles/diskbbox/diskbbox.htm
-RT_PROGRAM void get_bounds(int pid, float result[6]) {
+// https://github.com/spinatelli/raytracer/blob/master/Cylinder.cpp
+// http://hugi.scene.org/online/hugi24/coding%20graphics%20chris%20dragan%20raytracing%20shapes.htm
+
+// OptiX Context objects
+rtDeclareVariable(Ray, ray, rtCurrentRay, );
+
+// Intersected Geometry Attributes
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );             // triangle barycentrics
+
+// Primitive Parameters
+rtDeclareVariable(float3, O, , );     // origin
+rtDeclareVariable(float, L, , );      // height/length
+rtDeclareVariable(float, R, , );      // radius
+
+RT_FUNCTION float3 Cylinder_Normal(const float3& P, // hit point
+                                   const float3& O, // origin
+                                   const float& L,  // Length
+                                   const float& R){ // Radius
+	// Point is on one of the bases
+	/*if (p.x<center.x+radius && p.x>center.x-radius && p.z<center.z+radius && p.z>center.z-radius) {
+		double epsilon = 0.00000001;
+		if (p.y < center.y+height+epsilon && p.y>center.y+height-epsilon){
+			return Vector (0,1,0);
+		}
+		if (p.y < center.y+epsilon && p.y>center.y-epsilon){
+			return Vector (0,-1,0);
+		}
+	}*/
+
+	// Point is on lateral surface
+ 	return normalize(P - make_float3(O.x, P.y, O.z));
+}
+
+RT_PROGRAM void Intersect(int pid) {
+  float3 P0 = ray.origin - O; // translated ray origin
+
+  // intersection equation coefficients
+  float a = square(ray.direction.x) + square(ray.direction.z);
+  float b = ray.direction.x * P0.x + ray.direction.z + P0.z;
+  float c = square(P0.x) + square(P0.z) + R * R;
+
+  float delta = square(b) - a * c;
+  if(delta < 1e-8) return;
+
+  float t = (-b - sqrtf(delta))/a;
+  if(t < delta) return;
+
+  if (rtPotentialIntersection(t)) {
+    geo_index = 0;
+    bc = make_float2(0);
+    rtReportIntersection(0);
+  }
+}
+
+
+// Gets HitRecord parameters, given a ray, an index and a hit distance
+RT_CALLABLE_PROGRAM HitRecord Get_HitRecord(int index,    // primitive index
+                                            Ray ray,      // current ray
+                                            float t_hit,  // intersection dist
+                                            float2 bc) {  // barycentrics
+  HitRecord rec;
+
+  // view direction
+  rec.Wo = normalize(-ray.direction);
+
+  // Hit Point
+  float3 hit_point = ray.origin + t_hit * ray.direction;
+  rec.P = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+
+  // Normal
+  float3 normal = Cylinder_Normal(hit_point, O, L, R);
+  normal = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
+  rec.shading_normal = rec.geometric_normal = normal;
+
+  // Texture coordinates
+  rec.u = rec.v = 0.f;
+
+  // Texture Index
+  rec.index = index;
+
+  return rec;
+}
+
+RT_PROGRAM void Get_Bounds(int pid, float result[6]) {
   Aabb* aabb = (Aabb*)result;
 
-  float3 a = P1 - P0;
-  float3 db = R * sqrt(make_float3(1.f) - (sqr(a) / dot(a, a)));
+  float3 O2 = O + L * make_float3(0.f, 1.f, 0.f);
 
-  aabb->m_min = fminf(P0 - db, P0 - db);
-  aabb->m_max = fmaxf(P1 + db, P1 + db);
+  aabb->m_min = fminf(O, O2) - make_float3(R);
+  aabb->m_max = fmaxf(O, O2) + make_float3(R);
 }
