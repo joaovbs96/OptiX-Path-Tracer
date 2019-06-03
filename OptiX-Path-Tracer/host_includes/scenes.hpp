@@ -13,6 +13,7 @@
 // TODO: convert pointers to smart/shared pointers
 // TODO: add lights separately from raygen, and after all materials are
 // created(we may need to add back the material type to the materials)
+// TODO: make an application context containing the optix context and other parameters
 
 void InOneWeekend(Context& g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
