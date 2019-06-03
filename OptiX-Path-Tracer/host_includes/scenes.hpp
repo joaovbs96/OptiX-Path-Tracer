@@ -13,24 +13,23 @@
 // TODO: convert pointers to smart/shared pointers
 // TODO: add lights separately from raygen, and after all materials are
 // created(we may need to add back the material type to the materials)
-// TODO: make an application context containing the optix context and other parameters
 
-void InOneWeekend(Context& g_context, int Nx, int Ny) {
+void InOneWeekend(App_State &app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
   Light_Sampler lights;
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+  setRayGenerationProgram(app.context, lights);
+  setMissProgram(app.context, GRADIENT,          // gradient sky pattern
                  make_float3(1.f),               // white
                  make_float3(0.5f, 0.7f, 1.f));  // light blue
-  setExceptionProgram(g_context);
+  setExceptionProgram(app.context);
 
   // Set acceleration structure
-  Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+  Group group = app.context->createGroup();
+  group->setAcceleration(app.context->createAcceleration("Trbvh"));
 
   // create geometries
   Hitable_List list;
@@ -74,43 +73,43 @@ void InOneWeekend(Context& g_context, int Nx, int Ny) {
   list.push(new Sphere(make_float3(-4.f, 1.f, 1.f), 1.f, mt3));
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addElementsTo(group, g_context);
-  g_context["world"]->set(group);
+  list.addElementsTo(group, app.context);
+  app.context["world"]->set(group);
 
   // configure camera
   const float3 lookfrom = make_float3(13.f, 2.f, 3.f);
   const float3 lookat = make_float3(0.f, 0.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(20.0);
-  const float aspect(float(Nx) / float(Ny));
+  const float aspect(float(app.W) / float(app.H));
   const float aperture(0.1f);
   const float dist(10.f);
   Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
+  camera.set(app.context);
 
   auto t1 = std::chrono::system_clock::now();
   auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void MovingSpheres(Context& g_context, int Nx, int Ny) {
+void MovingSpheres(App_State &app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(3.f, 5.f, 1.f, 3.f, -0.5f, Z_AXIS);
-  lights.pdf.push_back(rect_pdf.createPDF(g_context));
-  lights.sample.push_back(rect_pdf.createSample(g_context));
+  lights.pdf.push_back(rect_pdf.createPDF(app.context));
+  lights.sample.push_back(rect_pdf.createSample(app.context));
   lights.emissions.push_back(make_float3(4.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, CONSTANT);  // dark background
-  setExceptionProgram(g_context);
+  setRayGenerationProgram(app.context, lights);
+  setMissProgram(app.context, CONSTANT);  // dark background
+  setExceptionProgram(app.context);
 
   // Set acceleration structure
-  Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+  Group group = app.context->createGroup();
+  group->setAcceleration(app.context->createAcceleration("Trbvh"));
 
   // create scene
   Hitable_List list;
@@ -167,48 +166,48 @@ void MovingSpheres(Context& g_context, int Nx, int Ny) {
   list.push(new AARect(3.f, 5.f, 1.f, 3.f, -0.5f, false, Z_AXIS, lmt));
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addElementsTo(group, g_context);
-  g_context["world"]->set(group);
+  list.addElementsTo(group, app.context);
+  app.context["world"]->set(group);
 
   // configure camera
   const float3 lookfrom = make_float3(13, 2, 3);
   const float3 lookat = make_float3(0, 0, 0);
   const float3 up = make_float3(0, 1, 0);
   const float fovy(20.0);
-  const float aspect(float(Nx) / float(Ny));
+  const float aspect(float(app.W) / float(app.H));
   const float aperture(0.1f);
   const float dist(10.f);
   Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
+  camera.set(app.context);
 
   auto t1 = std::chrono::system_clock::now();
   auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Cornell(Context& g_context, int Nx, int Ny) {
+void Cornell(App_State &app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(213.f, 343.f, 227.f, 332.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.createPDF(g_context));
-  lights.sample.push_back(rect_pdf.createSample(g_context));
+  lights.pdf.push_back(rect_pdf.createPDF(app.context));
+  lights.sample.push_back(rect_pdf.createSample(app.context));
   lights.emissions.push_back(make_float3(7.f));
 
   /*Sphere_PDF sph_pdf(make_float3(555.f - 100.f, 100.f, 100.f), 40.f);
-  lights.pdf.push_back(sph_pdf.createPDF(g_context));
-  lights.sample.push_back(sph_pdf.createSample(g_context));
+  lights.pdf.push_back(sph_pdf.createPDF(app.context));
+  lights.sample.push_back(sph_pdf.createSample(app.context));
   lights.emissions.push_back(make_float3(7.f));*/
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, CONSTANT);  // dark background
-  setExceptionProgram(g_context);
+  setRayGenerationProgram(app.context, lights);
+  setMissProgram(app.context, CONSTANT);  // dark background
+  setExceptionProgram(app.context);
 
   // create scene group
-  Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+  Group group = app.context->createGroup();
+  group->setAcceleration(app.context->createAcceleration("Trbvh"));
 
   // create textures
   Texture* redTx = new Constant_Texture(0.65f, 0.05f, 0.05f);
@@ -274,44 +273,44 @@ void Cornell(Context& g_context, int Nx, int Ny) {
   model2.scale(make_float3(10.f));
   model2.rotate(180.f, Y_AXIS);
   model2.translate(make_float3(150.f, 0.f, 0.f));
-  model2.addTo(group, g_context);
+  model2.addTo(group, app.context);
 
   // transforms list elements, one by one, and adds them to the scene graph
-  list.addElementsTo(group, g_context);
-  g_context["world"]->set(group);
+  list.addElementsTo(group, app.context);
+  app.context["world"]->set(group);
 
   // configure camera
   const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
   const float3 lookat = make_float3(278.f, 278.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(40.f);
-  const float aspect(float(Nx) / float(Ny));
+  const float aspect(float(app.W) / float(app.H));
   const float aperture(0.f);
   const float dist(10.f);
   Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
+  camera.set(app.context);
 
   auto t1 = std::chrono::system_clock::now();
   auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Final_Next_Week(Context& g_context, int Nx, int Ny) {
+void Final_Next_Week(App_State &app) {
   auto t0 = std::chrono::system_clock::now();
 
   Light_Sampler lights;
   Rectangle_PDF rect_pdf(113.f, 443.f, 127.f, 432.f, 554.f, Y_AXIS);
-  lights.pdf.push_back(rect_pdf.createPDF(g_context));
-  lights.sample.push_back(rect_pdf.createSample(g_context));
+  lights.pdf.push_back(rect_pdf.createPDF(app.context));
+  lights.sample.push_back(rect_pdf.createSample(app.context));
   lights.emissions.push_back(make_float3(7.f));
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, lights);
-  setMissProgram(g_context, CONSTANT);  // dark background
-  setExceptionProgram(g_context);
+  setRayGenerationProgram(app.context, lights);
+  setMissProgram(app.context, CONSTANT);  // dark background
+  setExceptionProgram(app.context);
 
-  Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+  Group group = app.context->createGroup();
+  group->setAcceleration(app.context->createAcceleration("Trbvh"));
 
   Hitable_List list;
 
@@ -388,45 +387,45 @@ void Final_Next_Week(Context& g_context, int Nx, int Ny) {
   }
   spheres.translate(make_float3(-100.f, 270.f, 395.f));
   spheres.rotate(15.f, Y_AXIS);
-  spheres.addListTo(group, g_context);
+  spheres.addListTo(group, app.context);
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addElementsTo(group, g_context);
-  g_context["world"]->set(group);
+  list.addElementsTo(group, app.context);
+  app.context["world"]->set(group);
 
   // configure camera
   const float3 lookfrom = make_float3(478.f, 278.f, -600.f);
   const float3 lookat = make_float3(278.f, 278.f, 0.f);
   const float3 up = make_float3(0.f, 1.f, 0.f);
   const float fovy(40.f);
-  const float aspect(float(Nx) / float(Ny));
+  const float aspect(float(app.W) / float(app.H));
   const float aperture(0.f);
   const float dist(10.f);
   Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-  camera.set(g_context);
+  camera.set(app.context);
 
   auto t1 = std::chrono::system_clock::now();
   auto sceneTime = std::chrono::duration<float>(t1 - t0).count();
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
+void Test_Scene(App_State &app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
   Light_Sampler lights;
 
   // Set the exception, ray generation and miss shader programs
-  setRayGenerationProgram(g_context, lights);
-  //setMissProgram(g_context, HDR, "../../../assets/hdr/ennis.hdr");
-  setMissProgram(g_context, GRADIENT,            // gradient sky pattern
+  setRayGenerationProgram(app.context, lights);
+  //setMissProgram(app.context, HDR, "../../../assets/hdr/ennis.hdr");
+  setMissProgram(app.context, GRADIENT,            // gradient sky pattern
                  make_float3(1.f),               // white
                  make_float3(0.5f, 0.7f, 1.f));  // light blue
-  setExceptionProgram(g_context);
+  setExceptionProgram(app.context);
 
   // create scene group
-  Group group = g_context->createGroup();
-  group->setAcceleration(g_context->createAcceleration("Trbvh"));
+  Group group = app.context->createGroup();
+  group->setAcceleration(app.context->createAcceleration("Trbvh"));
 
   // create textures
   Texture* whiteTx = new Constant_Texture(0.73f);
@@ -456,7 +455,7 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   Hitable_List list;
 
   // Test model
-  if (modelID == 0) {
+  if (app.model == 0) {
     Mesh_List meshList;
 
     Texture* tx4 = new Constant_Texture(1.f);
@@ -477,37 +476,37 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
 
     meshList.push(&model2);
 
-    meshList.addElementsTo(group, g_context);
+    meshList.addElementsTo(group, app.context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));*/
   }
 
   // lucy
-  else if (modelID == 1) {
+  else if (app.model == 1) {
     Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/");
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
-    model.addTo(group, g_context);
+    model.addTo(group, app.context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
   }
 
   // Dragon
-  else if (modelID == 2) {
+  else if (app.model == 2) {
     Mesh model = Mesh("dragon_cubic.obj", "../../../assets/dragon/");
     model.scale(make_float3(350.f));
     model.rotate(180.f, Y_AXIS);
     model.translate(make_float3(0.f, -500.f, 200.f));
-    model.addTo(group, g_context);
+    model.addTo(group, app.context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
   }
 
   // spheres
-  else if (modelID == 3) {
+  else if (app.model == 3) {
     /*list.push(
         new Sphere(make_float3(-350.f, -300.f, 0.f), 150.f, perlinXMt));*/
     list.push(new Sphere(make_float3(0.f, -450.f, 0.f), 150.f, whiteIso));
@@ -518,11 +517,11 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
   }
 
   // pie
-  else if (modelID == 4) {
+  else if (app.model == 4) {
     Mesh model = Mesh("pie.obj", "../../../assets/pie/");
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
-    model.addTo(group, g_context);
+    model.addTo(group, app.context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
@@ -534,37 +533,37 @@ void Test_Scene(Context& g_context, int Nx, int Ny, int modelID) {
     model.scale(make_float3(0.5f));
     model.rotate(90.f, Y_AXIS);
     model.translate(make_float3(300.f, 5.f, -400.f));
-    model.addTo(group, g_context);
+    model.addTo(group, app.context);
   }
 
   // transforms list elements, one by one, and adds them to the graph
-  list.addElementsTo(group, g_context);
-  g_context["world"]->set(group);
+  list.addElementsTo(group, app.context);
+  app.context["world"]->set(group);
 
   // configure camera
-  if ((modelID >= 0) && (modelID < 5)) {
+  if ((app.model >= 0) && (app.model < 5)) {
     const float3 lookfrom = make_float3(0.f, 10.f, -800.f);
     const float3 lookat = make_float3(0.f, 0.f, 0.f);
     const float3 up = make_float3(0.f, 1.f, 0.f);
     const float fovy(100.f);
-    const float aspect(float(Nx) / float(Ny));
+    const float aspect(float(app.W) / float(app.H));
     const float aperture(0.f);
     const float dist(0.8f);
     Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-    camera.set(g_context);
+    camera.set(app.context);
   }
 
   // for sponza
-  else if (modelID == 5) {
+  else if (app.model == 5) {
     const float3 lookfrom = make_float3(278.f, 278.f, -800.f);
     const float3 lookat = make_float3(278.f, 278.f, 0.f);
     const float3 up = make_float3(0.f, 1.f, 0.f);
     const float fovy(40.f);
-    const float aspect(float(Nx) / float(Ny));
+    const float aspect(float(app.W) / float(app.H));
     const float aperture(0.f);
     const float dist(10.f);
     Camera camera(lookfrom, lookat, up, fovy, aspect, aperture, dist, 0.0, 1.0);
-    camera.set(g_context);
+    camera.set(app.context);
   }
 
   auto t1 = std::chrono::system_clock::now();

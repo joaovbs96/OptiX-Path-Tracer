@@ -17,6 +17,31 @@
 
 #include "../lib/HDRloader.h"
 
+// Struct used to keep GUI state
+struct App_State {
+  // Default Constructor
+  App_State() {
+    context = Context::create(); // OptiX context
+    W = H = 500;          // image resolution
+    samples = 500;        // number of samples
+    scene = 2;            // counter to selection scene function
+    model = 0;            // model selection for mesh test scene
+    frequency = 1;        // update preview at every sample
+    currentSample = 0;    // always start at sample 0
+    showProgress = true;  // display preview?
+    RTX = true;           // use RTX mode
+    start = done = false; // hasn't started and it's not yet done
+    fileType = 0;         // PNG = 0, HDR = 1
+    fileName = "out";     // file name without extension
+  }
+
+  Context context;
+  int W, H, samples, scene, currentSample, model, frequency, fileType;
+  bool done, start, showProgress, RTX;
+  Buffer accBuffer, displayBuffer;
+  std::string fileName;
+};
+
 // encapsulates PTX string program creation
 Program createProgram(const char file[], const std::string &name,
                       Context &g_context) {

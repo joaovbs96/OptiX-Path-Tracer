@@ -23,9 +23,7 @@
 #include "host_includes/gui.hpp"
 #include "host_includes/image_save.hpp"
 
-Context g_context;
-
-float renderFrame(int Nx, int Ny) {
+float renderFrame(Context &g_context, int Nx, int Ny) {
   auto t0 = std::chrono::system_clock::now();
 
   // Validate settings
@@ -40,46 +38,47 @@ float renderFrame(int Nx, int Ny) {
   return (float)time;
 }
 
-int Optix_Config(GUIState &state) {
+int Optix_Config(App_State &app) {
   // Set RTX global attribute(should be done before creating the context)
-  const int RTX = true;
-  RTresult res;
-  res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &RTX);
-  if (res != RT_SUCCESS) {
-    printf("Error: RTX mode is required for this application, exiting. \n");
-    system("PAUSE");
-    exit(0);
-  } else
-    printf("OptiX RTX execution mode is ON.\n");
+  if(app.RTX){
+    int RTX = true;
+    RTresult res;
+    res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &(RTX));
+    if (res != RT_SUCCESS) {
+      printf("Error: RTX mode is required for this application, exiting. \n");
+      system("PAUSE");
+      exit(0);
+    } else
+      printf("OptiX RTX execution mode is ON.\n");
+  }
 
   // Create an OptiX context
-  g_context = Context::create();
-  g_context->setRayTypeCount(2);  // radiance rays and shadow rays
-  g_context->setMaxTraceDepth(5);
+  app.context->setRayTypeCount(2);  // radiance rays and shadow rays
+  app.context->setMaxTraceDepth(5);
 
   // Set number of samples
-  g_context["samples"]->setInt(state.samples);
+  app.context["samples"]->setInt(app.samples);
 
   // Create and set the world
-  switch (state.scene) {
+  switch (app.scene) {
     case 0:  // Peter Shirley's "In One Weekend" scene
-      InOneWeekend(g_context, state.w, state.h);
+      InOneWeekend(app);
       break;
 
     case 1:  // Moving Spheres test scene
-      MovingSpheres(g_context, state.w, state.h);
+      MovingSpheres(app);
       break;
 
     case 2:  // Cornell Box scene
-      Cornell(g_context, state.w, state.h);
+      Cornell(app);
       break;
 
     case 3:  // Peter Shirley's "The Next Week" final scene
-      Final_Next_Week(g_context, state.w, state.h);
+      Final_Next_Week(app);
       break;
 
     case 4:  // 3D models test scene
-      Test_Scene(g_context, state.w, state.h, state.model);
+      Test_Scene(app);
       break;
 
     default:
@@ -87,14 +86,14 @@ int Optix_Config(GUIState &state) {
   }
 
   // Create an output buffer
-  state.accBuffer = createFrameBuffer(state.w, state.h, g_context);
-  g_context["acc_buffer"]->set(state.accBuffer);
+  app.accBuffer = createFrameBuffer(app.W, app.H, app.context);
+  app.context["acc_buffer"]->set(app.accBuffer);
 
   // Create a display buffer
-  state.displayBuffer = createDisplayBuffer(state.w, state.h, g_context);
-  g_context["display_buffer"]->set(state.displayBuffer);
+  app.displayBuffer = createDisplayBuffer(app.W, app.H, app.context);
+  app.context["display_buffer"]->set(app.displayBuffer);
 
-  printf("OptiX Building Time: %.2f\n", renderFrame(0, 0));
+  printf("OptiX Building Time: %.2f\n", renderFrame(app.context, 0, 0));
 
   return 0;
 }
@@ -167,7 +166,7 @@ int main(int ac, char **av) {
 
   float Hf, Wf;
   uchar1 *imageData;
-  GUIState state;
+  App_State app;
   float renderTime = 0.f;
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -178,69 +177,71 @@ int main(int ac, char **av) {
     ImGui::NewFrame();
 
     {
-      if (!state.start) {
+      if (!app.start) {
         // Create and append program params window
         ImGui::Begin("Program Parameters");
 
-        ImGui::InputInt("Width", &state.w, 1, 100);
-        ImGui::InputInt("Height", &state.h, 1, 100);
+        ImGui::InputInt("Width", &app.W, 1, 100);
+        ImGui::InputInt("Height", &app.H, 1, 100);
 
-        ImGui::InputInt("Samples Per Pixel", &state.samples, 1, 100);
+        ImGui::InputInt("Samples Per Pixel", &app.samples, 1, 100);
+        
+        ImGui::Checkbox("RTX Mode", &app.RTX);
 
-        ImGui::Combo("Scene", &state.scene,
+        ImGui::Combo("Scene", &app.scene,
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "
                      "Week(Moving Spheres)\0Cornell Box\0Peter Shirley's The "
                      "Next Week(Final Scene)\0Model Test Scene\0");
 
-        if (state.scene == 4)
-          ImGui::Combo("model selection", &state.model,
+        if (app.scene == 4)
+          ImGui::Combo("model selection", &app.model,
                        "Placeholder Model\0Lucy\0Chinese "
                        "Dragon\0Spheres\0Pie\0Sponza\0");
 
-        ImGui::Checkbox("Show Progress", &state.showProgress);
+        ImGui::Checkbox("Show Progress", &app.showProgress);
 
         ImGui::Text("Save as:");
-        ImGui::InputText("Filename", &state.fileName, 0, 0, 0);
+        ImGui::InputText("Filename", &app.fileName, 0, 0, 0);
         ImGui::SameLine();
         ShowHelpMarker("File extension will be added automatically.");
-        ImGui::Combo("Filetype", &state.fileType, ".PNG\0.HDR\0");
+        ImGui::Combo("Filetype", &app.fileType, ".PNG\0.HDR\0");
 
         // check if render button has been pressed
         if (ImGui::Button("Render")) {
-          if (state.w > 0 && state.h > 0 && state.samples > 0) {
+          if (app.W > 0 && app.H > 0 && app.samples > 0) {
             // Configure OptiX context & scene
-            Optix_Config(state);
+            Optix_Config(app);
 
             // start flag
-            state.start = true;
-            state.currentSample = 0;
+            app.start = true;
+            app.currentSample = 0;
 
             // set proportional image size
-            if ((window_width < state.w) || (window_height < state.h)) {
-              if (state.w > state.h) {
+            if ((window_width < app.W) || (window_height < app.H)) {
+              if (app.W > app.H) {
                 Wf = window_height * 0.9f;
-                Hf = ((Wf * state.h) / state.w);
+                Hf = ((Wf * app.H) / app.W);
               } else {
                 Hf = window_width * 0.9f;
-                Wf = ((Hf * state.w) / state.h);
+                Wf = ((Hf * app.W) / app.H);
               }
             } else {
-              Wf = state.w * 1.f;
-              Hf = state.h * 1.f;
+              Wf = app.W * 1.f;
+              Hf = app.H * 1.f;
             }
 
             // allocate preview array
-            imageData = (uchar1 *)malloc(state.w * state.h * sizeof(uchar4));
+            imageData = (uchar1 *)malloc(app.W * app.H * sizeof(uchar4));
           } else {
             printf("Selected settings are invalid:\n");
 
-            if (state.samples <= 0)
+            if (app.samples <= 0)
               printf("- 'samples' should be a positive integer.\n");
 
-            if (state.w <= 0)
+            if (app.W <= 0)
               printf("- 'width' should be a positive integer.\n");
 
-            if (state.h <= 0)
+            if (app.H <= 0)
               printf("- 'height' should be a positive integer.\n");
 
             printf("\n");
@@ -254,20 +255,20 @@ int main(int ac, char **av) {
         ImGui::Begin("Progress");
 
         // render a frame
-        g_context["frame"]->setInt(state.currentSample);
-        renderTime += renderFrame(state.w, state.h);
+        app.context["frame"]->setInt(app.currentSample);
+        renderTime += renderFrame(app.context, app.W, app.H);
 
         // copy stream buffer content
-        if (state.showProgress) {
-          uchar1 *copyArr = (uchar1 *)state.displayBuffer->map();
-          memcpy(imageData, copyArr, state.w * state.h * sizeof(uchar4));
-          state.displayBuffer->unmap();
+        if (app.showProgress) {
+          uchar1 *copyArr = (uchar1 *)app.displayBuffer->map();
+          memcpy(imageData, copyArr, app.W * app.H * sizeof(uchar4));
+          app.displayBuffer->unmap();
         }
 
-        ImGui::Text("sample = %d / %d", state.currentSample, state.samples);
+        ImGui::Text("sample = %d / %d", app.currentSample, app.samples);
         ImGui::Text("Progress: ");
         ImGui::SameLine();
-        ImGui::ProgressBar(state.currentSample / float(state.samples));
+        ImGui::ProgressBar(app.currentSample / float(app.samples));
 
         // check if cancel button has been pressed
         if (ImGui::Button("Cancel")) {
@@ -283,16 +284,16 @@ int main(int ac, char **av) {
         }
 
         // update number of rendered samples
-        state.currentSample++;
+        app.currentSample++;
       }
 
       ImGui::End();
     }
 
-    // Only show the image if 'progressive' is true.
+    // Only show the image if its respective flag is true.
     // progressively showing the progress needs more memory and might be slower
     // overall. Turn progressive rendering off if it's too slow.
-    if (state.showProgress && state.start) {
+    if (app.showProgress && app.start) {
       ImGui::Begin("Render Preview");
 
       GLuint textureId;
@@ -302,7 +303,7 @@ int main(int ac, char **av) {
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, state.w, state.h, 0, GL_RGBA,
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, app.W, app.H, 0, GL_RGBA,
                    GL_UNSIGNED_BYTE, imageData);
 
       // display progress
@@ -326,24 +327,24 @@ int main(int ac, char **av) {
     glfwSwapBuffers(window);
 
     // if render successfully finished, save file
-    if (state.currentSample > 0)
-      if (!state.done)
-        if (state.currentSample == state.samples) {
+    if (app.currentSample > 0)
+      if (!app.done)
+        if (app.currentSample == app.samples) {
           printf("Done rendering, output file will be saved.\n");
 
           // Save to file type selected in the initial setup
-          if (state.fileType == 0)
-            Save_PNG(state, state.accBuffer);
+          if (app.fileType == 0)
+            Save_PNG(app, app.accBuffer);
           else
-            Save_HDR(state, state.accBuffer);
+            Save_HDR(app, app.accBuffer);
 
           printf("Render time: %.2fs\n", renderTime);
 
-          state.done = true;
+          app.done = true;
         }
 
     // if we are finished, leave the render loop
-    if (state.done) break;
+    if (app.done) break;
   }
 
   glfwDestroyWindow(window);

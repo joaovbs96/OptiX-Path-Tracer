@@ -33,27 +33,6 @@ static void glfw_error_callback(int error, const char *description) {
   fprintf(stderr, "Glfw Error %d: %s\n", error, description);
 }
 
-// Struct used to keep GUI state
-struct GUIState {
-  GUIState()
-      : w(500),
-        h(500),
-        samples(500),
-        scene(2),
-        model(0),
-        frequency(1),
-        currentSample(0),
-        showProgress(true),
-        done(false),
-        start(false),
-        fileType(0),
-        fileName("out") {}
-  int w, h, samples, scene, currentSample, model, frequency, fileType;
-  bool done, start, showProgress;
-  Buffer accBuffer, displayBuffer;
-  std::string fileName;
-};
-
 // Helper to display a little (?) mark which shows a tooltip when hovered.
 static void ShowHelpMarker(const char *desc) {
   ImGui::TextDisabled("(?)");
