@@ -37,8 +37,7 @@ struct HitRecord {
   float2 bc;   // triangle barycentric coordinates
   float3 geometric_normal;
   float3 shading_normal;
-  float3 Wo;          // view direction(i.e. direction to camera)
-  GeometryType type;  // type of geometry
+  float3 Wo;  // view direction(i.e. direction to camera)
 };
 
 // Radiance PRD containing variables that should be propagated as the ray

@@ -14,7 +14,7 @@
 // TODO: add lights separately from raygen, and after all materials are
 // created(we may need to add back the material type to the materials)
 
-void InOneWeekend(App_State &app) {
+void InOneWeekend(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
@@ -92,7 +92,7 @@ void InOneWeekend(App_State &app) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void MovingSpheres(App_State &app) {
+void MovingSpheres(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
@@ -185,7 +185,7 @@ void MovingSpheres(App_State &app) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Cornell(App_State &app) {
+void Cornell(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
@@ -295,7 +295,7 @@ void Cornell(App_State &app) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Final_Next_Week(App_State &app) {
+void Final_Next_Week(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
   Light_Sampler lights;
@@ -409,7 +409,7 @@ void Final_Next_Week(App_State &app) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
-void Test_Scene(App_State &app) {
+void Test_Scene(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
   // add light parameters and programs
@@ -417,8 +417,8 @@ void Test_Scene(App_State &app) {
 
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(app.context, lights);
-  //setMissProgram(app.context, HDR, "../../../assets/hdr/ennis.hdr");
-  setMissProgram(app.context, GRADIENT,            // gradient sky pattern
+  // setMissProgram(app.context, HDR, "../../../assets/hdr/ennis.hdr");
+  setMissProgram(app.context, GRADIENT,          // gradient sky pattern
                  make_float3(1.f),               // white
                  make_float3(0.5f, 0.7f, 1.f));  // light blue
   setExceptionProgram(app.context);
@@ -484,7 +484,7 @@ void Test_Scene(App_State &app) {
 
   // lucy
   else if (app.model == 1) {
-    Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/");
+    Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/", app.RTX);
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
     model.addTo(group, app.context);
@@ -495,7 +495,7 @@ void Test_Scene(App_State &app) {
 
   // Dragon
   else if (app.model == 2) {
-    Mesh model = Mesh("dragon_cubic.obj", "../../../assets/dragon/");
+    Mesh model = Mesh("dragon_cubic.obj", "../../../assets/dragon/", app.RTX);
     model.scale(make_float3(350.f));
     model.rotate(180.f, Y_AXIS);
     model.translate(make_float3(0.f, -500.f, 200.f));
@@ -518,7 +518,7 @@ void Test_Scene(App_State &app) {
 
   // pie
   else if (app.model == 4) {
-    Mesh model = Mesh("pie.obj", "../../../assets/pie/");
+    Mesh model = Mesh("pie.obj", "../../../assets/pie/", app.RTX);
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
     model.addTo(group, app.context);
@@ -529,7 +529,7 @@ void Test_Scene(App_State &app) {
 
   // sponza
   else {
-    Mesh model = Mesh("sponza.obj", "../../../assets/sponza/");
+    Mesh model = Mesh("sponza.obj", "../../../assets/sponza/", app.RTX);
     model.scale(make_float3(0.5f));
     model.rotate(90.f, Y_AXIS);
     model.translate(make_float3(300.f, 5.f, -400.f));

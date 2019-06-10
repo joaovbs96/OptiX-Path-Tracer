@@ -19,5 +19,5 @@ RT_FUNCTION float3 Evaluate(const Diffuse_Light_Parameters &surface,
                             const float3 &N,
                             float &pdf) {  // shading normal
   pdf = 1.f;
-  return surface.color;  // TODO: test this out
+  return surface.color;
 }

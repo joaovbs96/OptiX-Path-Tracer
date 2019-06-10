@@ -20,21 +20,30 @@ class Mesh {
   // - If no assets folder is given as parameter, model is in CWD.
   // - If no material is given as parameter, parse material from MTL file.
  public:
-  Mesh(std::string fileName)
-      : fileName(fileName), assetsFolder(""), givenMaterial(nullptr) {}
+  Mesh(std::string fileName, bool RTX)
+      : fileName(fileName),
+        assetsFolder(""),
+        givenMaterial(nullptr),
+        RTX_MODE(RTX) {}
 
-  Mesh(std::string fileName, std::string assetsFolder)
+  Mesh(std::string fileName, std::string assetsFolder, bool RTX)
       : fileName(fileName),
         assetsFolder(assetsFolder),
-        givenMaterial(nullptr) {}
+        givenMaterial(nullptr),
+        RTX_MODE(RTX) {}
 
-  Mesh(std::string fileName, BRDF *givenMaterial)
-      : fileName(fileName), assetsFolder(""), givenMaterial(givenMaterial) {}
+  Mesh(std::string fileName, BRDF *givenMaterial, bool RTX)
+      : fileName(fileName),
+        assetsFolder(""),
+        givenMaterial(givenMaterial),
+        RTX_MODE(RTX) {}
 
-  Mesh(std::string fileName, std::string assetsFolder, BRDF *givenMaterial)
+  Mesh(std::string fileName, std::string assetsFolder, BRDF *givenMaterial,
+       bool RTX)
       : fileName(fileName),
         assetsFolder(assetsFolder),
-        givenMaterial(givenMaterial) {}
+        givenMaterial(givenMaterial),
+        RTX_MODE(RTX) {}
 
   // Get GeometryInstance of Mesh
   GeometryInstance getGeometryInstance(Context &g_context) {
@@ -164,8 +173,6 @@ class Mesh {
     gi->setMaterialCount(1);
     gi->setMaterial(0, host_material->assignTo(g_context));
 
-    // TODO: get this attribute from the main function
-    bool RTX_MODE = true;
     if (RTX_MODE) {
       // Create a GeometryTriangles object
       GeometryTriangles geometry = g_context->createGeometryTriangles();
@@ -256,6 +263,7 @@ class Mesh {
     }
   }
 
+  bool RTX_MODE;
   BRDF *givenMaterial;
   const std::string fileName, assetsFolder;
   std::vector<TransformParameter> arr;
