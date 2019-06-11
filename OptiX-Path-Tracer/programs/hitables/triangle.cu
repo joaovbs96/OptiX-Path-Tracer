@@ -1,82 +1,66 @@
 #include "../prd.cuh"
 #include "hitables.cuh"
 
-
-/*! the parameters that describe each individual triangle geometry */
-rtDeclareVariable(float3, a, , );
-rtDeclareVariable(float2, a_uv, , );
-rtDeclareVariable(float3, b, , );
-rtDeclareVariable(float2, b_uv, , );
-rtDeclareVariable(float3, c, , );
-rtDeclareVariable(float2, c_uv, , );
-
-// precomputed variables
-rtDeclareVariable(float3, e1, , );
-rtDeclareVariable(float3, e2, , );
-rtDeclareVariable(float3, normal, , );
-
-rtDeclareVariable(float, scale, , );
-
-rtDeclareVariable(int, index, , );
-
-/*! the implicit state's ray we will intersect against */
+// OptiX Context objects
 rtDeclareVariable(Ray, ray, rtCurrentRay, );
 
-/*! the attributes we use to communicate between intersection programs and hit
- * program */
-rtDeclareVariable(HitRecord, hit_rec, attribute hit_rec, );
+// Intersected Geometry Attributes
+rtDeclareVariable(int, geo_index, attribute geo_index, );  // primitive index
+rtDeclareVariable(float2, bc, attribute bc, );  // triangle barycentrics
 
-/*! the per ray data we operate on */
-rtDeclareVariable(PerRayData, prd, rtPayload, );
+// Triangle Parameters
+rtBuffer<float3> vertex_buffer;
+rtBuffer<float3> normal_buffer;
+rtBuffer<float2> texcoord_buffer;
+rtBuffer<int3> index_buffer;
+rtBuffer<int> material_buffer;
 
 // Intersection program from McGuire's Graphics Codex -
 // https://graphicscodex.com/ Program that performs the ray-triangle
 // intersection
-RT_PROGRAM void hit_triangle(int pid) {
-  float3 pvec = cross(ray.direction, e2);
-  float aNum(dot(pvec, e1));
+RT_PROGRAM void Intersect(int pid) {
+  // Triangle Index
+  const int3 v_idx = index_buffer[pid];
 
-  // Backfacing / nearly parallel, or close to the limit of precision ?
-  if (abs(aNum) < 1E-8) return;
+  // Triangle Vertex
+  float3 a = vertex_buffer[v_idx.x];
+  float3 b = vertex_buffer[v_idx.y];
+  float3 c = vertex_buffer[v_idx.z];
+  
+  float3 e1 = rtTransformPoint(RT_OBJECT_TO_WORLD, b - a);
+  float3 e2 = rtTransformPoint(RT_OBJECT_TO_WORLD, c - a);
 
-  float3 tvec = ray.origin - a;
-  float u(dot(pvec, tvec) / aNum);
+  float3 P = cross(ray.direction, e2);
+  float A = dot(P, e1);
+
+  // Backfacing / nearly parallel, or close to the limit of precision?
+  if (abs(A) < 1E-8) return;
+
+  float3 R = ray.origin - a;
+  float u = dot(P, R) / A;
   if (u < 0.0 || u > 1.0) return;
 
-  float3 qVec = cross(tvec, e1);
-  float v(dot(qVec, ray.direction) / aNum);
+  float3 Q = cross(R, e1);
+  float v = dot(Q, ray.direction) / A;
   if (v < 0.0 || u + v > 1.0) return;
 
-  float t(dot(qVec, e2) / aNum);
-  if (t < ray.tmax && t > ray.tmin) {
-    if (rtPotentialIntersection(t)) {
-      hit_rec.t = t;
-
-      hit_rec.Wo = normalize(-ray.direction);
-
-      float3 hit_point = ray.origin + t * ray.direction;
-      hit_point = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
-      hit_rec.P = hit_point;
-
-      float3 Ng = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normal));
-      hit_rec.geometric_normal = Ng;
-      hit_rec.shading_normal = hit_rec.geometric_normal;
-
-      hit_rec.u = (a_uv.x * (1.0 - u - v) + b_uv.x * u + c_uv.x * v);
-      hit_rec.v = (a_uv.y * (1.0 - u - v) + b_uv.y * u + c_uv.y * v);
-
-      hit_rec.index = index;
-
-      rtReportIntersection(0);
-    }
+  float t = dot(Q, e2) / A;
+  if (rtPotentialIntersection(t)) {
+    geo_index = pid;
+    bc = make_float2(u, v);
+    rtReportIntersection(0);
   }
-
-  return;
 }
 
 /*! returns the bounding box of the pid'th primitive in this gometry. */
-RT_PROGRAM void get_bounds(int pid, float result[6]) {
+RT_PROGRAM void Get_Bounds(int pid, float result[6]) {
   Aabb* aabb = (Aabb*)result;
+
+  // Triangle Vertex
+  const int3 v_idx = index_buffer[pid];
+  float3 a = vertex_buffer[v_idx.x];
+  float3 b = vertex_buffer[v_idx.y];
+  float3 c = vertex_buffer[v_idx.z];
 
   // find min and max iterating through vertices
   // min(minX, minY, minZ)

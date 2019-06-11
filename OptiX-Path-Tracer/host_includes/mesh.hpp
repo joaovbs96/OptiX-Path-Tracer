@@ -192,9 +192,9 @@ class Mesh {
       geometry->setPrimitiveCount(n_faces);
 
       // Set intersection and bounding box programs
-      Program bound = createProgram(Old_Mesh_PTX, "bounds", g_context);
+      Program bound = createProgram(Triangle_PTX, "bounds", g_context);
       geometry->setBoundingBoxProgram(bound);
-      Program inter = createProgram(Old_Mesh_PTX, "intersection", g_context);
+      Program inter = createProgram(Triangle_PTX, "intersection", g_context);
       geometry->setIntersectionProgram(inter);
 
       gi->setGeometry(geometry);

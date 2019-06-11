@@ -465,9 +465,9 @@ void Test_Scene(App_State& app) {
 
     BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
 
-    list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
+    //list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
 
-    /*list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
+    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
 
     Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt);
     model2.scale(make_float3(100.f));
@@ -479,7 +479,7 @@ void Test_Scene(App_State& app) {
     meshList.addElementsTo(group, app.context);
 
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
-                         whiteMt));*/
+                         whiteMt));
   }
 
   // lucy
