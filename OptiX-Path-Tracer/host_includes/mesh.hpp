@@ -152,7 +152,7 @@ class Mesh {
     GeometryInstance gi = g_context->createGeometryInstance();
 
     // Create Geometry parameters callable program
-    Program prog = createProgram(Mesh_PTX, "Get_HitRecord", g_context);
+    Program prog = createProgram(Triangle_PTX, "Get_HitRecord", g_context);
 
     // create and set buffers
     Buffer v_buffer = createBuffer(v_vector, g_context);
@@ -182,7 +182,7 @@ class Mesh {
       geometry->setBuildFlags(RTgeometrybuildflags(0));
 
       // Set attribute program
-      Program att = createProgram(Mesh_PTX, "TriangleAttributes", g_context);
+      Program att = createProgram(Triangle_PTX, "Attributes", g_context);
       geometry->setAttributeProgram(att);
 
       gi->setGeometryTriangles(geometry);
@@ -192,9 +192,9 @@ class Mesh {
       geometry->setPrimitiveCount(n_faces);
 
       // Set intersection and bounding box programs
-      Program bound = createProgram(Triangle_PTX, "bounds", g_context);
+      Program bound = createProgram(Triangle_PTX, "Get_Bounds", g_context);
       geometry->setBoundingBoxProgram(bound);
-      Program inter = createProgram(Triangle_PTX, "intersection", g_context);
+      Program inter = createProgram(Triangle_PTX, "Intersect", g_context);
       geometry->setIntersectionProgram(inter);
 
       gi->setGeometry(geometry);

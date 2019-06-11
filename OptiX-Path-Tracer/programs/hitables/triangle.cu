@@ -15,9 +15,14 @@ rtBuffer<float2> texcoord_buffer;
 rtBuffer<int3> index_buffer;
 rtBuffer<int> material_buffer;
 
-// Intersection program from McGuire's Graphics Codex -
-// https://graphicscodex.com/ Program that performs the ray-triangle
-// intersection
+// Attribute Program (for GeometryTriangles)
+RT_PROGRAM void Attributes() {
+  geo_index = rtGetPrimitiveIndex();  // texture index
+  bc = rtGetTriangleBarycentrics();   // get barycentric coordinates
+}
+
+// Triangle intersection program from McGuire's Graphics Codex
+// https://graphicscodex.com/
 RT_PROGRAM void Intersect(int pid) {
   // Triangle Index
   const int3 v_idx = index_buffer[pid];
@@ -26,9 +31,9 @@ RT_PROGRAM void Intersect(int pid) {
   float3 a = vertex_buffer[v_idx.x];
   float3 b = vertex_buffer[v_idx.y];
   float3 c = vertex_buffer[v_idx.z];
-  
-  float3 e1 = rtTransformPoint(RT_OBJECT_TO_WORLD, b - a);
-  float3 e2 = rtTransformPoint(RT_OBJECT_TO_WORLD, c - a);
+
+  float3 e1 = b - a;
+  float3 e2 = c - a;
 
   float3 P = cross(ray.direction, e2);
   float A = dot(P, e1);
@@ -75,4 +80,70 @@ RT_PROGRAM void Get_Bounds(int pid, float result[6]) {
 
   aabb->m_min = make_float3(minX - 0.0001f, minY - 0.0001f, minZ - 0.0001f);
   aabb->m_max = make_float3(maxX + 0.0001f, maxY + 0.0001f, maxZ + 0.0001f);
+}
+
+RT_CALLABLE_PROGRAM HitRecord Get_HitRecord(int index,    // primitive index
+                                            Ray ray,      // current ray
+                                            float t_hit,  // intersection dist
+                                            float2 bc) {  // barycentrics
+  HitRecord rec;
+
+  // view direction
+  rec.Wo = normalize(-ray.direction);
+
+  // Triangle Index
+  const int3 v_idx = index_buffer[index];
+
+  // Triangle Vertex
+  float3 a = vertex_buffer[v_idx.x];
+  float3 b = vertex_buffer[v_idx.y];
+  float3 c = vertex_buffer[v_idx.z];
+
+  float3 e1 = rtTransformPoint(RT_OBJECT_TO_WORLD, b - a);
+  float3 e2 = rtTransformPoint(RT_OBJECT_TO_WORLD, c - a);
+
+  // Triangle Barycentrics
+  float b0 = 1.f - bc.x - bc.y, b1 = bc.x, b2 = bc.y;
+
+  // Hit Point
+  float3 hit_point = a * b0 + b * b1 + c * b2;
+  rec.P = rtTransformPoint(RT_OBJECT_TO_WORLD, hit_point);
+
+  // Geometric Normal
+  float3 Ng = cross(e1, e2);
+  float area = length(Ng) / 2.f;
+  Ng /= 2.f * area;
+  Ng = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, normalize(Ng)));
+  rec.geometric_normal = Ng;
+
+  // Shading Normal
+  if (normal_buffer.size() == 0) {
+    rec.shading_normal = Ng;
+  } else {
+    float3 a_n = normal_buffer[v_idx.x];
+    float3 b_n = normal_buffer[v_idx.y];
+    float3 c_n = normal_buffer[v_idx.z];
+
+    float3 Ns = a_n * b0 + b_n * b1 + c_n * b2;
+    Ns = normalize(rtTransformNormal(RT_OBJECT_TO_WORLD, Ns));
+    rec.shading_normal = Ns;
+  }
+
+  // Texture Coordinates
+  if (texcoord_buffer.size() == 0) {
+    rec.u = 0.f;
+    rec.v = 0.f;
+  } else {
+    float2 a_uv = texcoord_buffer[v_idx.x];
+    float2 b_uv = texcoord_buffer[v_idx.y];
+    float2 c_uv = texcoord_buffer[v_idx.z];
+
+    rec.u = a_uv.x * b0 + b_uv.x * b1 + c_uv.x * b2;
+    rec.v = a_uv.y * b0 + b_uv.y * b1 + c_uv.y * b2;
+  }
+
+  // Texture Index
+  rec.index = material_buffer[index];
+
+  return rec;
 }

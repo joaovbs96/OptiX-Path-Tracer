@@ -269,12 +269,6 @@ void Cornell(App_State& app) {
   box2.rotate(-18.f, Y_AXIS);
   list.push(&box2);*/
 
-  Mesh model2 = Mesh("teapot.obj", "../../../assets/teapot/", glassMt);
-  model2.scale(make_float3(10.f));
-  model2.rotate(180.f, Y_AXIS);
-  model2.translate(make_float3(150.f, 0.f, 0.f));
-  model2.addTo(group, app.context);
-
   // transforms list elements, one by one, and adds them to the scene graph
   list.addElementsTo(group, app.context);
   app.context["world"]->set(group);
@@ -465,11 +459,11 @@ void Test_Scene(App_State& app) {
 
     BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
 
-    //list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
+    // list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
 
     list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
 
-    Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt);
+    Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt, app.RTX);
     model2.scale(make_float3(100.f));
     model2.rotate(-90.f, Y_AXIS);
     model2.translate(make_float3(80.f, -500.f, 80.f));
@@ -484,7 +478,8 @@ void Test_Scene(App_State& app) {
 
   // lucy
   else if (app.model == 1) {
-    Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/", app.RTX);
+    BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
+    Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/", glassMt, app.RTX);
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));
     model.addTo(group, app.context);

@@ -40,14 +40,12 @@ cuda_compile_and_embed( Triangle_PTX programs/hitables/triangle.cu )
 cuda_compile_and_embed( Plane_PTX programs/hitables/plane.cu )
 cuda_compile_and_embed( Hit_PTX programs/hit.cu )
 cuda_compile_and_embed( Vector_Tex_PTX programs/textures/vector.cu )
-cuda_compile_and_embed( Mesh_PTX programs/hitables/geometry_triangles.cu )
 cuda_compile_and_embed( Normal_PTX programs/materials/normal_shader.cu )
 cuda_compile_and_embed( Ashikhmin_PTX programs/materials/ashikhmin_shirley.cu )
 cuda_compile_and_embed( Oren_Nayar_PTX programs/materials/oren_nayar.cu )
 cuda_compile_and_embed( Torrance_PTX programs/materials/torrance_sparrow.cu )
 cuda_compile_and_embed( Cylinder_PTX programs/hitables/cylinder.cu )
 cuda_compile_and_embed( Gradient_PTX programs/textures/gradient_texture.cu )
-cuda_compile_and_embed( Old_Mesh_PTX programs/hitables/mesh.cu )
 
 find_package(OpenGL REQUIRED) 
 
@@ -90,8 +88,6 @@ add_executable(OptiX_Path_Tracer
   ${Volume_Sphere_PTX}
   ${Volume_Box_PTX}
   ${Triangle_PTX}
-  ${Mesh_PTX}
-  ${Old_Mesh_PTX}
   ${Cylinder_PTX}
 
   # Material Programs
