@@ -14,8 +14,9 @@ rtDeclareVariable(rtObject, world, , );
 rtDeclareVariable(int, is_light, , );
 
 RT_PROGRAM void any_hit() {
+  // TODO: check if this is correct
   // only iluminate if ray is against the light normal
-  if (is_light && dot(prd_shadow.normal, ray.direction) < 0.f)
+  if (is_light && dot(prd_shadow.normal, ray.direction) > 0.f)
     prd_shadow.inShadow = false;
   else
     prd_shadow.inShadow = true;

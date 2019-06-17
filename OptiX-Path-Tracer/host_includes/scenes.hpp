@@ -195,11 +195,6 @@ void Cornell(App_State& app) {
   lights.sample.push_back(rect_pdf.createSample(app.context));
   lights.emissions.push_back(make_float3(7.f));
 
-  /*Sphere_PDF sph_pdf(make_float3(555.f - 100.f, 100.f, 100.f), 40.f);
-  lights.pdf.push_back(sph_pdf.createPDF(app.context));
-  lights.sample.push_back(sph_pdf.createSample(app.context));
-  lights.emissions.push_back(make_float3(7.f));*/
-
   // Set the exception, ray generation and miss shader programs
   setRayGenerationProgram(app.context, lights);
   setMissProgram(app.context, CONSTANT);  // dark background
@@ -215,26 +210,12 @@ void Cornell(App_State& app) {
   Texture* greenTx = new Constant_Texture(0.12f, 0.45f, 0.15f);
   Texture* lightTx = new Constant_Texture(7.f);
   Texture* alumTx = new Constant_Texture(0.8f, 0.85f, 0.88f);
-  Texture* pWhiteTx = new Constant_Texture(1.f);
-  Texture* pBlackTx = new Constant_Texture(0.f);
-  Texture* tx1 = new Constant_Texture(1.f);
-  Texture* tx2 = new Constant_Texture(1.f, 1.f, rnd());
-  Texture* tx4 = new Constant_Texture(0.f);
-  Texture* tx3 = new Constant_Texture(0.4f);
-  Texture* glass = new Constant_Texture(0.1f, 0.603f, 0.3f);
 
   // create materials
   BRDF* redMt = new Lambertian(redTx);
   BRDF* whiteMt = new Lambertian(whiteTx);
   BRDF* greenMt = new Lambertian(greenTx);
   BRDF* lightMt = new Diffuse_Light(lightTx);
-  BRDF* alumMt = new Metal(pWhiteTx, 0.0);
-  BRDF* glassMt = new Dielectric(pWhiteTx, glass, 1.5f, 0.f);
-  BRDF* blackSmokeMt = new Isotropic(pBlackTx);
-  BRDF* oren = new Oren_Nayar(whiteTx, 1.f);
-  BRDF* mt2 = new Ashikhmin_Shirley(tx1, tx3, 10000, 10);
-  BRDF* mt5 = new Torrance_Sparrow(tx1, 0.1f, 0.1f);
-  BRDF* mt6 = new Oren_Nayar(tx1, 1.f);
 
   // create geometries/hitables
   Hitable_List list;
@@ -245,29 +226,18 @@ void Cornell(App_State& app) {
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 0.f, false, Y_AXIS, whiteMt));
   list.push(new AARect(0.f, 555.f, 0.f, 555.f, 555.f, true, Z_AXIS, whiteMt));
-  // list.push(new Sphere(make_float3(150.f, 90.f, 150.f), 90.f, glassMt));
-  list.push(new Sphere(make_float3(555.f - 150.f, 90.f, 555.f - 150.f), 90.f,
-                       alumMt));
-  /*list.push(new Sphere(make_float3(555 / 3.f, 90.f, 555 / 2.f), 90.f, mt5));
-  list.push(new Sphere(make_float3(2 * 555 / 3.f, 90.f, 555 / 2.f), 90.f,
-  mt6));*/
 
-  // Aluminium box
-  /*Box box =
-      Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), whiteMt);
-  box.translate(make_float3(265.f, 0.f, 295.f));
-  box.rotate(15.f, Y_AXIS);
-  list.push(&box);*/
+  // list.push(new Sphere(make_float3(265.f, 100.f, 295.f), 100.f, whiteMt));
 
-  /*list.push(
-      new Sphere(make_float3(555.f - 100.f, 100.f, 100.f), 40.f,
-     alumMt));*/
+  Box box0 = Box(make_float3(0.f), make_float3(165.f, 330.f, 165.f), greenMt);
+  box0.translate(make_float3(265.f, 0.f, 295.f));
+  box0.rotate(15.f, Y_AXIS);
+  list.push(&box0);
 
-  /*Box box2 =
-      Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), whiteMt);
-  box2.translate(make_float3(130.f, 0.f, 65.f));
-  box2.rotate(-18.f, Y_AXIS);
-  list.push(&box2);*/
+  /*Box box1 = Box(make_float3(0.f), make_float3(165.f, 165.f, 165.f), whiteMt);
+  box1.translate(make_float3(130.f, 0.f, 65.f));
+  box1.rotate(-18.f, Y_AXIS);
+  list.push(&box1);*/
 
   // transforms list elements, one by one, and adds them to the scene graph
   list.addElementsTo(group, app.context);
@@ -289,6 +259,7 @@ void Cornell(App_State& app) {
   printf("Done assigning scene data, which took %.2f seconds.\n", sceneTime);
 }
 
+// FIXME: scene needs to be updated
 void Final_Next_Week(App_State& app) {
   auto t0 = std::chrono::system_clock::now();
 
@@ -444,6 +415,7 @@ void Test_Scene(App_State& app) {
   BRDF* perlinYMt = new Lambertian(perlinYTx);
   BRDF* perlinZMt = new Lambertian(perlinZTx);
   BRDF* whiteIso = new Isotropic(blueTx);
+  BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
 
   // create geometries
   Hitable_List list;
@@ -452,33 +424,20 @@ void Test_Scene(App_State& app) {
   if (app.model == 0) {
     Mesh_List meshList;
 
-    Texture* tx4 = new Constant_Texture(1.f);
-    Texture* tx3 = new Constant_Texture(0.3f);
-    BRDF* mt2 = new Torrance_Sparrow(tx4, 0.01f, 0.02f);
-    BRDF* mt3 = new Ashikhmin_Shirley(tx3, tx4, 10000, 10000);
-
-    BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
-
-    // list.push(new Cylinder(make_float3(0.f), 100.f, 100.f, blackMt));
-
-    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
-
     Mesh model2 = Mesh("bene.obj", "../../../assets/teapot/", glassMt, app.RTX);
     model2.scale(make_float3(100.f));
     model2.rotate(-90.f, Y_AXIS);
     model2.translate(make_float3(80.f, -500.f, 80.f));
-
     meshList.push(&model2);
-
     meshList.addElementsTo(group, app.context);
 
+    list.push(new Sphere(make_float3(0.f, -400.f, 0.f), 150.f, whiteMt));
     list.push(new AARect(-1000.f, 1000.f, -500.f, 500.f, -600.f, false, Y_AXIS,
                          whiteMt));
   }
 
   // lucy
   else if (app.model == 1) {
-    BRDF* glassMt = new Dielectric(glass, pWhiteTx, 1.0f, 0.f);
     Mesh model = Mesh("Lucy1M.obj", "../../../assets/lucy/", glassMt, app.RTX);
     model.scale(make_float3(150.f));
     model.translate(make_float3(0.f, -550.f, 0.f));

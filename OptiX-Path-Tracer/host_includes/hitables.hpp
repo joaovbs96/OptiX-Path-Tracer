@@ -70,8 +70,8 @@ class Hitable {
   }
 
  protected:
-  Geometry geometry;        // Geometry object
-  BRDF *material;  // Host side material object
+  Geometry geometry;  // Geometry object
+  BRDF *material;     // Host side material object
 
   // Creates GeometryInstance
   virtual GeometryInstance createGeometryInstance(Context &g_context) {
@@ -292,8 +292,6 @@ class Box : public Hitable {
     // Set bounding box program
     Program bound = createProgram(Box_PTX, "Get_Bounds", g_context);
     geometry->setBoundingBoxProgram(bound);
-
-    // Set intersection program
     Program intersect = createProgram(Box_PTX, "Intersect", g_context);
     geometry->setIntersectionProgram(intersect);
 
@@ -412,8 +410,7 @@ class Triangle : public Hitable {
 // Creates a Cylinder
 class Cylinder : public Hitable {
  public:
-  Cylinder(const float3 &oo, const float &ll, const float r,
-           BRDF *material)
+  Cylinder(const float3 &oo, const float &ll, const float r, BRDF *material)
       : O(oo), length(ll), radius(r), Hitable(material) {}
 
   // Creates a GeometryInstance object of a sphere primitive

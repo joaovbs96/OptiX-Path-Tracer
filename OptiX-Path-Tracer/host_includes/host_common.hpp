@@ -21,23 +21,25 @@
 struct App_State {
   // Default Constructor
   App_State() {
-    context = Context::create(); // OptiX context
-    W = H = 500;          // image resolution
-    samples = 500;        // number of samples
-    scene = 2;            // counter to selection scene function
-    model = 0;            // model selection for mesh test scene
-    frequency = 1;        // update preview at every sample
-    currentSample = 0;    // always start at sample 0
-    showProgress = true;  // display preview?
-    RTX = true;           // use RTX mode
-    start = done = false; // hasn't started and it's not yet done
-    fileType = 0;         // PNG = 0, HDR = 1
-    fileName = "out";     // file name without extension
+    context = Context::create();  // OptiX context
+    W = H = 500;                  // image resolution
+    samples = 500;                // number of samples
+    scene = 2;                    // counter to selection scene function
+    model = 0;                    // model selection for mesh test scene
+    frequency = 1;                // update preview at every sample
+    currentSample = 0;            // always start at sample 0
+    showProgress = true;          // display preview?
+    RTX = true;                   // use RTX mode
+    russian = true;               // use Russian Roulette
+    depth = 50;                   // max ray repth
+    start = done = false;         // hasn't started and it's not yet done
+    fileType = 0;                 // PNG = 0, HDR = 1
+    fileName = "out";             // file name without extension
   }
 
   Context context;
-  int W, H, samples, scene, currentSample, model, frequency, fileType;
-  bool done, start, showProgress, RTX;
+  int W, H, samples, scene, currentSample, model, frequency, fileType, depth;
+  bool done, start, showProgress, RTX, russian;
   Buffer accBuffer, displayBuffer;
   std::string fileName;
 };

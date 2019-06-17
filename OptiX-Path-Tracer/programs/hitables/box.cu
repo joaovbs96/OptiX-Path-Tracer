@@ -5,6 +5,8 @@
 // --- Axis Aligned Box --- //
 //////////////////////////////
 
+// FIXME: boxes are appearing pitch black. Why?
+
 // Based AABB intersection function from Peter Shirley's "The Next Week" and the
 // Box intersection function from the optixTutorial sample from OptiX's SDK.
 
@@ -37,14 +39,16 @@ RT_PROGRAM void Intersect(int pid) {
   float tmin = max_component(min_vec(t0, t1));
   float tmax = min_component(max_vec(t0, t1));
 
-  if (tmin <= tmax && rtPotentialIntersection(tmin)) {
-    geo_index = 0;
-    bc = make_float2(0);
-    rtReportIntersection(0);
-  } else if (tmin <= tmax && rtPotentialIntersection(tmax)) {
-    geo_index = 0;
-    bc = make_float2(0);
-    rtReportIntersection(0);
+  if (tmin <= tmax) {
+    if (rtPotentialIntersection(tmin)) {
+      geo_index = 0;
+      bc = make_float2(0);
+      rtReportIntersection(0);
+    } else if (rtPotentialIntersection(tmax)) {
+      geo_index = 0;
+      bc = make_float2(0);
+      rtReportIntersection(0);
+    }
   }
 }
 
@@ -79,6 +83,6 @@ RT_CALLABLE_PROGRAM HitRecord Get_HitRecord(int index,    // primitive index
 // returns the bounding box of the pid'th primitive in this gometry.
 RT_PROGRAM void Get_Bounds(int pid, float result[6]) {
   Aabb* aabb = (Aabb*)result;
-  aabb->m_min = boxmin;
-  aabb->m_max = boxmax;
+  aabb->m_min = boxmin - make_float3(0.001f);
+  aabb->m_max = boxmax + make_float3(0.001f);
 }

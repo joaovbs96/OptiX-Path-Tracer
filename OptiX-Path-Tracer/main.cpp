@@ -40,10 +40,11 @@ float renderFrame(Context &g_context, int Nx, int Ny) {
 
 int Optix_Config(App_State &app) {
   // Set RTX global attribute(should be done before creating the context)
-  if(app.RTX){
+  if (app.RTX) {
     int RTX = true;
     RTresult res;
-    res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX), &(RTX));
+    res = rtGlobalSetAttribute(RT_GLOBAL_ATTRIBUTE_ENABLE_RTX, sizeof(RTX),
+                               &(RTX));
     if (res != RT_SUCCESS) {
       printf("Error: RTX mode is required for this application, exiting. \n");
       system("PAUSE");
@@ -56,8 +57,10 @@ int Optix_Config(App_State &app) {
   app.context->setRayTypeCount(2);  // radiance rays and shadow rays
   app.context->setMaxTraceDepth(5);
 
-  // Set number of samples
+  // Set samples, ray depth and russian roulette variables
   app.context["samples"]->setInt(app.samples);
+  app.context["russian"]->setInt(app.russian);
+  app.context["maxDepth"]->setInt(app.depth);
 
   // Create and set the world
   switch (app.scene) {
@@ -185,8 +188,12 @@ int main(int ac, char **av) {
         ImGui::InputInt("Height", &app.H, 1, 100);
 
         ImGui::InputInt("Samples Per Pixel", &app.samples, 1, 100);
-        
+
         ImGui::Checkbox("RTX Mode", &app.RTX);
+
+        ImGui::Checkbox("Russian Roulette", &app.russian);
+
+        ImGui::InputInt("Max Depth", &app.depth, 1, 100);
 
         ImGui::Combo("Scene", &app.scene,
                      "Peter Shirley's In One Weekend\0Peter Shirley's The Next "
@@ -238,8 +245,7 @@ int main(int ac, char **av) {
             if (app.samples <= 0)
               printf("- 'samples' should be a positive integer.\n");
 
-            if (app.W <= 0)
-              printf("- 'width' should be a positive integer.\n");
+            if (app.W <= 0) printf("- 'width' should be a positive integer.\n");
 
             if (app.H <= 0)
               printf("- 'height' should be a positive integer.\n");

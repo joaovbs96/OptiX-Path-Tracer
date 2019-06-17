@@ -29,8 +29,10 @@ rtDeclareVariable(PerRayData, prd, rtPayload, );
 rtBuffer<float4, 2> acc_buffer;      // HDR color frame buffer
 rtBuffer<uchar4, 2> display_buffer;  // display buffer
 
-rtDeclareVariable(int, samples, , );  // number of samples
-rtDeclareVariable(int, frame, , );    // frame number
+rtDeclareVariable(int, samples, , );   // number of samples
+rtDeclareVariable(int, frame, , );     // frame number
+rtDeclareVariable(int, russian, , );   // russian roulette flag
+rtDeclareVariable(int, maxDepth, , );  // max ray depth
 
 rtDeclareVariable(rtObject, world, , );  // scene/top obj variable
 
@@ -71,7 +73,7 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
   bool previousHitSpecular = false;
 
   // iterative version of recursion
-  for (int depth = 0; depth < 50; depth++) {
+  for (int depth = 0; depth < maxDepth; depth++) {
     rtTrace(world, ray, prd);  // Trace a new ray
 
     // ray got 'lost' to the environment
@@ -105,12 +107,14 @@ RT_FUNCTION float3 color(Ray& ray, uint& seed) {
     }
 
     // Russian Roulette Path Termination
-    float prob = max_component(prd.throughput);
-    if (depth > 10) {
-      if (rnd(prd.seed) >= prob)
-        return prd.radiance + prd.throughput;
-      else
-        prd.throughput *= 1.f / prob;
+    if (russian) {
+      float prob = max_component(prd.throughput);
+      if (depth > 10) {
+        if (rnd(prd.seed) >= prob)
+          return prd.radiance + prd.throughput;
+        else
+          prd.throughput *= 1.f / prob;
+      }
     }
   }
 
