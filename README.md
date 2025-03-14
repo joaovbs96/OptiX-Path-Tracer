@@ -7,8 +7,8 @@
 NVIDIA's OptiX based GPU Path Tracer. Project originally forked from Ingo Wald's OptiX version of Peter Shirley's "Ray Tracing" series, still being 
 expanded with new features being added even after being done with the final book, "The Rest of Your Life". Accompanying blog posts describing the implemention are available in the following links:
 
-- ["Ray Tracing: The Next Week" In OptiX](https://joaovbs96.github.io/optix/2018/12/24/next-week.html)
-- ["Ray Tracing: The Rest of Your Life" In OptiX](https://joaovbs96.github.io/optix/2019/01/12/rest-life.html)
+- ["Ray Tracing: The Next Week" In OptiX](https://joaovbs96.github.io/posts/next-week/)
+- ["Ray Tracing: The Rest of Your Life" In OptiX](https://joaovbs96.github.io/posts/rest-life/)
 
 
 ## Features
